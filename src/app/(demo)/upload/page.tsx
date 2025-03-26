@@ -12,12 +12,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
+import PlaceholderContentUpload from "@/components/demo/placeholder-contentupload";
 
 export default function TagsPage() {
   return (
     <ContentLayout title="Tags">
       <Breadcrumb>
-      <BreadcrumbList>
+        <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
               <Link href="/">Home</Link>
@@ -77,7 +78,7 @@ export default function TagsPage() {
 
 
 
-      <PlaceholderContent />
+      <PlaceholderContentUpload />
 
 
 

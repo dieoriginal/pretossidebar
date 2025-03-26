@@ -150,7 +150,7 @@ export function Menu({ isOpen }: MenuProps) {
               {groupedResults[group].map((word) => (
                 <span
                   key={word}
-                  className="
+                  className="ç
                     text-sm 
                     bg-gray-200 dark:bg-gray-700
                     px-2 py-1 

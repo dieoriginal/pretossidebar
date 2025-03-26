@@ -1,3 +1,4 @@
+º
 "use client";
 
 import { useForm, useFieldArray } from "react-hook-form";
@@ -47,7 +48,7 @@ const formSchema = z.object({
 
 export type FormValues = z.infer<typeof formSchema>;
 
-export default function PoeticForm() {
+export default function VideoForm() {
   // Total de 7 passos (1 e 2 originais, 3 a 6 dos "ore" e 7 instruções finais)
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 7;
@@ -359,8 +360,8 @@ export default function PoeticForm() {
                 Próximo
               </button>
             ) : (
-              <a href="http://localhost:3000/dashboard" className="bg-green-600 text-white dark:bg-green-500 dark:text-black px-6 py-2 rounded inline-block">
-                Escrever
+              <a href="http://localhost:3000/dashboard" className="bg-green-600 text-white px-6 py-2 rounded inline-block">
+                Gerar Poema
               </a>
             )}
           </div>

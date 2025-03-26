@@ -465,17 +465,53 @@ export default function DashboardPage() {
     <ContentLayout title="Dashboard">
       <AdminPanelLayout rightSidebar={<Sidebar />}>
         <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Versificaçao</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/">Home</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+
+          <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+              <Link href="/upload">Upload</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+     
+          <BreadcrumbSeparator />
+
+          <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+              <Link href="/pressupostos">Pressupostos</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+
+          <BreadcrumbSeparator />
+
+          <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+              <Link href="/dashboard">Versificaçao</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+
+           <BreadcrumbSeparator />
+
+          <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+              <Link href="/dashboard">Versificaçao</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+
+          <BreadcrumbSeparator />
+
+          <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+              <Link href="/videoform">Video</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          
+        </BreadcrumbList>
         </Breadcrumb>
         <TooltipProvider>
           <div className="flex gap-6 mt-6">
