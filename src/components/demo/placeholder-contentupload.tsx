@@ -30,12 +30,56 @@ export default function PlaceholderContentUpload() {
       <CardContent className="p-6">
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="form-group">
-          <label className="block font-medium">Nome de Usuário:</label>
+          <label className="block font-medium">Producer:</label>
           <input
             {...form.register("username")}
             className="input-field border p-2 rounded w-full"
-            placeholder="Digite seu nome de usuário"
+            placeholder="Digite seu nome do produtor"
           />
+        </div>
+
+        <div className="form-group">
+          <label className="block font-medium">BPM:</label>
+          <input
+            type="number"
+            {...form.register("bpm")}
+            className="input-field border p-2 rounded w-full"
+            placeholder="153 BPM"
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="block font-medium">Nota de Autotune</label>
+          <select
+            {...form.register("autotuneNote")}
+            className="input-field border p-2 rounded w-full"
+          >
+            <option value="">Selecione uma nota</option>
+            <option value="C Minor">C Minor</option>
+            <option value="C# Minor">C# Minor</option>
+            <option value="D Minor">D Minor</option>
+            <option value="D# Minor">D# Minor</option>
+            <option value="E Minor">E Minor</option>
+            <option value="F Minor">F Minor</option>
+            <option value="F# Minor">F# Minor</option>
+            <option value="G Minor">G Minor</option>
+            <option value="G# Minor">G# Minor</option>
+            <option value="A Minor">A Minor</option>
+            <option value="A# Minor">A# Minor</option>
+            <option value="B Minor">B Minor</option>
+            <option value="C Major">C Major</option>
+            <option value="C# Major">C# Major</option>
+            <option value="D Major">D Major</option>
+            <option value="D# Major">D# Major</option>
+            <option value="E Major">E Major</option>
+            <option value="F Major">F Major</option>
+            <option value="F# Major">F# Major</option>
+            <option value="G Major">G Major</option>
+            <option value="G# Major">G# Major</option>
+            <option value="A Major">A Major</option>
+            <option value="A# Major">A# Major</option>
+            <option value="B Major">B Major</option>
+          </select>
         </div>
         <div className="form-group">
           <label className="block font-medium">Carregar Áudio:</label>

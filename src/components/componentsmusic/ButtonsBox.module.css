@@ -1,0 +1,16 @@
+
+.wrapper {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  place-items: center;
+  height: 30px; /* Altura reduzida */
+  width: 100px; /* Largura reduzida */
+}
+
+@media only screen and (max-width: 600px) {
+  .wrapper {
+    grid-template-columns: repeat(3, 1fr);
+    height: 20px; /* Altura reduzida para telas menores */
+    width: 80px; /* Largura reduzida para telas menores */
+  }
+}

@@ -46,7 +46,7 @@ export function Sidebar() {
 
 
 
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href="/versificacao" className="flex items-center gap-2">
 
 
 

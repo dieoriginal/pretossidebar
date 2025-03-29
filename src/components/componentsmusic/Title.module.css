@@ -1,0 +1,14 @@
+.title {
+  color: var(--titleColor);
+  font-size: 24px; /* Diminuído para se ajustar melhor ao cartão */
+  text-align: left;
+  max-width: 350px; /* Ajustado para ser menor que 362px */
+  height: 70px; /* Ajustado para ser menor que 79px */
+}
+
+@media only screen and (max-width: 600px) {
+  .title {
+    width: 90%; /* Ajustado para se adaptar melhor em telas menores */
+    text-align: center;
+  }
+}

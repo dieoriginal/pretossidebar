@@ -8,22 +8,9 @@ import { useState } from "react";
 
 // 1. Schema de validação atualizado
 const formSchema = z.object({
-  temaCentral: z.string().min(2, "Tema central é obrigatório"),
-  arquétipo: z.enum(["Prometeu", "Édipo", "Antígona", "Medeia"]),
-  apolineo: z.number().min(0).max(100),
-  dionisíaco: z.number().min(0).max(100),
-  efeitoDesejado: z.array(z.enum(["Catarse", "Anagnórise", "Peripécia"])),
-  tipoMetrica: z.enum(["dactílico", "iâmbico", "trocaico"]),
-  silabasPorLinha: z.number().min(1).max(20),
-  posicaoCesura: z.number().min(0).max(20),
-  esquemaRima: z.string(),
-  enjambement: z.number().min(0).max(1),
-  // Etapa 3: SONORA
-  aliteracaoConsoante: z.string(),
-  aliteracaoFrequencia: z.number().min(0),
-  assonanciaVogal: z.string(),
-  assonanciaPadrao: z.string(),
-  onomatopeias: z.array(z.string()),
+  tipo: z.enum(["Épica", "Elegia", "Ídilio", "Ode", "Tragédia", "Comédia"]),
+  forma: z.string().min(2, "Forma é obrigatória"),
+  tema: z.string().min(2, "Tema é obrigatório"),
   // Etapa 4: DRAMÁRGICA
   prologo: z.string(),
   parodos: z.string(),
@@ -36,41 +23,21 @@ const formSchema = z.object({
       categoria: z.string(),
       significado: z.string()
     })
-  ),
-  // Etapa 6: VALIDAÇÃO
-  testeSilabas: z.boolean(),
-  testeAliteracao: z.boolean(),
-  testeAssonancia: z.boolean(),
-  impactoEmocional: z.number().min(0).max(10),
-  instrucoesFinais: z.string()
+  )
 });
 
 export type FormValues = z.infer<typeof formSchema>;
 
 export default function PoeticForm() {
-  // Total de 7 passos (1 e 2 originais, 3 a 6 dos "ore" e 7 instruções finais)
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 7;
+  const totalSteps = 5;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      temaCentral: "",
-      arquétipo: "Prometeu",
-      apolineo: 50,
-      dionisíaco: 50,
-      efeitoDesejado: [],
-      tipoMetrica: "trocaico",
-      silabasPorLinha: 12,
-      posicaoCesura: 6,
-      esquemaRima: "ABABCC",
-      enjambement: 0.3,
-      // Etapa 3 defaults
-      aliteracaoConsoante: "m",
-      aliteracaoFrequencia: 3,
-      assonanciaVogal: "ó",
-      assonanciaPadrao: "cíclico",
-      onomatopeias: ["estrondo", "rugir", "crepitar"],
+      tipo: "Épica",
+      forma: "Longa, narrativa, hexâmetro dactílico",
+      tema: "Mitologia, heróis, guerra",
       // Etapa 4 defaults
       prologo: "Exposição do conflito",
       parodos: "Entrada do coro",
@@ -87,21 +54,10 @@ export default function PoeticForm() {
         { termo: "Fogo", categoria: "Prometeico", significado: "Rebelião/Iluminação" },
         { termo: "Lâmina", categoria: "Sacrifício", significado: "Ruptura/Iniciação" },
         { termo: "Abismo", categoria: "Nietzschiano", significado: "Vazio/Criação" }
-      ],
-      // Etapa 6 defaults
-      testeSilabas: true,
-      testeAliteracao: true,
-      testeAssonancia: true,
-      impactoEmocional: 8,
-      instrucoesFinais: ""
+      ]
     }
   });
 
-  // Para campos dinâmicos (arrays)
-  const { fields: onomatopeiaFields } = useFieldArray({
-    control: form.control,
-    name: "onomatopeias"
-  });
   const { fields: episodioFields } = useFieldArray({
     control: form.control,
     name: "episodios"
@@ -120,97 +76,43 @@ export default function PoeticForm() {
   const renderStep = () => {
     switch (currentStep) {
       case 1: return renderStep1();
-      case 2: return renderStep2();
-      case 3: return renderStep3();
       case 4: return renderStep4();
       case 5: return renderStep5();
-      case 6: return renderStep6();
-      case 7: return renderStep7();
       default: return null;
     }
   };
 
-  // Passo 1: Núcleo Trágico
+  // Passo 1: Tipo
   const renderStep1 = () => (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">1. Definição do Núcleo Trágico</h2>
+      <h2 className="text-2xl font-bold mb-4">1. Escolha o Tipo de Poesia</h2>
+      <h4>Escolha o sentimento intuitivo e abstráto que desejas explorar hoje.</h4>
       <div className="form-group">
-        <label className="block font-medium">Tema Central:</label>
-        <input
-          {...form.register("temaCentral")}
-          className="input-field border p-2 rounded w-full"
-          placeholder="Ex: Hybris, Destino vs Livre-Arbítrio"
-        />
-        {form.formState.errors.temaCentral && (
-          <span className="text-red-500">{form.formState.errors.temaCentral.message}</span>
-        )}
-      </div>
-      {/* Outros campos do passo 1 conforme necessário */}
-    </div>
-  );
-
-  // Passo 2: Engenharia Métrica
-  const renderStep2 = () => (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">2. Engenharia Métrica</h2>
-      <div className="form-group">
-        <label className="block font-medium">Tipo de Métrica:</label>
-        <select {...form.register("tipoMetrica")} className="input-field border p-2 rounded w-full">
-          <option value="dactílico">Dactílico</option>
-          <option value="iâmbico">Iâmbico</option>
-          <option value="trocaico">Trocaico</option>
+        <label className="block font-medium">Tipo:</label>
+        <select {...form.register("tipo")} className="input-field border p-2 rounded w-full">
+          <option value="Épica">Épica - são longas e detalham histórias de mitologia, heróis e batalhas.</option>
+          <option value="Elegia">Elegia - poesia lírica mais curta, composta principalmente por versos dísticos (duas linhas), e geralmente trata de temas como lamento, reflexão sobre a vida, e muitas vezes sobre a morte ou a guerra.</option>
+          <option value="Ídilio">Ídilio -  Poesias curtas e suaves, geralmente voltadas para a natureza, a vida simples e o campo. Elas têm um tom tranquilo e exploram a beleza do cotidiano rural.</option>
+          <option value="Ode">Ode - uma poesia lírica estruturada e muitas vezes exaltada, onde se faz uma glorificação de algo ou alguém, como heróis, vitórias ou eventos notáveis.</option>
+          <option value="Tragédia">Tragédia -  foco intenso no sofrimento humano e nas consequências do destino. O personagem principal geralmente enfrenta uma luta contra forças inevitáveis, como o destino, resultando em tragédia.</option>
+          <option value="Comédia">Comédia - A comédia é uma forma de drama que usa o humor para abordar questões sociais, políticas e morais. Muitas vezes, há uma crítica ácida à sociedade e ao comportamento humano.</option>
         </select>
       </div>
-      {/* Outros campos do passo 2 conforme necessário */}
-    </div>
-  );
-
-  // Passo 3: Anatomia Sonora (Camada Fonética)
-  const renderStep3 = () => (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">3. Anatomia Sonora (Camada Fonética)</h2>
       <div className="form-group">
-        <label className="block font-medium">Aliteração - Consoante:</label>
+        <label className="block font-medium">Forma:</label>
         <input
-          {...form.register("aliteracaoConsoante")}
+          {...form.register("forma")}
           className="input-field border p-2 rounded w-full"
-          placeholder="Ex: m"
+          placeholder="Ex: Longa, narrativa, hexâmetro dactílico"
         />
       </div>
       <div className="form-group">
-        <label className="block font-medium">Aliteração - Frequência (por verso):</label>
+        <label className="block font-medium">Tema:</label>
         <input
-          type="number"
-          {...form.register("aliteracaoFrequencia", { valueAsNumber: true })}
+          {...form.register("tema")}
           className="input-field border p-2 rounded w-full"
+          placeholder="Ex: Mitologia, heróis, guerra"
         />
-      </div>
-      <div className="form-group">
-        <label className="block font-medium">Assonância - Vogal:</label>
-        <input
-          {...form.register("assonanciaVogal")}
-          className="input-field border p-2 rounded w-full"
-          placeholder="Ex: ó"
-        />
-      </div>
-      <div className="form-group">
-        <label className="block font-medium">Assonância - Padrão:</label>
-        <input
-          {...form.register("assonanciaPadrao")}
-          className="input-field border p-2 rounded w-full"
-          placeholder="Ex: cíclico"
-        />
-      </div>
-      <div className="form-group">
-        <label className="block font-medium">Onomatopeias:</label>
-        {onomatopeiaFields.map((field, index) => (
-          <input
-            key={field.id}
-            {...form.register(`onomatopeias.${index}` as const)}
-            className="input-field border p-2 rounded w-full mb-2"
-            placeholder={`Onomatopeia ${index + 1}`}
-          />
-        ))}
       </div>
     </div>
   );
@@ -220,38 +122,39 @@ export default function PoeticForm() {
     <div className="space-y-4">
       <h2 className="text-2xl font-bold mb-4">4. Arquitetura Dramárgica (Estrutura Clássica)</h2>
       <div className="form-group">
-        <label className="block font-medium">Prólogo:</label>
+        <label className="block font-medium" title="Aqui o usuário define a introdução da narrativa, apresentando o conflito principal que impulsionará a ação. É o ponto de partida onde se estabelece o tema e as motivações dos personagens.">Prólogo – Exposição do Conflito:</label>
         <input
           {...form.register("prologo")}
           className="input-field border p-2 rounded w-full"
-          placeholder="Exposição do conflito"
+          placeholder="Aqui o usuário define a introdução da narrativa, apresentando o conflito principal que impulsionará a ação."
         />
       </div>
       <div className="form-group">
-        <label className="block font-medium">Parodos:</label>
+        <label className="block font-medium" title="Esta seção representa a entrada do coro (ou narrador coletivo) que comenta ou reflete sobre os eventos. Serve para contextualizar a situação, introduzir o tom emocional e preparar o público para o que se seguirá.">Parodos – Entrada do Coro:</label>
         <input
           {...form.register("parodos")}
           className="input-field border p-2 rounded w-full"
-          placeholder="Entrada do coro"
+          placeholder="Esta seção representa a entrada do coro que comenta ou reflete sobre os eventos."
         />
       </div>
       <div className="form-group">
-        <label className="block font-medium">Episódios:</label>
+        <label className="block font-medium" title="Esta parte é dividida em vários segmentos que compõem o desenvolvimento da ação:">Episódios:</label>
         {episodioFields.map((field, index) => (
           <input
             key={field.id}
             {...form.register(`episodios.${index}` as const)}
             className="input-field border p-2 rounded w-full mb-2"
-            placeholder={`Episódio ${index + 1}`}
+            placeholder={`Episódio ${index + 1}: ${index === 0 ? "Inicia a ação propriamente dita, apresentando a evolução do conflito." : ""}`}
+            title={index === 0 ? "Inicia a ação propriamente dita, apresentando a evolução do conflito." : ""}
           />
         ))}
       </div>
       <div className="form-group">
-        <label className="block font-medium">Êxodo:</label>
+        <label className="block font-medium" title="A seção final que encerra a narrativa, proporcionando uma conclusão – seja um fechamento trágico ou uma resolução dos conflitos apresentados.">Êxodo:</label>
         <input
           {...form.register("exodo")}
           className="input-field border p-2 rounded w-full"
-          placeholder="Lições do coro"
+          placeholder="A seção final que encerra a narrativa, proporcionando uma conclusão."
         />
       </div>
     </div>
@@ -261,77 +164,19 @@ export default function PoeticForm() {
   const renderStep5 = () => (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold mb-4">5. Lexicon Mitopoético (Banco de Imagens)</h2>
+      <h5>Nesta janela, você está configurando o Lexicon Mitopoético, que funciona como um banco de imagens e conceitos simbólicos para enriquecer suas criações artísticas ou narrativas.</h5>
       {dicionarioFields.map((field, index) => (
         <div key={field.id} className="space-y-2 border p-3 rounded mb-3">
           <div className="form-group">
-            <label className="block font-medium">Termo:</label>
+            <label className="block font-medium" title="Ex: Mar - Categoria: Infinito/Primordial - Significado: Mistério/Transcendência (O mar pode simbolizar tanto a vastidão do inconsciente quanto o potencial ilimitado para transformação.)">Termo:</label>
             <input
               {...form.register(`dicionarioPoetico.${index}.termo` as const)}
               className="input-field border p-2 rounded w-full"
               placeholder="Ex: Fogo"
             />
           </div>
-          <div className="form-group">
-            <label className="block font-medium">Categoria:</label>
-            <input
-              {...form.register(`dicionarioPoetico.${index}.categoria` as const)}
-              className="input-field border p-2 rounded w-full"
-              placeholder="Ex: Prometeico"
-            />
-          </div>
-          <div className="form-group">
-            <label className="block font-medium">Significado:</label>
-            <input
-              {...form.register(`dicionarioPoetico.${index}.significado` as const)}
-              className="input-field border p-2 rounded w-full"
-              placeholder="Ex: Rebelião/Iluminação"
-            />
-          </div>
         </div>
       ))}
-    </div>
-  );
-
-  // Passo 6: Processo de Validação (Testes de Sonoridade)
-  const renderStep6 = () => (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">6. Processo de Validação (Testes de Sonoridade)</h2>
-      <div className="form-group flex items-center space-x-4">
-        <input type="checkbox" {...form.register("testeSilabas")} className="w-4 h-4" />
-        <label className="font-medium">Teste de Sílabas</label>
-      </div>
-      <div className="form-group flex items-center space-x-4">
-        <input type="checkbox" {...form.register("testeAliteracao")} className="w-4 h-4" />
-        <label className="font-medium">Teste de Aliteração</label>
-      </div>
-      <div className="form-group flex items-center space-x-4">
-        <input type="checkbox" {...form.register("testeAssonancia")} className="w-4 h-4" />
-        <label className="font-medium">Teste de Assonância</label>
-      </div>
-      <div className="form-group">
-        <label className="block font-medium">Impacto Emocional (0 a 10):</label>
-        <input
-          type="number"
-          {...form.register("impactoEmocional", { valueAsNumber: true })}
-          className="input-field border p-2 rounded w-full"
-        />
-      </div>
-    </div>
-  );
-
-  // Passo 7: Instruções Finais
-  const renderStep7 = () => (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">7. Instruções Finais</h2>
-      <div className="form-group">
-        <label className="block font-medium">Observações ou Instruções:</label>
-        <textarea
-          {...form.register("instrucoesFinais")}
-          className="input-field border p-2 rounded w-full"
-          placeholder="Adicione quaisquer observações ou instruções finais..."
-          rows={4}
-        />
-      </div>
     </div>
   );
 
@@ -359,7 +204,7 @@ export default function PoeticForm() {
                 Próximo
               </button>
             ) : (
-              <a href="http://localhost:3000/dashboard" className="bg-green-600 text-white dark:bg-green-500 dark:text-black px-6 py-2 rounded inline-block">
+              <a href="http://localhost:3000/versificacao" className="bg-green-600 text-white dark:bg-green-500 dark:text-black px-6 py-2 rounded inline-block font-extrabold">
                 Escrever
               </a>
             )}
