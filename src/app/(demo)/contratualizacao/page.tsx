@@ -72,12 +72,6 @@ export default function VideoFormPage() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/">Home</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
               <Link href="/instrumental">Instrumental</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
@@ -96,19 +90,25 @@ export default function VideoFormPage() {
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
+              <Link href="/gravacao">Gravação</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
               <Link href="/cinematografia">Cinematografia</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/orcamento">Orçamento</Link>
+              <Link href="/orcamento">Orçamentalização</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/filmagem">Filmagem</Link>
+              <Link href="/filmagem">Filmagens</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -126,13 +126,7 @@ export default function VideoFormPage() {
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/monetizacao">Monetização</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/lancamento">Lançamento</Link>
+              <Link href="/lançamendo">Lançamento</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
         </BreadcrumbList>
@@ -140,11 +134,11 @@ export default function VideoFormPage() {
 
       <div className="pt-4 space-y-8">
         {teamMembers.map((member) => (
-          <div key={member.id} className="bg-gray-100 p-4 rounded-md shadow-sm">
+          <div key={member.id} className="bg-white dark:bg-gray-800 p-4 rounded-md shadow-sm">
             <div className="flex flex-col gap-4">
               {/* Tipo de Produção */}
               <div className="flex flex-col">
-                <label htmlFor={`productionType-${member.id}`} className="mb-2">
+                <label htmlFor={`productionType-${member.id}`} className="mb-2 text-gray-700 dark:text-gray-300">
                   Tipo de Produção:
                 </label>
                 <select
@@ -157,7 +151,7 @@ export default function VideoFormPage() {
                       e.target.value as "Música" | "Vídeo"
                     )
                   }
-                  className="border p-2 rounded"
+                  className="border p-2 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
                 >
                   <option value="Música">Música</option>
                   <option value="Vídeo">Vídeo</option>
@@ -166,7 +160,7 @@ export default function VideoFormPage() {
 
               {/* Função */}
               <div className="flex flex-col">
-                <label htmlFor={`role-${member.id}`} className="mb-2">
+                <label htmlFor={`role-${member.id}`} className="mb-2 text-gray-700 dark:text-gray-300">
                   Função:
                 </label>
                 <input
@@ -174,14 +168,14 @@ export default function VideoFormPage() {
                   id={`role-${member.id}`}
                   value={member.role}
                   onChange={(e) => updateMember(member.id, "role", e.target.value)}
-                  className="border p-2 rounded"
+                  className="border p-2 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
                   placeholder="Ex: Produtor, Diretor, etc."
                 />
               </div>
 
               {/* Valor a Pagar */}
               <div className="flex flex-col">
-                <label htmlFor={`payment-${member.id}`} className="mb-2">
+                <label htmlFor={`payment-${member.id}`} className="mb-2 text-gray-700 dark:text-gray-300">
                   Valor a Pagar (EUR):
                 </label>
                 <input
@@ -191,7 +185,7 @@ export default function VideoFormPage() {
                   onChange={(e) =>
                     updateMember(member.id, "payment", parseFloat(e.target.value))
                   }
-                  className="border p-2 rounded"
+                  className="border p-2 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
                   placeholder="Ex: 100"
                 />
               </div>
@@ -199,7 +193,7 @@ export default function VideoFormPage() {
               {/* Função no Vídeo (only for video production) */}
               {member.productionType === "Vídeo" && (
                 <div className="flex flex-col">
-                  <label htmlFor={`videoRole-${member.id}`} className="mb-2">
+                  <label htmlFor={`videoRole-${member.id}`} className="mb-2 text-gray-700 dark:text-gray-300">
                     Função no Vídeo:
                   </label>
                   <input
@@ -209,7 +203,7 @@ export default function VideoFormPage() {
                     onChange={(e) =>
                       updateMember(member.id, "videoRole", e.target.value)
                     }
-                    className="border p-2 rounded"
+                    className="border p-2 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
                     placeholder="Ex: Diretor de Fotografia, Editor, etc."
                   />
                 </div>
@@ -217,7 +211,7 @@ export default function VideoFormPage() {
 
               {/* Modelo de Contrato (locked) */}
               <div className="flex flex-col">
-                <label htmlFor={`contract-${member.id}`} className="mb-2">
+                <label htmlFor={`contract-${member.id}`} className="mb-2 text-gray-700 dark:text-gray-300">
                   Modelo de Contrato:
                 </label>
                 <input
@@ -225,7 +219,7 @@ export default function VideoFormPage() {
                   id={`contract-${member.id}`}
                   value="Contrato de Prestação de Serviço"
                   disabled
-                  className="border p-2 rounded bg-gray-200"
+                  className="border p-2 rounded bg-gray-200 dark:bg-gray-600 dark:text-gray-400"
                 />
               </div>
 
@@ -243,10 +237,10 @@ export default function VideoFormPage() {
         ))}
 
         {/* Total Budget Summary */}
-        <div className="border rounded p-4 shadow-md flex items-center justify-between">
+        <div className="border rounded p-4 shadow-md flex items-center justify-between bg-white dark:bg-gray-800">
           <div>
-            <h2 className="text-2xl font-bold">Orçamento Total</h2>
-            <p className="text-xl">{totalBudget.toFixed(2)} €</p>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Orçamento Total</h2>
+            <p className="text-xl text-gray-700 dark:text-gray-300">{totalBudget.toFixed(2)} €</p>
           </div>
         </div>
 

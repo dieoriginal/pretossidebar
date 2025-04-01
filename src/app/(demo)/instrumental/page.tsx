@@ -47,15 +47,11 @@ export default function TagsPage() {
     <ContentLayout title="Tags">
       <Breadcrumb>
         <BreadcrumbList>
+        
+    
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/">Home</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/upload">Upload</Link>
+              <Link href="/instrumental">Instrumental</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -73,42 +69,42 @@ export default function TagsPage() {
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/videoform">Cinematografia</Link>
+              <Link href="/gravacao">Recording</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/arrendamento">Orçamento</Link>
+              <Link href="/cinematografia">Cinematografia</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/diadefilmagem">Filmagem</Link>
+              <Link href="/orcamento">Orçamentalização</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/filmagem">Filmagens</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
 
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/registrodeobra">Contratualização</Link>
+              <Link href="/contratualizacao">Contratualização</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
 
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/registrodeobra">Direitos Autorais</Link>
+              <Link href="/direitosautorais">Direitos Autorais</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/registrodeobra">Monetização</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
+     
 
 
           <BreadcrumbSeparator />

@@ -17,7 +17,7 @@ export function VerseTag({ tag, onChange }: VerseTagProps) {
     <select
       value={tag}
       onChange={(e) => onChange(e.target.value)}
-      className={`w-12 text-center text-base px-3 py-2 border-2 rounded-full uppercase font-bold ${borderColor} bg-white dark:bg-slate-700 text-black dark:text-white`}
+      className={`w-16 text-center items-center py-2 border-2 rounded-full uppercase font-bold ${borderColor} bg-white dark:bg-slate-700 text-black dark:text-white`}
     >
       <option value="A">A</option>
       <option value="B">B</option>

@@ -29,12 +29,8 @@ export default function VideoFormPage() {
     <ContentLayout title="Vídeo & Cinematografia">
       <Breadcrumb>
         <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/">Home</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
+        
+    
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
               <Link href="/instrumental">Instrumental</Link>
@@ -55,19 +51,25 @@ export default function VideoFormPage() {
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
+              <Link href="/gravacao">Recording</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
               <Link href="/cinematografia">Cinematografia</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/orcamento">Orçamento</Link>
+              <Link href="/orcamento">Orçamentalização</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/filmagem">Filmagem</Link>
+              <Link href="/filmagem">Filmagens</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
 
@@ -84,13 +86,7 @@ export default function VideoFormPage() {
               <Link href="/direitosautorais">Direitos Autorais</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/monetizacao">Monetização</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
+     
 
 
           <BreadcrumbSeparator />
@@ -116,7 +112,7 @@ export default function VideoFormPage() {
             onClick={() => (window.location.href = "/orcamento")}
             className="bg-green-500 text-white"
           >
-            Pronto Para Orçamentalizar
+            Pronto para Orçamentalizar
           </Button>
         </div>
       </div>

@@ -18,12 +18,8 @@ export default function TagsPage() {
     <ContentLayout title="Tags">
       <Breadcrumb>
         <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/">Home</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
+        
+    
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
               <Link href="/instrumental">Instrumental</Link>
@@ -44,19 +40,25 @@ export default function TagsPage() {
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
+              <Link href="/gravacao">Recording</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
               <Link href="/cinematografia">Cinematografia</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/orcamento">Orçamento</Link>
+              <Link href="/orcamento">Orçamentalização</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/filmagem">Filmagem</Link>
+              <Link href="/filmagem">Filmagens</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
 
@@ -73,13 +75,7 @@ export default function TagsPage() {
               <Link href="/direitosautorais">Direitos Autorais</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/monetizacao">Monetização</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
+     
 
 
           <BreadcrumbSeparator />

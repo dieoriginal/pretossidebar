@@ -6,6 +6,7 @@ interface WordTagProps {
   isRhymed: boolean;
   onChange: (newWord: string) => void;
   onColorChange: (newColor: string) => void;
+  onRemove: () => void; // New prop for removing this word
   rhymedColor?: string;
 }
 
@@ -15,33 +16,28 @@ export function WordTag({
   isRhymed,
   onChange,
   onColorChange,
+  onRemove,
   rhymedColor,
 }: WordTagProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(word);
 
-  // If a custom color (or rhymed color) exists, use it inline.
-  // Otherwise, fallback to Tailwind classes:
-  //   Light: bg-gray-200; Dark: bg-black
+  // Use inline style if a custom or rhymed color is provided; fallback to Tailwind classes
   const backgroundStyle =
     color
       ? { backgroundColor: color }
       : isRhymed && rhymedColor
       ? { backgroundColor: rhymedColor }
-      : undefined;
+      : {};
 
   return (
     <div
-      className={`inline-flex items-center m-1 p-1 border rounded cursor-pointer dark:text-white ${
-        !color && !(isRhymed && rhymedColor)
-          ? "bg-gray-200 dark:bg-black"
-          : ""
-      }`}
+      className="inline-flex items-center m-1 p-1 border rounded dark:text-white"
       style={backgroundStyle}
     >
       {isEditing ? (
         <input
-          className="bg-transparent outline-none px-1 uppercase font-bold"
+          className="bg-transparent outline-none px-1 uppercase font-bold text-sm"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => {
@@ -57,10 +53,18 @@ export function WordTag({
           autoFocus
         />
       ) : (
-        <span onClick={() => setIsEditing(true)} className="px-1 uppercase font-bold">
-          {value}
+        <span onClick={() => setIsEditing(true)} className="px-1 uppercase font-bold text-sm">
+          {value || "___"}
         </span>
       )}
+      {/* Tiny remove icon (kept minimal) */}
+      <button
+        onClick={onRemove}
+        className="text-red-500 text-xs ml-1"
+        title="Remover palavra"
+      >
+        &times;
+      </button>
       <input
         type="color"
         value={color || "#ffffff"}

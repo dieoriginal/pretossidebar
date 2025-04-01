@@ -97,18 +97,62 @@ export default function ShootingDayPage() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/">Home</Link>
+              <Link href="/instrumental">Instrumental</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/production">Produção</Link>
+              <Link href="/contextualizacao">Contextualização</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink>Dia de Filmagem</BreadcrumbLink>
+            <BreadcrumbLink asChild>
+              <Link href="/versificacao">Versificação</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/gravacao">Gravação</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/cinematografia">Cinematografia</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/orcamento">Orçamentalização</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/filmagem">Filmagens</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/contratualizacao">Contratualização</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/direitosautorais">Direitos Autorais</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/lançamento">Lançamento</Link>
+            </BreadcrumbLink>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -119,7 +163,7 @@ export default function ShootingDayPage() {
           <h2 className="text-2xl font-bold mb-4">Locais de Filmagem</h2>
           <div className="space-y-4">
             {locations.map((location, idx) => (
-              <div key={location.id} className="bg-gray-50 p-6 rounded-lg shadow-sm">
+              <div key={location.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                 <h3 className="font-semibold text-lg mb-4">Local {idx + 1}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -128,7 +172,7 @@ export default function ShootingDayPage() {
                       type="date"
                       value={location.date}
                       onChange={(e) => handleUpdate(setLocations, location.id, 'date', e.target.value)}
-                      className="w-full p-2 border rounded-md"
+                      className="w-full p-2 border rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                   <div>
@@ -137,7 +181,7 @@ export default function ShootingDayPage() {
                       type="time"
                       value={location.time}
                       onChange={(e) => handleUpdate(setLocations, location.id, 'time', e.target.value)}
-                      className="w-full p-2 border rounded-md"
+                      className="w-full p-2 border rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                   <div>
@@ -146,7 +190,7 @@ export default function ShootingDayPage() {
                       type="text"
                       value={location.address}
                       onChange={(e) => handleUpdate(setLocations, location.id, 'address', e.target.value)}
-                      className="w-full p-2 border rounded-md"
+                      className="w-full p-2 border rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                       placeholder="Endereço completo"
                     />
                   </div>
@@ -173,17 +217,15 @@ export default function ShootingDayPage() {
           <h2 className="text-2xl font-bold mb-4">Refeições</h2>
           <div className="space-y-4">
             {meals.map((meal, idx) => (
-              <div key={meal.id} className="bg-gray-50 p-6 rounded-lg shadow-sm">
+              <div key={meal.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                 <h3 className="font-semibold text-lg mb-4">Refeição {idx + 1}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  
-                 
                   <div>
                     <label className="block text-sm font-medium mb-1">Tipo</label>
                     <select
                       value={meal.type}
                       onChange={(e) => handleUpdate(setMeals, meal.id, 'type', e.target.value)}
-                      className="w-full p-2 border rounded-md bg-white"
+                      className="w-full p-2 border rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     >
                       <option value="">Selecione...</option>
                       <option value="Café da Manhã">BBGrill</option>
@@ -193,7 +235,6 @@ export default function ShootingDayPage() {
                       <option value="Lanche">Tupperware</option>
                     </select>
                   </div>
-                  
                 </div>
               </div>
             ))}
@@ -217,16 +258,15 @@ export default function ShootingDayPage() {
           <h2 className="text-2xl font-bold mb-4">Transporte</h2>
           <div className="space-y-4">
             {transports.map((transport, idx) => (
-              <div key={transport.id} className="bg-gray-50 p-6 rounded-lg shadow-sm">
+              <div key={transport.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                 <h3 className="font-semibold text-lg mb-4">Transporte {idx + 1}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 
                   <div>
                     <label className="block text-sm font-medium mb-1">Tipo de Veículo</label>
                     <select
                       value={transport.vehicle}
                       onChange={(e) => handleUpdate(setTransports, transport.id, 'vehicle', e.target.value)}
-                      className="w-full p-2 border rounded-md bg-white"
+                      className="w-full p-2 border rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     >
                       <option value="">Selecione...</option>
                       <option value="Van"></option>
@@ -235,16 +275,13 @@ export default function ShootingDayPage() {
                       <option value="Caminhão de Equipamentos">Caminhão de Equipamentos</option>
                     </select>
                   </div>
-                 
-                 
-
                   <div>
                     <label className="block text-sm font-medium mb-1">Número de Passageiros</label>
                     <input
                       type="number"
                       value={transport.passengers}
                       onChange={(e) => handleUpdate(setTransports, transport.id, 'passengers', e.target.value)}
-                      className="w-full p-2 border rounded-md"
+                      className="w-full p-2 border rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                       placeholder="Quantidade de passageiros"
                     />
                   </div>

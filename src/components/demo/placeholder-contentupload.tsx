@@ -29,7 +29,24 @@ export default function PlaceholderContentUpload() {
     <Card className="rounded-lg border-none mt-6">
       <CardContent className="p-6">
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+      <div className="form-group">
+          <label className="block font-medium">Carregar Áudio:</label>
+          <input
+            type="file"
+            accept="audio/*"
+            className="input-field border p-2 rounded w-full"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                console.log("Arquivo de áudio carregado:", file);
+              }
+            }}
+          />
+        </div>
+
         <div className="form-group">
+        
           <label className="block font-medium">Producer:</label>
           <input
             {...form.register("username")}
@@ -81,20 +98,7 @@ export default function PlaceholderContentUpload() {
             <option value="B Major">B Major</option>
           </select>
         </div>
-        <div className="form-group">
-          <label className="block font-medium">Carregar Áudio:</label>
-          <input
-            type="file"
-            accept="audio/*"
-            className="input-field border p-2 rounded w-full"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                console.log("Arquivo de áudio carregado:", file);
-              }
-            }}
-          />
-        </div>
+        
         <div className="flex justify-end">
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
             Enviar

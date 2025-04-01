@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Link from "next/link";
 import { ContentLayout } from "@/components/admin-panel/content-layout";
 import {
@@ -22,8 +22,12 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { Sidebar } from "@/components/admin-panel/sidebar";
 import AdminPanelLayout from "@/components/admin-panel/admin-panel-layout";
 import { Button } from "@/components/ui/button";
-import { VerseCard } from "@/components/admin-panel/estrofes/VerseCard"; // Adjust the path as necessary
+import { VerseCard } from "@/components/admin-panel/estrofes/VerseCard";
 import { FormValues } from "@/types";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import jsPDF from "jspdf";
 
 const initialPoeticParams: FormValues = {
   tipo: "Épica",
@@ -60,154 +64,225 @@ const initialPoeticParams: FormValues = {
   ],
 };
 
+const PreviewModal = ({ verses }: { verses: string[] }) => (
+  <Dialog>
+    <DialogTrigger asChild>
+      <Button variant="outline" className="gap-2">
+        <EyeIcon className="h-4 w-4" />
+        Pré-visualizar
+      </Button>
+    </DialogTrigger>
+    <DialogContent className="min-h-[90vh] max-w-[800px]">
+      <DialogHeader>
+        <DialogTitle className="text-center">Pré-visualização do Poema</DialogTitle>
+      </DialogHeader>
+      <div className="bg-white p-8 h-full dark:bg-black">
+        <div className="font-helvetica uppercase text-black dark:text-white text-center space-y-6 text-lg">
+          {verses.map((verse, index) => (
+            <p key={index} className="break-words">{verse}</p>
+          ))}
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
+);
+
+const exportToPDF = (verses: string[]) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const lineHeight = 10;
+  let yPosition = 20;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(12);
+  doc.setTextColor(0);
+
+  verses.forEach((verse) => {
+    const lines = doc.splitTextToSize(verse.toUpperCase(), pageWidth - 20);
+    
+    lines.forEach((line: string) => {
+      if (yPosition > doc.internal.pageSize.getHeight() - 20) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      doc.text(line, 10, yPosition);
+      yPosition += lineHeight;
+    });
+    
+    yPosition += lineHeight;
+  });
+
+  doc.save("poema.pdf");
+};
+
 export default function DashboardPage() {
   const sidebar = useSidebar();
-  if (!sidebar) return <div>Loading...</div>;
   const { settings, setSettings } = sidebar;
   const [globalParams] = useState<FormValues>(initialPoeticParams);
   const [cards, setCards] = useState<number[]>([Date.now()]);
+  const [allVerses, setAllVerses] = useState<string[][]>([]);
 
-  const addNewCard = () => {
-    setCards((prev) => [...prev, Date.now()]);
-  };
+  const addNewCard = () => setCards((prev) => [...prev, Date.now()]);
+  const removeCard = () => setCards((prev) => prev.slice(0, -1));
 
-  const removeCard = () => {
-    setCards((prev) => (prev.length ? prev.slice(0, prev.length - 1) : prev));
-  };
+  const handleVersesUpdate = useCallback((index: number, verses: string[]) => {
+    setAllVerses(prev => {
+      const newVerses = [...prev];
+      newVerses[index] = verses;
+      return newVerses;
+    });
+  }, []);
+
+  if (!sidebar) return <div>Carregando...</div>;
 
   return (
     <ContentLayout title="Dashboard">
       <AdminPanelLayout rightSidebar={<Sidebar />}>
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/">Home</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/instrumental">Instrumental</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/contextualizacao">Contextualização</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/versificacao">Versificação</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/cinematografia">Cinematografia</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/orcamento">Orçamento</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/filmagem">Filmagem</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
+        <Card className="mb-6">
+          <CardHeader>
+            <Breadcrumb>
+              <BreadcrumbList>
+                {[
+                  "Instrumental", "Contextualização", "Versificação", "Gravação",
+                  "Cinematografia", "Orçamentalização", "Filmagens", 
+                  "Contratualização", "Direitos Autorais", "Lançamento"
+                ].map((item, index) => (
+                  <React.Fragment key={item}>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink asChild>
+                        <Link href={`/${item.toLowerCase()}`} className="hover:text-primary">
+                          {item}
+                        </Link>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    {index < 9 && <BreadcrumbSeparator />}
+                  </React.Fragment>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
+          </CardHeader>
+        </Card>
 
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/contratualizacao">Contratualização</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <TooltipProvider>
+              <div className="flex gap-6">
+                <Tabs defaultValue="controls" className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="controls">Controles</TabsTrigger>
+                    <TabsTrigger value="settings">Configurações</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="pt-4 flex gap-6">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="is-hover-open"
+                            checked={settings.isHoverOpen}
+                            onCheckedChange={(x) => setSettings({ isHoverOpen: x })}
+                          />
+                          <Label htmlFor="is-hover-open">Abertura Sutil</Label>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Ativa a exibição suave da sidebar ao passar o mouse</p>
+                      </TooltipContent>
+                    </Tooltip>
 
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/direitosautorais">Direitos Autorais</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="disable-sidebar"
+                            checked={settings.disabled}
+                            onCheckedChange={(x) => setSettings({ disabled: x })}
+                          />
+                          <Label htmlFor="disable-sidebar">Desativar Sidebar</Label>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Esconde completamente a sidebar</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </Tabs>
+              </div>
+            </TooltipProvider>
+          </CardContent>
+        </Card>
 
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/monetizacao">Monetização</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-
-
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/lançamendo">Lançamento</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-        <TooltipProvider>
-          <div className="flex gap-6 mt-6">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is-hover-open"
-                    onCheckedChange={(x) => setSettings({ isHoverOpen: x })}
-                    checked={settings.isHoverOpen}
-                  />
-                  <Label htmlFor="is-hover-open">Abertura Subtíl</Label>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  Quando encostares o Mouse à esquerda, a barra de lado mostrar-se-á.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="disable-sidebar"
-                    onCheckedChange={(x) => setSettings({ disabled: x })}
-                    checked={settings.disabled}
-                  />
-                  <Label htmlFor="disable-sidebar">Desativar Sidebar</Label>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Esconder a sidebar</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
-        <div className="pt-4 gap-4">
+        <div className="space-y-6">
           {cards.map((cardId, idx) => (
-            <VerseCard key={cardId} index={idx + 1} formParams={globalParams} />
+            <VerseCard 
+              key={cardId} 
+              index={idx} 
+              formParams={globalParams} 
+              className="shadow-lg hover:shadow-xl transition-shadow"
+              onVersesChange={(verses) => handleVersesUpdate(idx, verses)}
+            />
           ))}
-          <div className="flex justify-center gap-4">
-            <Button onClick={addNewCard} className="bg-blue-500 text-white">
-              Add New Estrofe
-            </Button>
-            <Button onClick={removeCard} className="bg-red-500 text-white">
-              Remove Last Estrofe
-            </Button>
-            <Button 
-              onClick={() => window.location.href = "http://localhost:3000/cinematografia"} 
-              className="bg-green-500 text-white"
-            >
-              Ir para Cinematografia
-            </Button>
-          </div>
+
+          <Card className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <CardContent className="pt-6 flex justify-center gap-4 flex-wrap">
+              <div className="flex gap-4">
+                <Button onClick={addNewCard} variant="default" className="gap-2">
+                  <PlusIcon className="h-4 w-4" />
+                  Adicionar Estrofe
+                </Button>
+                
+                <Button onClick={removeCard} variant="destructive" className="gap-2">
+                  <TrashIcon className="h-4 w-4" />
+                  Remover Estrofe
+                </Button>
+              </div>
+
+              <div className="flex gap-4">
+                <PreviewModal verses={allVerses.flat()} />
+                
+                <Button 
+                  onClick={() => exportToPDF(allVerses.flat())} 
+                  variant="secondary" 
+                  className="gap-2"
+                >
+                  <FileTextIcon className="h-4 w-4" />
+                  Exportar PDF
+                </Button>
+
+                <Button 
+                  variant="secondary" 
+                  className="gap-2"
+                  onClick={() => window.location.href = "http://localhost:3000/cinematografia"}
+                >
+                  <VideoIcon className="h-4 w-4" />
+                  Planear Cinematografia
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </AdminPanelLayout>
     </ContentLayout>
   );
+}
+
+function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"/></svg>;
+}
+
+function TrashIcon(props: React.SVGProps<SVGSVGElement>) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>;
+}
+
+function VideoIcon(props: React.SVGProps<SVGSVGElement>) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11z"/></svg>;
+}
+
+function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 9a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5a5 5 0 0 1 5-5a5 5 0 0 1 5 5a5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5"/></svg>;
+}
+
+function FileTextIcon(props: React.SVGProps<SVGSVGElement>) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path fill="currentColor" d="M14 2v6h6m-4 5H8m8 4H8m2-8H8"/></svg>;
 }
