@@ -120,21 +120,7 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
               </TooltipProvider>
             </CardContent>
           </Card>
-                <Card className="mb-6 h-[1cm] w-[280px] h-[36px] flex items-center justify-center">
-                  <CardHeader>
-                    <TooltipProvider>
-                      <div className="flex gap-6">
-                        <Tabs defaultValue="controls" className="w-full">
-                          <TabsList>
-                            <TabsTrigger value="versos">Versificação</TabsTrigger>
-                            <TabsTrigger value="pdf"> Documentação</TabsTrigger>
-                            <TabsTrigger value="cinematografia">Cinematografia</TabsTrigger>
-                          </TabsList>
-                        </Tabs>
-                      </div>
-                    </TooltipProvider>
-                  </CardHeader>
-                </Card>
+              
         
               </div>
           </div>

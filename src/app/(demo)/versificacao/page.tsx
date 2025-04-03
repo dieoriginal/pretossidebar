@@ -1,22 +1,14 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import Link from "next/link";
 import { ContentLayout } from "@/components/admin-panel/content-layout";
-
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { Sidebar } from "@/components/admin-panel/sidebar";
 import AdminPanelLayout from "@/components/admin-panel/admin-panel-layout";
 import { Button } from "@/components/ui/button";
 import { VerseCard } from "@/components/admin-panel/estrofes/VerseCard";
+import { OtherVerseCard } from "@/components/admin-panel/estrofes/OtherVerseCard";
+import VideoVerseCard2 from "@/components/admin-panel/video/VideoVerseCard2";
 import { FormValues } from "@/types";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -116,6 +108,7 @@ export default function DashboardPage() {
   const [globalParams] = useState<FormValues>(initialPoeticParams);
   const [cards, setCards] = useState<number[]>([Date.now()]);
   const [allVerses, setAllVerses] = useState<string[][]>([]);
+  const [activeTab, setActiveTab] = useState("versos");
 
   const addNewCard = () => setCards((prev) => [...prev, Date.now()]);
   const removeCard = () => setCards((prev) => prev.slice(0, -1));
@@ -130,55 +123,99 @@ export default function DashboardPage() {
 
   if (!sidebar) return <div>Carregando...</div>;
 
+  const renderCards = () => {
+    switch(activeTab) {
+      case "versos":
+        return cards.map((cardId, idx) => (
+          <VerseCard 
+            key={cardId} 
+            index={idx} 
+            formParams={globalParams} 
+            className="shadow-lg hover:shadow-xl transition-shadow"
+            onVersesChange={(verses) => handleVersesUpdate(idx, verses)}
+          />
+        ));
+      case "pdf":
+        return cards.map((cardId, idx) => (
+          <OtherVerseCard 
+            key={cardId} 
+            index={idx} 
+            formParams={globalParams} 
+            className="shadow-lg hover:shadow-xl transition-shadow"
+            onVersesChange={(verses) => handleVersesUpdate(idx, verses)}
+          />
+        ));
+      case "cinematografia":
+        return cards.map((cardId, idx) => (
+          <VideoVerseCard2
+            key={cardId}
+            index={idx}
+          />
+        ));
+      default:
+        return null;
+    }
+  };
+
   return (
     <ContentLayout title="Dashboard">
       <AdminPanelLayout rightSidebar={<Sidebar />}>
+        <Card className="mb-6 h-[36px] flex items-center justify-center">
+          <CardHeader>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList>
+                <TabsTrigger value="versos">Versificação</TabsTrigger>
+                <TabsTrigger value="pdf">Documentação</TabsTrigger>
+                <TabsTrigger value="cinematografia">Cinematografia</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+        </Card>
 
         <div className="space-y-6">
-          {cards.map((cardId, idx) => (
-            <VerseCard 
-              key={cardId} 
-              index={idx} 
-              formParams={globalParams} 
-              className="shadow-lg hover:shadow-xl transition-shadow"
-              onVersesChange={(verses) => handleVersesUpdate(idx, verses)}
-            />
-          ))}
+          {renderCards()}
 
           <Card className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <CardContent className="pt-6 flex justify-center gap-4 flex-wrap">
               <div className="flex gap-4">
-                <Button onClick={addNewCard} variant="default" className="gap-2">
-                  <PlusIcon className="h-4 w-4" />
-                  Adicionar Estrofe
-                </Button>
-                
-                <Button onClick={removeCard} variant="destructive" className="gap-2">
-                  <TrashIcon className="h-4 w-4" />
-                  Remover Estrofe
-                </Button>
+                {activeTab !== "cinematografia" && (
+                  <>
+                    <Button onClick={addNewCard} variant="default" className="gap-2">
+                      <PlusIcon className="h-4 w-4" />
+                      Adicionar Estrofe
+                    </Button>
+                    <Button onClick={removeCard} variant="destructive" className="gap-2">
+                      <TrashIcon className="h-4 w-4" />
+                      Remover Estrofe
+                    </Button>
+                  </>
+                )}
               </div>
 
               <div className="flex gap-4">
-                <PreviewModal verses={allVerses.flat()} />
-                
-                <Button 
-                  onClick={() => exportToPDF(allVerses.flat())} 
-                  variant="secondary" 
-                  className="gap-2"
-                >
-                  <FileTextIcon className="h-4 w-4" />
-                  Exportar PDF
-                </Button>
+                {activeTab === "versos" && <PreviewModal verses={allVerses.flat()} />}
 
-                <Button 
-                  variant="secondary" 
-                  className="gap-2"
-                  onClick={() => window.location.href = "http://localhost:3000/cinematografia"}
-                >
-                  <VideoIcon className="h-4 w-4" />
-                  Planear Cinematografia
-                </Button>
+                {activeTab !== "cinematografia" && (
+                  <Button 
+                    onClick={() => exportToPDF(allVerses.flat())} 
+                    variant="secondary" 
+                    className="gap-2"
+                  >
+                    <FileTextIcon className="h-4 w-4" />
+                    Exportar PDF
+                  </Button>
+                )}
+
+                {activeTab === "cinematografia" && (
+                  <Button 
+                    variant="secondary" 
+                    className="gap-2"
+                    onClick={() => window.location.href = "http://localhost:3000/cinematografia"}
+                  >
+                    <VideoIcon className="h-4 w-4" />
+                    Gerar Storyboard
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
