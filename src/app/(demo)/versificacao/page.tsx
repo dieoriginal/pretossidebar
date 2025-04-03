@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/admin-panel/sidebar";
 import AdminPanelLayout from "@/components/admin-panel/admin-panel-layout";
 import { Button } from "@/components/ui/button";
 import { VerseCard } from "@/components/admin-panel/estrofes/VerseCard";
-import { OtherVerseCard } from "@/components/admin-panel/estrofes/OtherVerseCard";
+import OtherVerseCard from "@/components/admin-panel/estrofes/OtherVerseCard";
 import VideoVerseCard2 from "@/components/admin-panel/video/VideoVerseCard2";
 import { FormValues } from "@/types";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -99,7 +99,7 @@ const exportToPDF = (verses: string[]) => {
     yPosition += lineHeight;
   });
 
-  doc.save("poema.pdf");
+  doc.save("Diepretty1.pdf");
 };
 
 export default function DashboardPage() {
@@ -195,22 +195,12 @@ export default function DashboardPage() {
               <div className="flex gap-4">
                 {activeTab === "versos" && <PreviewModal verses={allVerses.flat()} />}
 
-                {activeTab !== "cinematografia" && (
-                  <Button 
-                    onClick={() => exportToPDF(allVerses.flat())} 
-                    variant="secondary" 
-                    className="gap-2"
-                  >
-                    <FileTextIcon className="h-4 w-4" />
-                    Exportar PDF
-                  </Button>
-                )}
+           
 
                 {activeTab === "cinematografia" && (
                   <Button 
                     variant="secondary" 
                     className="gap-2"
-                    onClick={() => window.location.href = "http://localhost:3000/cinematografia"}
                   >
                     <VideoIcon className="h-4 w-4" />
                     Gerar Storyboard

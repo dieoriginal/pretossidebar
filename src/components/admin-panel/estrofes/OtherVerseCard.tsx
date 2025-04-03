@@ -1,491 +1,308 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  DndContext,
-  closestCenter,
-  useSensor,
-  useSensors,
-  PointerSensor,
-  KeyboardSensor,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { analyzeMeter } from "@/lib/analyzeMeter";
-import { AddNewVerseInline } from "./AddNewVerseInline";
-import { SortableVerseLine } from "./SortableVerseLine";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import Link from "next/link";
+import jsPDF from "jspdf";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FormValues } from "@/types";
 
-interface Verse {
-  id: number;
-  words: { text: string; customColor?: string }[];
-  tag: string;
+interface Word {
+  text: string;
+  color: string;
 }
 
-interface OtherVerseCardProps {
-  index: number;
-  formParams: any;
-  className?: string;
-  onVersesChange?: (verses: string[]) => void;
-}
-
-type SelectedTab = "figuras" | "engMetrica" | "metrica" | "dramArq" | "lexicon";
-
-interface ExtraOptions {
-  selectedTab: SelectedTab;
-  selectedEngMetrica: string;
-  selectedVersoOption: string;
-  numeroVersos: number;
-  selectedRhymeScheme: string[];
-  selectedDramArq: string;
-  selectedLexicon: string[];
-}
-
-const initialExtraOptions: ExtraOptions = {
-  selectedTab: "figuras",
-  selectedEngMetrica: "trocaico",
-  selectedVersoOption: "Onossílabo",
-  numeroVersos: 4,
-  selectedRhymeScheme: ["A", "B", "A", "B"],
-  selectedDramArq: "Prólogo",
-  selectedLexicon: [],
+const initialPoeticParams: FormValues = {
+  tipo: "Épica",
+  forma: "Longa, narrativa, hexâmetro dactílico",
+  tema: "Mitologia, heróis, guerra",
+  arquétipo: "Prometeu",
+  apolineo: 50,
+  dionisíaco: 50,
+  efeitoDesejado: [],
+  tipoMetrica: "trocaico",
+  silabasPorLinha: 12,
+  posicaoCesura: 6,
+  esquemaRima: "ABAB - ABBA - AABB",
+  enjambement: 0.3,
+  aliteracaoConsoante: "m",
+  aliteracaoFrequencia: 3,
+  assonanciaVogal: "ó",
+  assonanciaPadrao: "cíclico",
+  onomatopeias: ["estrondo", "rugir", "crepitar"],
+  prologo: "Exposição do conflito",
+  parodos: "Entrada do coro",
+  episodios: [
+    "Ascensão do herói",
+    "Erro trágico (hamartia)",
+    "Virada de fortuna (peripeteia)",
+    "Queda (catástrofe)",
+    "Reconhecimento (anagnórise)",
+  ],
+  exodo: "Lições do coro",
+  dicionarioPoetico: [
+    { termo: "Fogo", categoria: "Prometeico", significado: "Rebelião/Iluminação" },
+    { termo: "Lâmina", categoria: "Sacrifício", significado: "Ruptura/Iniciação" },
+    { termo: "Abismo", categoria: "Nietzschiano", significado: "Vazio/Criação" },
+  ],
 };
 
-const literaryFigures = [
-  { name: "Metáfora", description: "Comparação implícita entre duas coisas. Ex.: 'A vida é um sonho'." },
-  { name: "Símile", description: "Comparação explícita usando 'como'. Ex.: 'Ele é forte como um touro'." },
-  { name: "Hipérbole", description: "Exagero para enfatizar uma ideia. Ex.: 'Estou morrendo de fome'." },
-  { name: "Ironia", description: "Dizer o oposto do que se quer expressar. Ex.: 'Que dia lindo!' (num dia chuvoso)." },
-  { name: "Aliteração", description: "Repetição de sons consonantais. Ex.: 'O rato roeu a roupa do rei de Roma'." },
-  { name: "Prosopopeia", description: "Atribuir características humanas a seres inanimados. Ex.: 'O sol sorriu para nós'." },
-  { name: "Onomatopeia", description: "Palavras que imitam sons. Ex.: 'O relógio faz tic-tac'." },
-  { name: "Eufemismo", description: "Suavização de uma expressão. Ex.: 'Ele partiu para um lugar melhor'." },
-  { name: "Antítese", description: "Contraposição de ideias. Ex.: 'É um mar de rosas, mas também um deserto de espinhos'." },
-  { name: "Paradoxo", description: "Ideias opostas que geram reflexão. Ex.: 'Menos é mais'." },
-];
+const PreviewModal = ({ verses }: { verses: Word[][] }) => (
+  <Dialog>
+    <DialogTrigger asChild>
+      <Button variant="outline" className="gap-2">
+        <EyeIcon className="h-4 w-4" />
+        Pré-visualizar
+      </Button>
+    </DialogTrigger>
+    <DialogContent className="min-h-[90vh] max-w-[800px]">
+      <DialogHeader>
+        <DialogTitle className="text-center">Pré-visualização do Poema</DialogTitle>
+      </DialogHeader>
+      <div className="bg-white p-8 h-full">
+        <div className="font-helvetica uppercase text-black text-center space-y-6 text-lg">
+          {verses.map((verse, index) => (
+            <p key={index} className="break-words">
+              {verse.map((word, i) => (
+                <span key={i} style={{ color: word.color }}>
+                  {word.text}{i < verse.length - 1 ? " " : ""}
+                </span>
+              ))}
+            </p>
+          ))}
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
+);
 
-const engMetricaOptions = [
-  { tipo: "trocaico", distribuicao: "Forte → Fraco", exemplo: "LU-a", efeito: "Enfático, marcado" },
-  { tipo: "iâmbico", distribuicao: "Fraco → Forte", exemplo: "aMOR", efeito: "Fluído, crescente" },
-  { tipo: "dactílico", distribuicao: "Forte → Fraco → Fraco", exemplo: "RÚ-sti-co", efeito: "Musical, épico" },
-];
-
-const versoOptions = ["Onossílabo", "Dissílabo", "Trissílabo", "Tetrassílabo", "Pentassílabo", "Hexassílabo"];
-const dramArqOptions = ["Prólogo", "Parodos", "Episódios", "Êxodo"];
-const dramArqTooltips: { [key: string]: string } = {
-  "Prólogo": "Exposição do conflito",
-  "Parodos": "Entrada do coro",
-  "Episódios": "Escolha entre: Ascensão do herói, Erro trágico (hamartia), Virada de fortuna (peripeteia), Queda (catástrofe) ou Reconhecimento (anagnórise)",
-  "Êxodo": "Lições do coro",
+const hexToRgb = (hex: string) => {
+  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
 };
 
-const lexiconOptions = [
-  { termo: "Fogo", categoria: "Prometeico", significado: "Rebelião/Iluminação" },
-  { termo: "Lâmina", categoria: "Sacrifício", significado: "Ruptura/Iniciação" },
-  { termo: "Abismo", categoria: "Nietzschiano", significado: "Vazio/Criação" },
-];
+const exportToPDF = (verses: Word[][]) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 10;
+  let y = margin;
+  const lineHeight = 12;
 
-export function OtherVerseCard({ index, formParams, className, onVersesChange }: OtherVerseCardProps) {
-  const [verses, setVerses] = useState<Verse[]>([]);
-  const [selectedContexts, setSelectedContexts] = useState<string[]>([]);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
-  const [showAnalysis, setShowAnalysis] = useState(false);
-  const [extraOptions, setExtraOptions] = useState<ExtraOptions>(initialExtraOptions);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(12);
 
-  useEffect(() => {
-    const storedState = localStorage.getItem(`verseCard-${index}`);
-    if (storedState) {
-      try {
-        const parsedState = JSON.parse(storedState) as {
-          verses: Verse[];
-          selectedContexts: string[];
-          extraOptions: ExtraOptions;
-        };
-        setVerses(parsedState.verses || []);
-        setSelectedContexts(parsedState.selectedContexts || []);
-        setExtraOptions(parsedState.extraOptions || initialExtraOptions);
-      } catch (error) {
-        console.error("Error parsing stored verse card state", error);
-      }
-    }
-  }, [index]);
+  verses.forEach(verse => {
+    let currentLine: Word[] = [];
+    let currentLineWidth = 0;
 
-  useEffect(() => {
-    const stateToStore = { verses, selectedContexts, extraOptions };
-    localStorage.setItem(`verseCard-${index}`, JSON.stringify(stateToStore));
-    
-    if (onVersesChange) {
-      const verseTexts = verses.map(v => v.words.map(w => w.text).join(" "));
-      const storedVerses = JSON.parse(localStorage.getItem(`verseCard-${index}`) || '{}').verses?.map((v: Verse) => v.words.map((w: any) => w.text).join(" ")).join();
-      // Add condition to prevent infinite updates
-      if (verseTexts.join() !== storedVerses) {
-        onVersesChange(verseTexts);
-      }
-    }
-  }, [verses, selectedContexts, extraOptions, index, onVersesChange]);
-
-  const keyboardSensor = useSensor(KeyboardSensor, {
-    coordinateGetter: sortableKeyboardCoordinates,
-  });
-  const pointerSensor = useSensor(PointerSensor);
-  const sensors = useSensors(keyboardSensor, pointerSensor);
-
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-    if (active.id !== over.id) {
-      setVerses((prev) => {
-        const oldIndex = prev.findIndex((v) => v.id === active.id);
-        const newIndex = prev.findIndex((v) => v.id === over.id);
-        return arrayMove(prev, oldIndex, newIndex);
+    const flushLine = () => {
+      let lineX = margin;
+      currentLine.forEach((word, wordIndex) => {
+        const wordText = word.text.toUpperCase() + (wordIndex === currentLine.length - 1 ? "" : " ");
+        const rgb = hexToRgb(word.color) || { r: 0, g: 0, b: 0 };
+        doc.setTextColor(rgb.r, rgb.g, rgb.b);
+        doc.text(wordText, lineX, y);
+        lineX += doc.getTextWidth(wordText);
       });
-    }
-  };
+      y += lineHeight;
+      currentLine = [];
+      currentLineWidth = 0;
+    };
 
-  const defaultTagCycle = ["A", "B", "C", "D"];
-  const addNewVerse = (words: { text: string; customColor?: string }[]) => {
-    const newTag = defaultTagCycle[verses.length % defaultTagCycle.length];
-    const newVerse: Verse = { id: Date.now(), words, tag: newTag };
-    setVerses((prev) => [...prev, newVerse]);
-  };
-
-  const deleteVerse = (id: number) => {
-    setVerses((prev) => prev.filter((v) => v.id !== id));
-  };
-
-  const updateVerseWords = (id: number, newWords: { text: string; customColor?: string }[]) => {
-    setVerses((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, words: newWords } : v))
-    );
-  };
-
-  const updateVerseTag = (id: number, newTag: string) => {
-    setVerses((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, tag: newTag } : v))
-    );
-  };
-
-  const updateWordColor = (id: number, index: number, newColor: string) => {
-    setVerses((prev) =>
-      prev.map((v) => {
-        if (v.id === id) {
-          const updatedWords = [...v.words];
-          updatedWords[index] = { ...updatedWords[index], customColor: newColor };
-          return { ...v, words: updatedWords };
+    verse.forEach((word) => {
+      const wordWidth = doc.getTextWidth(word.text.toUpperCase() + " ");
+      if (currentLineWidth + wordWidth > pageWidth - margin * 2) {
+        flushLine();
+        if (y > doc.internal.pageSize.getHeight() - margin) {
+          doc.addPage();
+          y = margin;
         }
-        return v;
-      })
-    );
-  };
-
-  async function handleAnalyze() {
-    const lines = verses.map((verse) => verse.words.map((w) => w.text).join(" "));
-    try {
-      const result = await analyzeMeter(lines);
-      setAnalysisResult(result);
-      setShowAnalysis(true);
-    } catch (error) {
-      console.error("Error analyzing meter:", error);
-    }
-  }
-
-  const toggleContext = (figure: string) => {
-    if (selectedContexts.includes(figure)) {
-      setSelectedContexts(selectedContexts.filter((f) => f !== figure));
-    } else {
-      setSelectedContexts([...selectedContexts, figure]);
-    }
-  };
-
-  const handleTabChange = (tab: SelectedTab) => {
-    setExtraOptions((prev) => ({ ...prev, selectedTab: tab }));
-  };
-
-  const selectEngMetrica = (tipo: string) => {
-    setExtraOptions((prev) => ({ ...prev, selectedEngMetrica: tipo }));
-  };
-
-  const selectVersoOption = (option: string) => {
-    setExtraOptions((prev) => ({ ...prev, selectedVersoOption: option }));
-  };
-
-  const updateNumeroVersos = (num: number) => {
-    setExtraOptions((prev) => ({ ...prev, numeroVersos: num }));
-  };
-
-  const updateRhymeScheme = (idx: number, letter: string) => {
-    setExtraOptions((prev) => {
-      const newScheme = [...prev.selectedRhymeScheme];
-      newScheme[idx] = letter;
-      return { ...prev, selectedRhymeScheme: newScheme };
+      }
+      currentLine.push(word);
+      currentLineWidth += wordWidth;
     });
-  };
 
-  const selectDramArq = (option: string) => {
-    setExtraOptions((prev) => ({ ...prev, selectedDramArq: option }));
-  };
-
-  const toggleLexicon = (termo: string) => {
-    const current = extraOptions.selectedLexicon;
-    if (current.includes(termo)) {
-      setExtraOptions((prev) => ({
-        ...prev,
-        selectedLexicon: current.filter((t) => t !== termo),
-      }));
-    } else {
-      setExtraOptions((prev) => ({
-        ...prev,
-        selectedLexicon: [...current, termo],
-      }));
+    if (currentLine.length > 0) {
+      flushLine();
     }
+
+    if (y > doc.internal.pageSize.getHeight() - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  });
+
+  doc.save("poema.pdf");
+};
+
+function VerseCard({ index, onVersesChange }: { index: number, onVersesChange: (words: Word[]) => void }) {
+  const [words, setWords] = useState<Word[]>([]);
+
+  const handleColorChange = (index: number, color: string) => {
+    const newWords = [...words];
+    newWords[index].color = color;
+    setWords(newWords);
+    onVersesChange(newWords);
+  };
+
+  const addNewVerse = (newWords: Word[]) => {
+    const updated = [...words, ...newWords];
+    setWords(updated);
+    onVersesChange(updated);
+  };
+
+  const removeWord = (removeIndex: number) => {
+    const updatedWords = words.filter((_, i) => i !== removeIndex);
+    setWords(updatedWords);
+    onVersesChange(updatedWords);
   };
 
   return (
-    <div className={`border p-4 rounded mb-4 select-none ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Estrofe #{index + 1}</h3>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleTabChange("figuras")}>
-            Figuras
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleTabChange("engMetrica")}>
-            Métrica
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleTabChange("dramArq")}>
-            Arquitetura
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {extraOptions.selectedTab === "figuras" && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-            {literaryFigures.map((figure) => (
-              <button
-                key={figure.name}
-                onClick={() => toggleContext(figure.name)}
-                className={`p-2 text-left rounded border transition-all ${
-                  selectedContexts.includes(figure.name)
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-gray-200 hover:border-gray-300 bg-white dark:bg-gray-800"
-                }`}
-                title={figure.description}
-              >
-                <span className="block text-sm font-semibold text-gray-800 dark:text-gray-200">{figure.name}</span>
-                <span className="block text-xs text-gray-500 mt-1">{figure.description.split(".")[0]}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {extraOptions.selectedTab === "engMetrica" && (
-          <div className="grid gap-2">
-            {engMetricaOptions.map((opt) => (
-              <button
-                key={opt.tipo}
-                onClick={() => selectEngMetrica(opt.tipo)}
-                className={`p-3 rounded border transition-all ${
-                  extraOptions.selectedEngMetrica === opt.tipo
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-gray-200 hover:border-gray-300 bg-white dark:bg-gray-800"
-                }`}
-                title={`Exemplo: ${opt.exemplo}\nEfeito: ${opt.efeito}`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-gray-800 dark:text-gray-200 capitalize">{opt.tipo}</span>
-                  <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{opt.distribuicao}</span>
-                </div>
-                <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  Exemplo: <span className="font-mono">{opt.exemplo}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {extraOptions.selectedTab === "metrica" && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {versoOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => selectVersoOption(option)}
-                  className={`p-2 rounded border transition-all ${
-                    extraOptions.selectedVersoOption === option
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                      : "border-gray-200 hover:border-gray-300 bg-white dark:bg-gray-800"
-                  }`}
-                  title={`Verso ${option.toLowerCase()}`}
-                >
-                  <span className="block font-semibold text-gray-800 dark:text-gray-200">{option}</span>
-                  <span className="block text-xs text-gray-500 mt-1">
-                    {option.replace('ssílabo', ' sílabas').replace('sílabo', ' sílabas')}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 rounded border border-gray-200 bg-white dark:bg-gray-800">
-                <label className="block text-sm font-semibold mb-2">Número de Versos</label>
-                <input
-                  type="number"
-                  value={extraOptions.numeroVersos}
-                  onChange={(e) => updateNumeroVersos(Number(e.target.value))}
-                  className="w-full p-1 border rounded text-center"
-                  min={1}
-                />
-              </div>
-
-              <div className="p-3 rounded border border-gray-200 bg-white dark:bg-gray-800">
-                <label className="block text-sm font-semibold mb-2">Esquema de Rima</label>
-                <div className="flex gap-2">
-                  {extraOptions.selectedRhymeScheme.map((letter, i) => (
-                    <input
-                      key={i}
-                      type="text"
-                      value={letter}
-                      onChange={(e) => updateRhymeScheme(i, e.target.value.toUpperCase().slice(0, 1))}
-                      className="flex-1 p-1 border rounded text-center uppercase font-mono"
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {extraOptions.selectedTab === "dramArq" && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {dramArqOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => selectDramArq(option)}
-                className={`p-3 rounded border transition-all ${
-                  extraOptions.selectedDramArq === option
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-gray-200 hover:border-gray-300 bg-white dark:bg-gray-800"
-                }`}
-                title={dramArqTooltips[option]}
-              >
-                <span className="block font-semibold text-gray-800 dark:text-gray-200">{option}</span>
-                <span className="block text-xs text-gray-500 mt-2">
-                  {dramArqTooltips[option].split(":")[0]}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {extraOptions.selectedTab === "lexicon" && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {lexiconOptions.map((term) => (
-              <button
-                key={term.termo}
-                onClick={() => toggleLexicon(term.termo)}
-                className={`p-3 rounded border transition-all ${
-                  extraOptions.selectedLexicon.includes(term.termo)
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-gray-200 hover:border-gray-300 bg-white dark:bg-gray-800"
-                }`}
-                title={`Significado: ${term.significado}`}
-              >
-                <div className="flex justify-between items-start">
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">{term.termo}</span>
-                  <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                    {term.categoria}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">{term.significado}</p>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+    <div className="border p-4 rounded-lg mb-4">
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Digite o verso..."
+          className="border p-1 rounded flex-1"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              const newWords = e.currentTarget.value.trim().split(" ").map(word => ({ text: word, color: "#000000" }));
+              addNewVerse(newWords);
+              e.currentTarget.value = "";
+            }
+          }}
+        />
+        <Button
+          onClick={() => {
+            const input = document.querySelector(`input[placeholder="Digite o verso..."]`) as HTMLInputElement;
+            const newWords = input.value.trim().split(" ").map(word => ({ text: word, color: "#000000" }));
+            addNewVerse(newWords);
+            input.value = "";
+          }}
+          variant="default"
         >
-          <SortableContext items={verses.map((v) => v.id)} strategy={verticalListSortingStrategy}>
-            <div className="space-y-2">
-              {verses.map((verse) => (
-                <SortableVerseLine
-                  key={verse.id}
-                  id={verse.id}
-                  verse={verse}
-                  onDelete={deleteVerse}
-                  onTagChange={updateVerseTag}
-                  onWordChange={updateVerseWords}
-                  onWordColorChange={updateWordColor}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-
-        <div className="mt-4">
-          <AddNewVerseInline addNewVerse={addNewVerse} />
-        </div>
-
-        <div className="mt-4 flex flex-col gap-2">
-          <div className="flex gap-2">
-            <Button onClick={handleAnalyze} variant="default">
-              Analisar Métrica
-            </Button>
-            {showAnalysis && (
-              <Button
-                onClick={() => {
-                  setShowAnalysis(false);
-                  setAnalysisResult(null);
-                }}
-                variant="destructive"
-              >
-                Ocultar Métrica
-              </Button>
-            )}
+          Adicionar Verso
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {words.map((word, i) => (
+          <div key={i} className="flex items-center gap-1 bg-gray-100 p-1 rounded">
+            <input
+              type="color"
+              value={word.color}
+              onChange={(e) => handleColorChange(i, e.target.value)}
+              className="w-6 h-6"
+            />
+            <span style={{ color: word.color }}>{word.text}</span>
+            <button onClick={() => removeWord(i)} className="text-red-500 ml-2">
+              X
+            </button>
           </div>
-          {showAnalysis && analysisResult && (
-            <div className="mt-2 p-4 border rounded">
-              <p className="text-sm font-semibold">
-                Métrica: {analysisResult.meter}
-              </p>
-              {analysisResult.original_lines.map((line: string, idx: number) => (
-                <div key={idx} className="mt-1 p-2 border rounded">
-                  <p className="text-sm">
-                    Linha {idx + 1}: {line} (Total de sílabas: {analysisResult.word_details[idx].total_syllables})
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {analysisResult.word_details[idx].details.map(
-                      (
-                        detail: {
-                          word: string;
-                          syllable_breakdown: string;
-                          scansion: string;
-                          syllable_count: number;
-                        },
-                        wIdx: number
-                      ) => (
-                        <div key={wIdx} className="text-xs p-1 border rounded">
-                          <div>{detail.word}</div>
-                          <div className="font-mono">
-                            {detail.syllable_breakdown} ({detail.scansion})
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        ))}
       </div>
     </div>
+  );
+}
+
+export default function OtherVerseCard() {
+  const [globalParams] = useState<FormValues>(initialPoeticParams);
+  const [cards, setCards] = useState<number[]>([Date.now()]);
+  const [allVerses, setAllVerses] = useState<Word[][]>([]);
+
+  const addNewCard = () => setCards((prev) => [...prev, Date.now()]);
+  const removeCard = () => setCards((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
+
+  const handleVersesUpdate = useCallback((index: number, words: Word[]) => {
+    setAllVerses(prev => {
+      const newVerses = [...prev];
+      newVerses[index] = words;
+      return newVerses;
+    });
+  }, []);
+
+  return (
+    <div className="p-4">
+      {/* Unique page content without duplicate global layouts */}
+  
+   
+
+      <div className="space-y-6">
+        {cards.map((cardId, idx) => (
+          <VerseCard key={cardId} index={idx} onVersesChange={(words) => handleVersesUpdate(idx, words)} />
+        ))}
+      </div>
+
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur p-4 flex justify-center gap-4 flex-wrap">
+        <Button onClick={addNewCard} variant="default" className="gap-2">
+          <PlusIcon className="h-4 w-4" />
+          Adicionar Estrofe
+        </Button>
+        <Button onClick={removeCard} variant="destructive" className="gap-2">
+          <TrashIcon className="h-4 w-4" />
+          Remover Estrofe
+        </Button>
+        <PreviewModal verses={allVerses} />
+        <Button onClick={() => exportToPDF(allVerses)} variant="secondary" className="gap-2">
+          <FileTextIcon className="h-4 w-4" />
+          Exportar PDF
+        </Button>
+        <Button
+          variant="secondary"
+          className="gap-2"
+          onClick={() => (window.location.href = "http://localhost:3000/cinematografia")}
+        >
+          <VideoIcon className="h-4 w-4" />
+          Planear Cinematografia
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z" />
+    </svg>
+  );
+}
+
+function TrashIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z" />
+    </svg>
+  );
+}
+
+function VideoIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11z" />
+    </svg>
+  );
+}
+
+function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5 5 5 0 0 1 5-5 5 5 0 0 1 5 5 5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5" />
+    </svg>
+  );
+}
+
+function FileTextIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path fill="currentColor" d="M14 2v6h6m-4 5H8m8 4H8m2-8H8" />
+    </svg>
   );
 }

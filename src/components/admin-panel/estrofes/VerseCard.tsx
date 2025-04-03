@@ -244,6 +244,13 @@ export function VerseCard({ index, formParams, className, onVersesChange }: Vers
     }
   };
 
+  const copyVerseToClipboard = (verse: Verse) => {
+    const verseText = verse.words.map((w) => w.text).join(" ");
+    navigator.clipboard.writeText(verseText).then(() => {
+      alert("Verse copied to clipboard!");
+    });
+  };
+
   return (
     <div className={`border p-4 rounded mb-4 select-none ${className}`}>
       <div className="flex items-center justify-between mb-4">
@@ -415,15 +422,22 @@ export function VerseCard({ index, formParams, className, onVersesChange }: Vers
           <SortableContext items={verses.map((v) => v.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-2">
               {verses.map((verse) => (
-                <SortableVerseLine
-                  key={verse.id}
-                  id={verse.id}
-                  verse={verse}
-                  onDelete={deleteVerse}
-                  onTagChange={updateVerseTag}
-                  onWordChange={updateVerseWords}
-                  onWordColorChange={updateWordColor}
-                />
+                <div key={verse.id} className="relative">
+                  <SortableVerseLine
+                    id={verse.id}
+                    verse={verse}
+                    onDelete={deleteVerse}
+                    onTagChange={updateVerseTag}
+                    onWordChange={updateVerseWords}
+                    onWordColorChange={updateWordColor}
+                  />
+                  <button
+                    onClick={() => copyVerseToClipboard(verse)}
+                    className="absolute top-2 right-2 p-1 bg-blue-500 text-white rounded"
+                  >
+                    Copy
+                  </button>
+                </div>
               ))}
             </div>
           </SortableContext>
@@ -486,6 +500,8 @@ export function VerseCard({ index, formParams, className, onVersesChange }: Vers
           )}
         </div>
       </div>
+
+      
     </div>
   );
 }

@@ -189,8 +189,8 @@ export function Menu({ isOpen }: MenuProps) {
               bg-transparent
             "
           >
-            <option value="en">English</option>
             <option value="pt">Português</option>
+            <option value="en">English</option>
           </select>
         </div>
       </div>
@@ -213,7 +213,7 @@ export function Menu({ isOpen }: MenuProps) {
             >
               <h1 className="text-sm font-semibold">
                 {group === 4
-                  ? "4 ou Mais Sílabas"
+                  ? "4 Sílabas"
                   : `${group} Sílaba${group > 1 ? "s" : ""}`}
               </h1>
             </div>
