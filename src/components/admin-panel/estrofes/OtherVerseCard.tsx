@@ -27,7 +27,7 @@ interface Verse {
   tag: string;
 }
 
-interface VerseCardProps {
+interface OtherVerseCardProps {
   index: number;
   formParams: any;
   className?: string;
@@ -90,7 +90,7 @@ const lexiconOptions = [
   { termo: "Abismo", categoria: "Nietzschiano", significado: "Vazio/Criação" },
 ];
 
-export function VerseCard({ index, formParams, className, onVersesChange }: VerseCardProps) {
+export function OtherVerseCard({ index, formParams, className, onVersesChange }: OtherVerseCardProps) {
   const [verses, setVerses] = useState<Verse[]>([]);
   const [selectedContexts, setSelectedContexts] = useState<string[]>([]);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -247,7 +247,7 @@ export function VerseCard({ index, formParams, className, onVersesChange }: Vers
   return (
     <div className={`border p-4 rounded mb-4 select-none ${className}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Estrofe {index + 1}</h3>
+        <h3 className="text-lg font-semibold">Estrofe #{index + 1}</h3>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => handleTabChange("figuras")}>
             Figuras

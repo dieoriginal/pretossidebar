@@ -1,13 +1,16 @@
 "use client";
 
+import React from "react";
+import Link from "next/link";
 import { Footer } from "@/components/admin-panel/footer";
 import { Sidebar } from "@/components/admin-panel/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
 
+
 export default function AdminPanelLayout({
-  children
+  children,
 }: {
   children: React.ReactNode;
 }) {
@@ -23,9 +26,11 @@ export default function AdminPanelLayout({
           !settings.disabled && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-72")
         )}
       >
+        
         {children}
+
+     
       </main>
-      
       <footer
         className={cn(
           "transition-[margin-left] ease-in-out duration-300",

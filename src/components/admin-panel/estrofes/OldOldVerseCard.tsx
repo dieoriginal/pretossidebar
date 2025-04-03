@@ -247,7 +247,7 @@ export function VerseCard({ index, formParams, className, onVersesChange }: Vers
   return (
     <div className={`border p-4 rounded mb-4 select-none ${className}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Estrofe {index + 1}</h3>
+        <h3 className="text-lg font-semibold">Estrofe #{index + 1}</h3>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => handleTabChange("figuras")}>
             Figuras

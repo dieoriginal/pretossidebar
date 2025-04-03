@@ -3,13 +3,7 @@
 import React, { useState, useCallback } from "react";
 import Link from "next/link";
 import { ContentLayout } from "@/components/admin-panel/content-layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -74,10 +68,10 @@ const PreviewModal = ({ verses }: { verses: string[] }) => (
     </DialogTrigger>
     <DialogContent className="min-h-[90vh] max-w-[800px]">
       <DialogHeader>
-        <DialogTitle className="text-center">Pré-visualização do Poema</DialogTitle>
+        <DialogTitle className="text-center">Pré-visualização</DialogTitle>
       </DialogHeader>
-      <div className="bg-white p-8 h-full dark:bg-black">
-        <div className="font-helvetica uppercase text-black dark:text-white text-center space-y-6 text-lg">
+      <div className="bg-white p-8 h-full">
+        <div className="font-helvetica uppercase text-black text-center space-y-6 text-lg">
           {verses.map((verse, index) => (
             <p key={index} className="break-words">{verse}</p>
           ))}
@@ -139,79 +133,6 @@ export default function DashboardPage() {
   return (
     <ContentLayout title="Dashboard">
       <AdminPanelLayout rightSidebar={<Sidebar />}>
-        <Card className="mb-6">
-          <CardHeader>
-            <Breadcrumb>
-              <BreadcrumbList>
-                {[
-                  "Instrumental", "Contextualização", "Versificação", "Gravação",
-                  "Cinematografia", "Orçamentalização", "Filmagens", 
-                  "Contratualização", "Direitos Autorais", "Lançamento"
-                ].map((item, index) => (
-                  <React.Fragment key={item}>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink asChild>
-                        <Link href={`/${item.toLowerCase()}`} className="hover:text-primary">
-                          {item}
-                        </Link>
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    {index < 9 && <BreadcrumbSeparator />}
-                  </React.Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
-          </CardHeader>
-        </Card>
-
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <TooltipProvider>
-              <div className="flex gap-6">
-                <Tabs defaultValue="controls" className="w-full">
-                  <TabsList>
-                    <TabsTrigger value="controls">Controles</TabsTrigger>
-                    <TabsTrigger value="settings">Configurações</TabsTrigger>
-                  </TabsList>
-                  
-                  <div className="pt-4 flex gap-6">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="is-hover-open"
-                            checked={settings.isHoverOpen}
-                            onCheckedChange={(x) => setSettings({ isHoverOpen: x })}
-                          />
-                          <Label htmlFor="is-hover-open">Abertura Sutil</Label>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Ativa a exibição suave da sidebar ao passar o mouse</p>
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="disable-sidebar"
-                            checked={settings.disabled}
-                            onCheckedChange={(x) => setSettings({ disabled: x })}
-                          />
-                          <Label htmlFor="disable-sidebar">Desativar Sidebar</Label>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Esconde completamente a sidebar</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </Tabs>
-              </div>
-            </TooltipProvider>
-          </CardContent>
-        </Card>
 
         <div className="space-y-6">
           {cards.map((cardId, idx) => (
