@@ -50,7 +50,7 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
                           { name: "Contextualização", link: "/contextualizacao" },
                           { name: "Versificação", link: "/versificacao" },
                           { name: "Gravação", link: "/gravacao" },
-                          { name: "Cinematografia", link: "/cinematografia" },
+                          { name: "Vestuário", link: "/vestuario" },
                           { name: "Orçamentalização", link: "/orcamento" },
                           { name: "Filmagens", link: "/filmagem" },
                           { name: "Contratualização", link: "/contratualizacao" },

@@ -1,282 +1,285 @@
 import React, { useState, useMemo } from "react";
 import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-// Equipment options with pricing in Euros
-const cameraOptions = [
-  { label: "FUJIFILM GFX 50s II", value: "fujifilm_gfx50s_ii", price: 100 },
-  { label: "Blackmagic Pocket Cinema Camera 6K G2", value: "blackmagic_6k", price: 75 },
-  { label: "SONY FX3", value: "sony_fx3", price: 110 },
-  { label: "SONY FX30", value: "sony_fx30", price: 65 },
-  { label: "Canon R6 Mark II", value: "canon_r6_mark_ii", price: 85 },
-  { label: "Sony A7S III", value: "sony_a7s_iii", price: 100 },
-  { label: "Sony a7 IV", value: "sony_a7_iv", price: 70 },
-  { label: "Sony a6700", value: "sony_a6700", price: 50 },
-  { label: "Sony A7 III", value: "sony_a7_iii", price: 50 },
-  { label: "Sony A6500", value: "sony_a6500", price: 30 },
-  { label: "Canon EOS R6", value: "canon_eos_r6", price: 60 },
-  { label: "CANON EOS 6D MARK II", value: "canon_eos_6d_mark_ii", price: 40 },
-  { label: "CANON EOS 70D Body", value: "canon_eos_70d", price: 15 },
-  { label: "Canon 250D", value: "canon_250d", price: 20 },
-  { label: "NIKON D850", value: "nikon_d850", price: 65 },
-  { label: "NIKON Z6 II", value: "nikon_z6_ii", price: 60 },
-  { label: "Nikon Z6", value: "nikon_z6", price: 45 },
-  { label: "Nikon D750", value: "nikon_d750", price: 35 },
-  { label: "Fujifilm X-T4", value: "fujifilm_xt4", price: 45 },
-  { label: "Fujifilm X-T3", value: "fujifilm_xt3", price: 35 },
-  { label: "FUJIFILM X-E4", value: "fujifilm_xe4", price: 25 },
-  { label: "Panasonic GH6", value: "panasonic_gh6", price: 55 },
-  { label: "Panasonic GH5", value: "panasonic_gh5", price: 40 },
+// Options with pricing for each category
+const hairstyleOptions = [
+  { label: "Tinta Preta", value: "tintapreta", price: 6 },
+  { label: "Relaxing", value: "moderno", price: 9 },
+  { label: "Retoque", value: "criativo", price: 5 },
 ];
 
-const lensOptions = [
-  { label: "Sony 10-18 mm f/4.0", value: "sony_10_18", price: 15 },
-  { label: "Sigma 16-28mm f2.8 DG DN Sony-E", value: "sigma_16_28", price: 40 },
-  { label: "SIGMA 10-18mm f/2.8 DC DN E-mount", value: "sigma_10_18", price: 25 },
-  { label: "SIGMA 18-50mm f/2.8 DC DN - Sony E", value: "sigma_18_50", price: 20 },
-  { label: "Sony 12-24mm f2.8 GM", value: "sony_12_24", price: 75 },
-  { label: "Sony FE 14mm f1.8 GM", value: "sony_fe_14", price: 40 },
-  { label: "Sony 16-35MM F2.8 GM II", value: "sony_16_35", price: 65 },
-  { label: "Sony 24mm f/1.4 GM", value: "sony_24", price: 40 },
-  { label: "Sony 24-70mm f/2.8 GM II", value: "sony_24_70", price: 65 },
+const glassesOptions = [
+  { label: "Sem Óculos", value: "sem_oculos", price: 0 },
+  { label: "Com Óculos Estilosos", value: "com_oculos", price: 15 },
 ];
 
-const stabilizationOptions = [
-  { label: "DJI RS 4 Pro Combo", value: "dji_rs4_pro", price: 50 },
-  { label: "DJI RS 3 Pro Combo", value: "dji_rs3_pro", price: 40 },
-  { label: "DJI RSC 2 Pro Combo", value: "dji_rsc2_pro", price: 30 },
-  { label: "Zhiyun Weebill S", value: "zhiyun_weebill_s", price: 25 },
-  { label: "Monopé Manfrotto com cabeça fluida", value: "manfrotto_monopod", price: 10 },
+const neckAccessoryOptions = [
+  { label: "Nenhum", value: "nenhum", price: 0 },
+  { label: "Cravat de Seda", value: "cravat", price: 4 },
+  { label: "Chains Personalizado", value: "chainspersonalizados", price: 560 },
 ];
 
-const lightingOptions = [
-  { label: "Godox MG1200Bi", value: "godox_mg1200bi", price: 120 },
-  { label: "NANLITE Forza 500B II", value: "nanlite_forza_500b", price: 60 },
-  { label: "NANLITE 720B", value: "nanlite_720b", price: 70 },
-  { label: "Aputure 600x Pro", value: "aputure_600x_pro", price: 110 },
-  { label: "Nanlite Forza 300B Bicolor", value: "nanlite_forza_300b", price: 40 },
+const accessoryOptions = [
+  { label: "Grillz Open Face", value: "grillz", price: 50 },
+  { label: "Brincos Científicos", value: "brincos", price: 90 },
+  { label: "Gorro", value: "gorro", price: 5},
+  { label: "Shein Kit", value: "sheinkit", price: 20 },
+  { label: "Relógio", value: "relogio", price: 20 },
+  { label: "Luvas", value: "luvas", price: 6 },
+  { label: "Luvas The North Face", value: "luvasnf", price: 20 },
+
 ];
 
-const outfitOptions = [
-  { label: "DTF Transfer", value: "dtf_transfer", price: 11 },
-  { label: "T-Shirt", value: "t_shirt", price: 7 },
-  { label: "Anel Glitter", value: "anel_glitter", price: 3.5 },
-  { label: "Pulseiras Chines", value: "pulseiras_chines", price: 3.5 },
-  { label: "Pulseiras Sheind", value: "pulseiras_sheind", price: 0 },
+const superiorOptions = [
+  { label: "Let's Copy DTF", value: "dtf", price: 11 },
+  { label: "Tshirt Vazia", value: "brincos", price: 9 },
+  { label: "Balmacan Personalizada", value: "balmacan", price: 5},
+  { label: "Colete", value: "colete", price: 15 },
+  { label: "Colete", value: "colete", price: 15 },
+  { label: "Cravat de Seda", value: "cravat", price: 4 },
+  { label: "Chains Personalizado", value: "chainspersonalizados", price: 560 },
+  { label: "Gravata Ascot", value: "gravata_ascot", price: 10 },
+  { label: "Fivela de Cintura", value: "fivela_cintura", price: 20 },
+  { label: "Cinto de Couro", value: "cinto_couro", price: 30 },
 ];
 
-const FilmingBudgetPage = () => {
-  // Equipment selections
-  const [selectedCamera, setSelectedCamera] = useState("");
-  const [selectedLens, setSelectedLens] = useState("");
-  const [selectedStabilization, setSelectedStabilization] = useState("");
-  const [selectedLighting, setSelectedLighting] = useState("");
-  const [selectedOutfits, setSelectedOutfits] = useState<string[]>([]);
+const inferiorOptions = [
+  { label: "Let's Copy DTF", value: "dtf", price: 11 },
+  { label: "Tshirt Vazia", value: "brincos", price: 9 },
+  { label: "Balmacan Personalizada", value: "balmacan", price: 5},
+  { label: "Colete", value: "colete", price: 15 },
+  { label: "Luvas", value: "luvas", price: 6 },
+  { label: "Luvas The North Face", value: "luvasnf", price: 20 },
 
-  // Custom items state: list of items
-  const [customItems, setCustomItems] = useState<{ label: string; price: number }[]>([]);
-  // Temporary state for new custom item inputs
-  const [newCustomLabel, setNewCustomLabel] = useState("");
-  const [newCustomPrice, setNewCustomPrice] = useState<number>(0);
 
-  // Calculate the total budget based on all selected items
-  const totalBudget = useMemo(() => {
-    let sum = 0;
-    const camera = cameraOptions.find((opt) => opt.value === selectedCamera);
-    const lens = lensOptions.find((opt) => opt.value === selectedLens);
-    const stabilization = stabilizationOptions.find((opt) => opt.value === selectedStabilization);
-    const lighting = lightingOptions.find((opt) => opt.value === selectedLighting);
+];
 
-    if (camera) sum += camera.price;
-    if (lens) sum += lens.price;
-    if (stabilization) sum += stabilization.price;
-    if (lighting) sum += lighting.price;
+const WardrobePlanningPage = () => {
+  // Multi-select states for predefined categories
+  const [selectedHairstyles, setSelectedHairstyles] = useState<string[]>([]);
+  const [selectedGlasses, setSelectedGlasses] = useState<string[]>([]);
+  const [selectedNeckAccessories, setSelectedNeckAccessories] = useState<string[]>([]);
+  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
 
-    // Ensure selectedOutfits is an array
-    const outfitsArray = Array.isArray(selectedOutfits) ? selectedOutfits : [];
-    outfitsArray.forEach((outfit) => {
-      const outfitOption = outfitOptions.find((opt) => opt.value === outfit);
-      if (outfitOption) sum += outfitOption.price;
-    });
+  // State for custom item addition
+  const [customItems, setCustomItems] = useState<{ name: string; category: string; price: number }[]>([]);
+  const [customName, setCustomName] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
 
-    // Sum custom items prices
-    const customSum = customItems.reduce((acc, item) => acc + item.price, 0);
-    sum += customSum;
-
-    return sum;
-  }, [selectedCamera, selectedLens, selectedStabilization, selectedLighting, selectedOutfits, customItems]);
-
-  // Handler to add a new custom item
-  const handleAddCustomItem = () => {
-    if (newCustomLabel.trim() !== "" && newCustomPrice > 0) {
-      setCustomItems((prev) => [...prev, { label: newCustomLabel, price: newCustomPrice }]);
-      setNewCustomLabel("");
-      setNewCustomPrice(0);
+  // Toggle helper for multi-selection
+  const toggleSelection = (
+    value: string,
+    selected: string[],
+    setSelected: (arr: string[]) => void
+  ) => {
+    if (selected.includes(value)) {
+      setSelected(selected.filter((item) => item !== value));
+    } else {
+      setSelected([...selected, value]);
     }
   };
 
-  // Handler to remove a custom item by index
-  const handleRemoveCustomItem = (index: number) => {
-    setCustomItems((prev) => prev.filter((_, i) => i !== index));
+  // Specific toggle handlers for each category
+  const toggleHairstyle = (value: string) =>
+    toggleSelection(value, selectedHairstyles, setSelectedHairstyles);
+  const toggleGlasses = (value: string) =>
+    toggleSelection(value, selectedGlasses, setSelectedGlasses);
+  const toggleNeckAccessory = (value: string) =>
+    toggleSelection(value, selectedNeckAccessories, setSelectedNeckAccessories);
+  const toggleAccessory = (value: string) =>
+    toggleSelection(value, selectedAccessories, setSelectedAccessories);
+
+  // Function to add a custom item (name, category, and price)
+  const addCustomItem = (name: string, category: string, price: string) => {
+    const priceNumber = parseFloat(price);
+    if (!isNaN(priceNumber)) {
+      setCustomItems((prev) => [...prev, { name, category, price: priceNumber }]);
+    }
   };
+
+  const handleAddCustomItem = () => {
+    if (customName && customCategory && customPrice) {
+      addCustomItem(customName, customCategory, customPrice);
+      setCustomName("");
+      setCustomCategory("");
+      setCustomPrice("");
+    }
+  };
+
+  // Calculate the total price based on all selections and custom items
+  const totalPrice = useMemo(() => {
+    let total = 0;
+
+    // Sum function for selected options
+    const sumSelected = (
+      selected: string[],
+      options: { value: string; price: number }[]
+    ) => {
+      selected.forEach((val) => {
+        const found = options.find((item) => item.value === val);
+        if (found) total += found.price;
+      });
+    };
+
+    sumSelected(selectedHairstyles, hairstyleOptions);
+    sumSelected(selectedGlasses, glassesOptions);
+    sumSelected(selectedNeckAccessories, neckAccessoryOptions);
+    sumSelected(selectedAccessories, accessoryOptions);
+
+    customItems.forEach((item) => {
+      total += item.price;
+    });
+
+    return total;
+  }, [selectedHairstyles, selectedGlasses, selectedNeckAccessories, selectedAccessories, customItems]);
+
+  // Create summary object for display
+  const wardrobeSummary = useMemo(() => {
+    return {
+      hairstyles: selectedHairstyles,
+      glasses: selectedGlasses,
+      neckAccessories: selectedNeckAccessories,
+      accessories: selectedAccessories,
+      customItems,
+      totalPrice,
+    };
+  }, [selectedHairstyles, selectedGlasses, selectedNeckAccessories, selectedAccessories, customItems, totalPrice]);
 
   return (
     <div className="p-8 space-y-8">
-      <h1 className="text-3xl font-bold">
-        Orçamentalização
-      </h1>
-      <h5>Adicione todos os custos necessários para realização das filmagens.
-      </h5>
+      <h1 className="text-3xl font-bold">Outfit</h1>
+      <h5>Selecione ou personalize os itens do seu vestuário para o videoclip</h5>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Camera Section */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* Hairstyle Section */}
         <div className="border rounded p-4 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Câmera</h2>
-          <Label className="mb-2 block">Selecione a Câmera</Label>
-          <Select value={selectedCamera} onValueChange={setSelectedCamera}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione uma câmera" />
-            </SelectTrigger>
-            <SelectContent>
-              {cameraOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label} ({option.price} €)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Lens Section */}
-        <div className="border rounded p-4 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Lente</h2>
-          <Label className="mb-2 block">Selecione a Lente</Label>
-          <Select value={selectedLens} onValueChange={setSelectedLens}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione uma lente" />
-            </SelectTrigger>
-            <SelectContent>
-              {lensOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label} ({option.price} €)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Stabilization Section */}
-        <div className="border rounded p-4 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Estabilização</h2>
-          <Label className="mb-2 block">Selecione o Sistema</Label>
-          <Select value={selectedStabilization} onValueChange={setSelectedStabilization}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione um sistema" />
-            </SelectTrigger>
-            <SelectContent>
-              {stabilizationOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label} ({option.price} €)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Lighting Section */}
-        <div className="border rounded p-4 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Iluminação</h2>
-          <Label className="mb-2 block">Selecione o Equipamento</Label>
-          <Select value={selectedLighting} onValueChange={setSelectedLighting}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione o equipamento" />
-            </SelectTrigger>
-            <SelectContent>
-              {lightingOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label} ({option.price} €)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Outfit Section */}
-        
-
-        {/* Custom Items Section */}
-        <div className="border rounded p-4 shadow-sm md:col-span-2">
-          <h2 className="text-xl font-semibold mb-4">Itens Personalizados</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
-              <Label className="mb-2 block">Nome do Item</Label>
-              <input
-                type="text"
-                value={newCustomLabel}
-                onChange={(e) => setNewCustomLabel(e.target.value)}
-                className="border rounded p-2 w-full"
-                placeholder="Nome do item"
-              />
-            </div>
-            <div>
-              <Label className="mb-2 block">Preço do Item</Label>
-              <input
-                type="number"
-                value={newCustomPrice}
-                onChange={(e) => setNewCustomPrice(parseFloat(e.target.value))}
-                className="border rounded p-2 w-full"
-                placeholder="Preço do item"
-              />
-            </div>
-            <div>
-              <Button onClick={handleAddCustomItem} className="w-full">
-                Adicionar Item
+          <h2 className="text-xl font-semibold mb-4">Cabelo</h2>
+          <Label className="mb-2 block">Selecione os Penteados</Label>
+          <div className="flex flex-wrap gap-4">
+            {hairstyleOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={selectedHairstyles.includes(option.value) ? "default" : "outline"}
+                onClick={() => toggleHairstyle(option.value)}
+              >
+                {option.label} (€{option.price})
               </Button>
-            </div>
+            ))}
           </div>
-          {customItems.length > 0 && (
-            <ul className="mt-4 space-y-2">
-              {customItems.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex justify-between items-center border rounded p-2"
-                >
-                  <span>
-                    {item.label} ({item.price} €)
-                  </span>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleRemoveCustomItem(index)}
-                  >
-                    Remover
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
+        </div>
+
+        {/* Glasses Section */}
+        <div className="border rounded p-4 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Óculos</h2>
+          <Label className="mb-2 block">Selecione as Opções de Óculos</Label>
+          <div className="flex flex-wrap gap-4">
+            {glassesOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={selectedGlasses.includes(option.value) ? "default" : "outline"}
+                onClick={() => toggleGlasses(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Neck Accessory Section */}
+        <div className="border rounded p-4 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Acessórios de Pescoço</h2>
+          <Label className="mb-2 block">Selecione Cravat, Scarf ou Nenhum</Label>
+          <div className="flex flex-wrap gap-4">
+            {neckAccessoryOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={selectedNeckAccessories.includes(option.value) ? "default" : "outline"}
+                onClick={() => toggleNeckAccessory(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Accessories Section */}
+        <div className="border rounded p-4 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Acessórios</h2>
+          <Label className="mb-2 block">Selecione os Acessórios Adicionais</Label>
+          <div className="flex flex-wrap gap-4">
+            {accessoryOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={selectedAccessories.includes(option.value) ? "default" : "outline"}
+                onClick={() => toggleAccessory(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        
+        {/* Superior Section */}
+        <div className="border rounded p-4 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Parte Superior</h2>
+          <Label className="mb-2 block">Selecione os Acessórios Adicionais</Label>
+          <div className="flex flex-wrap gap-4">
+            {superiorOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={selectedAccessories.includes(option.value) ? "default" : "outline"}
+                onClick={() => toggleAccessory(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Item Section */}
+        <div className="border rounded p-4 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Adicionar Item Personalizado</h2>
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            placeholder="Nome do Item"
+            className="border rounded p-2 w-full mb-2"
+          />
+          <input
+            type="text"
+            value={customCategory}
+            onChange={(e) => setCustomCategory(e.target.value)}
+            placeholder="Categoria"
+            className="border rounded p-2 w-full mb-2"
+          />
+          <input
+            type="number"
+            value={customPrice}
+            onChange={(e) => setCustomPrice(e.target.value)}
+            placeholder="Preço"
+            className="border rounded p-2 w-full mb-2"
+          />
+          <Button onClick={handleAddCustomItem}>Adicionar Item</Button>
         </div>
       </div>
 
-      {/* Budget Summary */}
-      <div className="border rounded p-4 shadow-md flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Orçamento Total</h2>
-          <p className="text-xl">{totalBudget} €</p>
-        </div>
+      {/* Summary / Confirmation */}
+      <div className="border rounded p-4 shadow-md flex flex-col gap-4">
+        <h2 className="text-2xl font-bold">Resumo do Vestuário</h2>
+        <pre className="text-sm whitespace-pre-wrap">
+          {JSON.stringify(wardrobeSummary, null, 2)}
+        </pre>
+        <div className="text-xl font-bold">Total Estimado: €{totalPrice.toFixed(2)}</div>
         <Button variant="outline" onClick={() => window.location.href = "/filmagem"}>
-          Confirmar Orçamento
+          Confirmar Vestuário
         </Button>
       </div>
     </div>
   );
 };
 
-export default FilmingBudgetPage;
+export default WardrobePlanningPage;

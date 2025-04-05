@@ -862,6 +862,19 @@ export default function DashboardPage() {
                 />
               </div>
               
+              <div className="col-span-2 mt-4">
+                <Label htmlFor={`additionalText-${verse.id}`} className="block text-gray-700 dark:text-gray-300 mb-1">
+                  Localização Perfeita
+                </Label>
+                <Input
+                  id={`additionalText-${verse.id}`}
+                  type="text"
+                  maxLength={100}
+                  placeholder="Insira a morada completa"
+                  className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              
             </div>
           );
         });

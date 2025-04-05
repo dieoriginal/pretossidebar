@@ -154,6 +154,24 @@ export default function VideoFormPage() {
                 />
               </div>
 
+                 <div className="flex flex-col">
+         
+                <div className="flex items-center">
+                  <label htmlFor={`agreement-${member.id}`} className="mb-2 text-gray-700 dark:text-gray-300">
+                    Assinatura SPAUTORES Obrigatória
+                  </label>
+                  <input
+                    type="checkbox"
+                    id={`agreement-${member.id}`}
+                    checked={member.agreement}
+                    onChange={(e) => updateMember(member.id, "agreement", e.target.checked)}
+                    className="ml-2"
+                  />
+                </div>
+              </div>
+
+
+
               {/* Remove button */}
               <div className="flex justify-end">
                 <Button

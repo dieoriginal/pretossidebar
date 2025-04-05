@@ -13,24 +13,24 @@ import { Rocket, AlertCircle, CheckCircle } from "lucide-react";
 
 const registrationGroups = [
   {
-    title: "Performance Rights Organizations",
-    entities: ["BMI", "ASCAP", "SOCAN", "PRS", "GEMA"],
-    description: "Essential for public performance royalties collection",
+    title: "Organizações de Direitos de Performance",
+    entities: ["SAUTORES", "SONGTRUST"],
+    description: "Essencial para a coleta de royalties de performance pública",
   },
   {
-    title: "Publishing Administrators",
-    entities: ["SONGTRUST", "HARRYFOX AGENCY", "MUSIXMATCH"],
-    description: "Mechanical rights and sync licensing management",
+    title: "Administradores de Publicação",
+    entities: ["Songtrust", "Harryfox Agency", "FundaçÃo GDA"],
+    description: "Gestão de direitos mecânicos e licenciamento de sincronização",
   },
   {
-    title: "Digital Distribution",
-    entities: ["SOUNDCHANGE", "AUDIOGEST", "FUGA", "TUNECORE"],
-    description: "Platform distribution and neighboring rights",
+    title: "Distribuição Digital",
+    entities: ["DistroKid", "Soundcloud For Artists", "Audiogest ISRC"],
+    description: "Distribuição em plataformas e direitos conexos",
   },
   {
-    title: "Lyrics & Metadata",
-    entities: ["GENIUS", "LYRICFIND", "MUSIXMATCH"],
-    description: "Lyric licensing and metadata management",
+    title: "Letras & Metadados",
+    entities: ["Genius", "LyricFind", "MusixMatch"],
+    description: "Licenciamento de letras e gestão de metadados",
   },
 ];
 
@@ -58,7 +58,7 @@ export default function MusicRegistrationChecklistPage() {
       <div className="space-y-8">
         <div className="bg-slate-800 dark:bg-slate-900 p-6 rounded-lg border border-slate-700 dark:border-slate-600">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white">Global Registration Progress</h2>
+            <h2 className="text-2xl font-bold text-white">Registro Global da Música</h2>
             <Badge variant="outline" className="border-purple-400 text-purple-400 text-lg">
               {completedEntities}/{totalEntities}
             </Badge>
@@ -129,7 +129,7 @@ export default function MusicRegistrationChecklistPage() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Action Required</AlertTitle>
             <AlertDescription>
-              Complete all registration checkboxes to enable monetization
+              Só podes ir ao próximo paço com um ISWC e ISRC português.
             </AlertDescription>
           </Alert>
         )}
@@ -141,7 +141,7 @@ export default function MusicRegistrationChecklistPage() {
             disabled={!allChecked}
           >
             <Rocket className="mr-2 h-4 w-4" />
-            Proceed to Monetization
+            Ir para o Lançamento
             {!allChecked && <span className="ml-2 text-yellow-200">({completedEntities}/{totalEntities})</span>}
           </Button>
         </div>

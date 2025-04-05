@@ -16,8 +16,8 @@ interface WordItem {
   numSyllables?: number;
 }
 
-// Basic function to estimate syllable count for Portuguese words.
-// This counts contiguous vowel groups as syllables.
+// Função básica para estimar a contagem de sílabas para palavras em português.
+// Isso conta grupos de vogais contíguos como sílabas.
 function countSyllables(word: string): number {
   const matches = word.toLowerCase().match(/[aeiouáéíóúâêîôûãõ]+/g);
   return matches ? matches.length : 0;
@@ -38,8 +38,8 @@ export function Menu({ isOpen }: MenuProps) {
   }>({ 1: [], 2: [], 3: [], 4: [] });
   const [ptVocabulary, setPtVocabulary] = useState<WordItem[]>([]);
 
-  // Load Portuguese vocabulary from the txt file.
-  // Place vocabulary.txt in your /public folder with one word per line.
+  // Carregar vocabulário em português do arquivo txt.
+  // Coloque vocabulary.txt na sua pasta /public com uma palavra por linha.
   useEffect(() => {
     if (language === "pt") {
       fetch("/vocabulary.txt")
@@ -53,7 +53,7 @@ export function Menu({ isOpen }: MenuProps) {
             let normalizedWord = word;
             normalizedWord = restoreAccents(normalizedWord);
             normalizedWord = toSentenceCase(normalizedWord);
-            // If you have a way to detect verbs, you can add:
+            // Se você tiver uma maneira de detectar verbos, pode adicionar:
             // normalizedWord = isVerb(normalizedWord) ? normalizeVerb(normalizedWord) : normalizedWord;
             return {
               word: normalizedWord,
@@ -62,17 +62,17 @@ export function Menu({ isOpen }: MenuProps) {
           });
           setPtVocabulary(vocab);
         })
-        .catch((err) => console.error("Error loading vocabulary:", err));
+        .catch((err) => console.error("Erro ao carregar vocabulário:", err));
     }
   }, [language]);
 
-  // Simple function to determine if two words rhyme using their last two characters.
+  // Função simples para determinar se duas palavras rimam usando seus últimos quatro caracteres.
   const wordsRhyme = (wordA: string, wordB: string) => {
-    if (wordA.length < 2 || wordB.length < 2) return false;
-    return wordA.slice(-2).toLowerCase() === wordB.slice(-2).toLowerCase();
+    if (wordA.length < 4 || wordB.length < 4) return false;
+    return wordA.slice(-4).toLowerCase() === wordB.slice(-4).toLowerCase();
   };
 
-  // Filter and group words based on the search query and concept.
+  // Filtrar e agrupar palavras com base na consulta de pesquisa e conceito.
   useEffect(() => {
     if (query.trim().length > 0) {
       if (language === "pt") {
@@ -99,7 +99,7 @@ export function Menu({ isOpen }: MenuProps) {
         });
         setGroupedResults(groups);
       } else {
-        // For English, use the Datamuse API.
+        // Para inglês, use a API Datamuse.
         let apiUrl = `https://api.datamuse.com/words?rel_rhy=${encodeURIComponent(
           query
         )}&md=s`;
@@ -122,10 +122,10 @@ export function Menu({ isOpen }: MenuProps) {
             });
             setGroupedResults(groups);
           })
-          .catch((err) => console.error("Error fetching rhymes:", err));
+          .catch((err) => console.error("Erro ao buscar rimas:", err));
       }
     } else {
-      // If no query, optionally show all Portuguese words (grouped by syllables).
+      // Se não houver consulta, opcionalmente mostre todas as palavras em português (agrupadas por sílabas).
       if (language === "pt") {
         const groups = { 1: [], 2: [], 3: [], 4: [] } as {
           [key: number]: string[];
