@@ -102,7 +102,7 @@ const episodeOptions = [
   "Êxodo",
 ];
 
-const featuringOptions = ["Zara G", "YuriNR5", "Sippinpurp", "YUZI", "YunLilo"];
+const featuringOptions = ["Zara G", "YuriNR5", "Sippinpurp", "YUZI", "YunLilo", "Yasz Dicko", "MAFIA73", "P. William", "Chaylan"];
 
 const WordTag: React.FC<{
   word: string;

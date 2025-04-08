@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ContentLayout } from "@/components/admin-panel/content-layout";
+import FilmingBudgetPage from "@/components/admin-panel/video/VideoVerseCard4";
 
 import { Button } from "@/components/ui/button";
 import VideoVerseCard from "@/components/admin-panel/video/VideoVerseCard";
@@ -24,9 +25,8 @@ export default function VideoFormPage() {
 
       
       <div className="pt-4 gap-4">
-        {verses.map((verseId, idx) => (
-          <VideoVerseCard key={verseId} index={idx + 1} />
-        ))}
+      
+      <FilmingBudgetPage/>
        
       </div>
     </ContentLayout>
