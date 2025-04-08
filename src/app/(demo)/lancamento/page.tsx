@@ -226,6 +226,37 @@ export default function PromotionProcessPage() {
         },
       ],
     },
+    {
+      title: "SPOTIFY SMM PANEL",
+      icon: <Sliders className="h-5 w-5 text-blue-400" />,
+      locked: true,
+      steps: [
+        {
+          id: "smm-1",
+          label: "SMM RAPID - Portugal",
+          completed: false,
+          required: true,
+          link: "https://smmrapid.com/services",
+          services: [
+            "Spotify Only",
+            "PacySMM - Portugal",
+            "YT Views - 1,20",
+            "Spotify Play & Youtube Likes",
+            "SMM Raja - Portugal",
+            "YT Views - 3,36",
+            "YT Likes - 6,48",
+            "Sam Pak Channel - Youtube Comments - 0,61",
+            "YT Views - 0,80",
+            "Boost Up Panel - Portugal",
+            "YT Views - 5,19",
+            "Min Order - 5000",
+            "Follow Mental - Portugal",
+            "YT Likes - 1,0164",
+            "YT Views - 3,85",
+          ],
+        },
+      ],
+    },
   ]);
 
   const totalSteps = phases.flatMap((p) => p.steps).length;
@@ -348,6 +379,23 @@ export default function PromotionProcessPage() {
                           </Badge>
                         )}
                       </div>
+                      {step.link && (
+                        <div className="mt-2">
+                          <a
+                            href={step.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 underline"
+                          >
+                            Acesse os serviços
+                          </a>
+                          <ul className="mt-2 text-slate-300">
+                            {step.services.map((service, index) => (
+                              <li key={index}>{service}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
