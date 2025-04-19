@@ -1,0 +1,47 @@
+.metronome {
+    text-align: center;
+    padding: 10px;
+    max-width: 100%;
+    overflow: hidden;
+}
+  
+.bpm-slider,
+.measure-selector,
+.overlay-control {
+    margin: 5px 0;
+    width: 100%;
+    max-width: 100%;
+}
+  
+.beat-indicator {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+  
+.beat-circle {
+    width: 15px;
+    height: 15px;
+    margin: 0 2px;
+    border-radius: 50%;
+    background-color: #ccc;
+    transition: background-color 0.3s;
+}
+  
+.beat-circle.active {
+    background-color: #4caf50;
+}
+  
+.beat-circle.accent {
+    background-color: #f44336;
+}
+  
+.beat-circle.overlay-accent {
+    box-shadow: 0 0 0 2px #2196F3;
+}
+  
+.beat-circle.accent.overlay-accent {
+    box-shadow: 0 0 0 2px #FFC107;
+}

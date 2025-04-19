@@ -274,6 +274,7 @@ const FilmingBudgetPage = () => {
         <Button variant="outline" onClick={() => window.location.href = "/filmagem"}>
           Confirmar Orçamento
         </Button>
+        <h1> <a href="https://rentacamera.pt/" target="_blank" rel="noopener noreferrer" className="text-blue-500">rentacamera.pt</a></h1>
       </div>
     </div>
   );

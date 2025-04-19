@@ -11167,7 +11167,7 @@ mutável
 notável 
 opável 
 pagável 
-palpável,
+palpável 
 passável 
 pensável 
 portável 
@@ -11198,7 +11198,7 @@ admirável
 adorável 
 agradável 
 agrupável 
-ajustável,
+ajustável 
  alcançável 
  alterável 
  amigável 
@@ -11216,9 +11216,9 @@ ajustável,
  comparável 
  comportável 
  comprovável 
- comutável,
+ comutável 
   condenável 
-  condestável,
+  condestável 
    confessável 
    confiável 
    confortável 
@@ -11226,7 +11226,7 @@ ajustável,
    consagrável 
    constatável 
    consultável 
-   contactável,
+   contactável 
     contestável 
     contornável 
     contratável 
@@ -11253,7 +11253,2054 @@ ajustável,
     desejável 
     desligável 
     desmontável 
-    desprezável destacável desvendável desviável detectável detestável dilatável disfarçável dispensável disputável divulgável dominável educável ejectável ejetável empregável encontrável enquadrável ensinável esgotável espantável esperável estimável evitável evocável excitável execrável expectável explicável explorável exportável expugnável favorável fecundável fermentável figurável flutuável formidável frequentável governável habitável honorável ignorável igualável impagável impalpável imparável impecável impensável implacável imprestável improvável impugnável imputável imutável inafável inamável incansável incaptável incitável incobrável incontável inculpável incurável indobrável indomável inefável inegável infindável inflamável infumável injetável inquebrável insanável insarável insondável insuflável integrável intestável intocável intragável intratável inundável invejável invendável inviável invocável irrigável irritável isolável lamentável lastimável legislável maleável manejável maneável manobrável melhorável memorável mensurável miserável misturável navegável observável obviável odiável operável oxidável partilhável penetrável penhorável perdoável perdurável permeável permutável ponderável pontuável praticável procurável programável projetável propagável prorrogável protestável publicável razoável reciclável recitável reclinável recobrável recusável redobrável reformável refutável regravável relevável renovável reparável repassável reprovável resgatável respeitável respirável responsável retocável retratável revogável separável situável sociável subornável superável suportável sustentável tolerável transformável transitável transportável tributável variável venerável violável visitável vulnerável
+    desprezável 
+    destacável 
+    desvendável 
+    desviável 
+    detectável 
+    detestável 
+    dilatável 
+    disfarçável 
+    dispensável 
+    disputável 
+    divulgável 
+    dominável 
+    educável 
+    ejectável 
+    ejetável 
+    empregável 
+    encontrável 
+    enquadrável 
+    ensinável 
+    esgotável 
+    espantável 
+    esperável 
+    estimável 
+    evitável 
+    evocável 
+    excitável 
+    execrável 
+    expectável
+    explicável 
+    explorável 
+    exportável 
+    expugnável 
+    favorável 
+    fecundável 
+    fermentável 
+    figurável 
+    flutuável 
+    formidável 
+    frequentável 
+    governável 
+    habitável 
+    honorável 
+    ignorável 
+    igualável 
+    impagável
+    impalpável 
+    imparável 
+    impecável 
+    impensável 
+    implacável 
+    imprestável 
+    improvável 
+    impugnável 
+    imputável 
+    imutável 
+    inafável 
+    inamável 
+    incansável 
+    incaptável 
+    incitável 
+    incobrável 
+    incontável 
+    inculpável 
+    incurável 
+    indobrável 
+    indomável 
+    inefável 
+    inegável 
+    infindável 
+    inflamável 
+    infumável 
+    injetável 
+    inquebrável 
+    insanável 
+    insarável 
+    insondável 
+    insuflável 
+    integrável 
+    intestável 
+    intocável 
+    intragável 
+    intratável 
+    inundável 
+    invejável 
+    invendável 
+    inviável 
+    invocável 
+    irrigável
+    irritável 
+    isolável 
+    lamentável 
+    lastimável 
+    legislável
+    maleável
+    manejável
+    maneável
+    manobrável
+    melhorável
+    memorável
+    mensurável
+    miserável
+    misturável
+    navegável
+    observável
+    obviável
+    odiável
+    operável
+    oxidável
+    partilhável
+    penetrável
+    penhorável
+    perdoável
+    perdurável
+    permeável
+    permutável
+    ponderável
+    pontuável
+    praticável
+    procurável
+    programável
+    projetável
+    propagável
+    prorrogável
+    protestável
+    publicável
+    razoável
+    reciclável
+    recitável
+    reclinável
+    recobrável
+    recusável
+    redobrável
+    reformável
+    refutável
+    regravável
+    relevável
+    renovável
+    reparável
+    repassável
+    reprovável
+    resgatável
+    respeitável
+    respirável
+    responsável
+    retocável
+    retratável
+    revogável
+    separável
+    situável
+    sociável
+    subornável
+    superável
+    suportável
+    sustentável
+    tolerável
+    transformável
+    transitável
+    transportável
+    tributável
+    variável
+    venerável
+    violável
+    visitável
+    vulnerável
+    abirritável
+    abominável
+    aconselhável
+    acumulável
+    alienável
+    amortizável
+    analisável
+    apreciável
+    apresentável
+    apropriável
+    aproveitável
+    aproximável
+    articulável
+    assimilável
+    assinalável
+    associável
+    avaliável
+    bivariável
+    cantarolável
+    classificável
+    comemorável
+    comensurável
+    comerciável
+    compaginável
+    comunicável
+    conciliável
+    concretizável
+    configurável
+    considerável
+    contrariável
+    corresponsável
+    desagradável
+    desamorável
+    descapotável
+    desconfiável
+    desconfortável
+    desconversável
+    descortinável
+    desestimável
+    desfavorável
+    desfigurável
+    desintegrável
+    desnavegável
+    determinável
+    dissimulável
+    dissociável
+    domesticável
+    edificável
+    elogiável
+    enumerável
+    enunciável
+    equiparável
+    executável
+    extraditável
+    extraviável
+    falsificável
+    financiável
+    homologável
+    imaginável
+    imemorável
+    imensurável
+    impartilhável
+    impenetrável
+    impenhorável
+    impenterável
+    imperdoável
+    impermeável
+    imperscrutável
+    imperturbável
+    imponderável
+    impraticável
+    improrrogável
+    inabalável
+    inabarcável
+    inabitável
+    inabordável
+    inacabável
+    inaceitável
+    inadaptável
+    inadiável
+    inafundável
+    inalcançável
+    inalistável
+    inalterável
+    inapagável
+    inapelável
+    inaplicável
+    inassinável
+    inatacável
+    inavegável
+    inavistável
+    incalculável
+    incensurável
+    incinerável
+    incomparável
+    incomportável
+    inconfessável
+    inconfiável
+    inconfortável
+    inconjugável
+    inconquistável
+    inconsolável
+    inconsultável
+    incontactável
+    incontestável
+    incontornável
+    incontrolável
+    inconversável
+    incriticável
+    incultivável
+    indecifrável
+    indeclinável
+    indefensável
+    indeformável
+    indelegável
+    indemnizável
+    indemonstrável
+    inderrogável
+    indesculpável
+    indesejável
+    indesligável
+    indesmontável
+    indestrinçável
+    indestronável
+    indesvendável
+    indetectável
+    indisfarçável
+    indispensável
+    indisputável
+    indivulgável
+    indominável
+    indubitável
+    ineducável
+    inelutável
+    inenarrável
+    inencontrável
+    inensinável
+    inescapável
+    inescrutável
+    inescusável
+    inesgotável
+    inesperável
+    inestimável
+    inevitável
+    inexcitável
+    inexorável
+    inexpiável
+    inexplicável
+    inexplorável
+    inexpugnável
+    inextricável
+    infatigável
+    ingovernável
+    inigualável
+    inimitável
+    inimputável
+    ininflamável
+    inintegrável
+    inobservável
+    inolvidável
+    inominável
+    inoperável
+    inoxidável
+    inquebrantável
+    insaciável
+    inseparável
+    insituável
+    insociável
+    insofismável
+    insubornável
+    insuperável
+    insuportável
+    insustentável
+    interminável
+    interpretável
+    intolerável
+    intransitável
+    intransportável
+    intributável
+    inumerável
+    invariável
+    inviolável
+    invulnerável
+    irrecusável
+    irreformável
+    irrefragável
+    irrefreável
+    irrefutável
+    irreparável
+    irresgatável
+    irrespirável
+    irresponsável
+    irretratável
+    irrevogável
+    justificável
+    localizável
+    manipulável
+    manuseável
+    mencionável
+    menosprezável
+    minimizável
+    mobilizável
+    modificável
+    negociável
+    nobelizável
+    noticiável
+    orientável
+    panificável
+    prefigurável
+    pronunciável
+    qualificável
+    quantificável
+    questionável
+    readaptável
+    reajustável
+    realizável
+    recarregável
+    recomendável
+    reconfortável
+    reconvocável
+    recultivável
+    recuperável
+    reeducável
+    reembolsável
+    reencontrável
+    reexplicável
+    reexplorável
+    reexportável
+    reintegrável
+    remanejável
+    remediável
+    rememorável
+    representável
+    republicável
+    reunificável
+    reutilizável
+    subdelegável
+    ultrapassável
+    unificável
+    utilizável
+    valorizável
+    verificável
+    abalienável
+    antissociável
+    autoaplicável
+    autossustentável
+    biodegradável
+    capitalizável
+    circum-navegável
+    colecionável
+    comparticipável
+    contabilizável
+    criminalizável
+    desaconselhável
+    desamortizável
+    desaproveitável
+    desarticulável
+    descodificável
+    desmobilizável
+    desvalorizável
+    deteriorável
+    diagnosticável
+    diferenciável
+    escamoteável
+    generalizável
+    hiperexcitável
+    identificável
+    imemoriável
+    imodificável
+    impressionável
+    impronunciável
+    inacreditável
+    inacumulável
+    inafiançável
+    inalienável
+    inanalisável
+    inapreciável
+    inapresentável
+    inaproveitável
+    inarticulável
+    inassimilável
+    inassinalável
+    inclassificável
+    incomensurável
+    incomerciável
+    incomunicável
+    inconciliável
+    incontrariável
+    indescortinável
+    indeterminável
+    indissimulável
+    indissociável
+    indomesticável
+    inegociável
+    inexecutável
+    infalsificável
+    influenciável
+    inimaginável
+    ininterpretável
+    injustificável
+    inqualificável
+    inquestionável
+    intercambiável
+    inultrapassável
+    inutilizável
+    inverificável
+    irrealizável
+    irrecuperável
+    irremediável
+    irrenunciável
+    irrepresentável
+    ministeriável
+    negligenciável
+    parametrizável
+    predeterminável
+    presidenciável
+    reclassificável
+    reconciliável
+    reedificável
+    legislável
+    maleável
+    manejável
+    maneável
+    manobrável
+    melhorável
+    memorável
+    mensurável
+    miserável
+    misturável
+    navegável
+    observável
+    obviável
+    odiável
+    operável
+    oxidável
+    partilhável
+    penetrável
+    penhorável
+    perdoável
+    perdurável
+    permeável
+    permutável
+    ponderável
+    pontuável
+    praticável
+    procurável
+    programável
+    projetável
+    propagável
+    prorrogável
+    protestável
+    publicável
+    razoável
+    reciclável
+    recitável
+    reclinável
+    recobrável
+    recusável
+    redobrável
+    reformável
+    refutável
+    regravável
+    relevável
+    renovável
+    reparável
+    repassável
+    reprovável
+    resgatável
+    respeitável
+    respirável
+    responsável
+    retocável
+    retratável
+    revogável
+    separável
+    situável
+    sociável
+    subornável
+    superável
+    suportável
+    sustentável
+    tolerável
+    transformável
+    transitável
+    transportável
+    tributável
+    variável
+    venerável
+    violável
+    visitável
+    vulnerável
+    abirritável
+    abominável
+    aconselhável
+    acumulável
+    alienável
+    amortizável
+    analisável
+    apreciável
+    apresentável
+    apropriável
+    aproveitável
+    aproximável
+    articulável
+    assimilável
+    assinalável
+    associável
+    avaliável
+    bivariável
+    cantarolável
+    classificável
+    comemorável
+    comensurável
+    comerciável
+    compaginável
+    comunicável
+    conciliável
+    concretizável
+    configurável
+    considerável
+    contrariável
+    corresponsável
+    desagradável
+    desamorável
+    descapotável
+    desconfiável
+    desconfortável
+    desconversável
+    descortinável
+    desestimável
+    desfavorável
+    desfigurável
+    desintegrável
+    desnavegável
+    determinável
+    dissimulável
+    dissociável
+    domesticável
+    edificável
+    elogiável
+    enumerável
+    enunciável
+    equiparável
+    executável
+    extraditável
+    extraviável
+    falsificável
+    financiável
+    homologável
+    imaginável
+    imemorável
+    imensurável
+    impartilhável
+    impenetrável
+    impenhorável
+    impenterável
+    imperdoável
+    impermeável
+    imperscrutável
+    imperturbável
+    imponderável
+    impraticável
+    improrrogável
+    inabalável
+    inabarcável
+    inabitável
+    inabordável
+    inacabável
+    inaceitável
+    inadaptável
+    inadiável
+    inafundável
+    inalcançável
+    inalistável
+    inalterável
+    inapagável
+    inapelável
+    inaplicável
+    inassinável
+    inatacável
+    inavegável
+    inavistável
+    incalculável
+    incensurável
+    incinerável
+    incomparável
+    incomportável
+    inconfessável
+    inconfiável
+    inconfortável
+    inconjugável
+    inconquistável
+    inconsolável
+    inconsultável
+    incontactável
+    incontestável
+    incontornável
+    incontrolável
+    inconversável
+    incriticável
+    incultivável
+    indecifrável
+    indeclinável
+    indefensável
+    indeformável
+    indelegável
+    indemnizável
+    indemonstrável
+    inderrogável
+    indesculpável
+    indesejável
+    indesligável
+    indesmontável
+    indestrinçável
+    indestronável
+    indesvendável
+    indetectável
+    indisfarçável
+    indispensável
+    indisputável
+    indivulgável
+    indominável
+    indubitável
+    ineducável
+    inelutável
+    inenarrável
+    inencontrável
+    inensinável
+    inescapável
+    inescrutável
+    inescusável
+    inesgotável
+    inesperável
+    inestimável
+    inevitável
+    inexcitável
+    inexorável
+    inexpiável
+    inexplicável
+    inexplorável
+    inexpugnável
+    inextricável
+    infatigável
+    ingovernável
+    inigualável
+    inimitável
+    inimputável
+    ininflamável
+    inintegrável
+    inobservável
+    inolvidável
+    inominável
+    inoperável
+    inoxidável
+    inquebrantável
+    insaciável
+    inseparável
+    insituável
+    insociável
+    insofismável
+    insubornável
+    insuperável
+    insuportável
+    insustentável
+    interminável
+    interpretável
+    intolerável
+    intransitável
+    intransportável
+    intributável
+    inumerável
+    invariável
+    inviolável
+    invulnerável
+    irrecusável
+    irreformável
+    irrefragável
+    irrefreável
+    irrefutável
+    irreparável
+    irresgatável
+    irrespirável
+    irresponsável
+    irretratável
+    irrevogável
+    justificável
+    localizável
+    manipulável
+    manuseável
+    mencionável
+    menosprezável
+    minimizável
+    mobilizável
+    modificável
+    negociável
+    nobelizável
+    noticiável
+    orientável
+    panificável
+    prefigurável
+    pronunciável
+    qualificável
+    quantificável
+    questionável
+    readaptável
+    reajustável
+    realizável
+    recarregável
+    recomendável
+    reconfortável
+    reconvocável
+    recultivável
+    recuperável
+    reeducável
+    reembolsável
+    reencontrável
+    reexplicável
+    reexplorável
+    reexportável
+    reintegrável
+    remanejável
+    remediável
+    rememorável
+    representável
+    republicável
+    reunificável
+    reutilizável
+    subdelegável
+    ultrapassável
+    unificável
+    utilizável
+    valorizável
+    verificável
+    abalienável
+    antissociável
+    autoaplicável
+    autossustentável
+    biodegradável
+    capitalizável
+    circum-navegável
+    colecionável
+    comparticipável
+    contabilizável
+    criminalizável
+    desaconselhável
+    desamortizável
+    desaproveitável
+    desarticulável
+    descodificável
+    desmobilizável
+    desvalorizável
+    deteriorável
+    diagnosticável
+    diferenciável
+    escamoteável
+    generalizável
+    hiperexcitável
+    identificável
+    imemoriável
+    imodificável
+    impressionável
+    impronunciável
+    inacreditável
+    inacumulável
+    inafiançável
+    inalienável
+    inanalisável
+    inapreciável
+    inapresentável
+    inaproveitável
+    inarticulável
+    inassimilável
+    inassinalável
+    inclassificável
+    incomensurável
+    incomerciável
+    incomunicável
+    inconciliável
+    incontrariável
+    indescortinável
+    indeterminável
+    indissimulável
+    indissociável
+    indomesticável
+    inegociável
+    inexecutável
+    infalsificável
+    influenciável
+    inimaginável
+    ininterpretável
+    injustificável
+    inqualificável
+    inquestionável
+    intercambiável
+    inultrapassável
+    inutilizável
+    inverificável
+    irrealizável
+    irrecuperável
+    irremediável
+    irrenunciável
+    irrepresentável
+    ministeriável
+    negligenciável
+    parametrizável
+    predeterminável
+    presidenciável
+    reclassificável
+    reconciliável
+    reedificável
+    legislável
+    maleável
+    manejável
+    maneável
+    manobrável
+    melhorável
+    memorável
+    mensurável
+    miserável
+    misturável
+    navegável
+    observável
+    obviável
+    odiável
+    operável
+    oxidável
+    partilhável
+    penetrável
+    penhorável
+    perdoável
+    perdurável
+    permeável
+    permutável
+    ponderável
+    pontuável
+    praticável
+    procurável
+    programável
+    projetável
+    propagável
+    prorrogável
+    protestável
+    publicável
+    razoável
+    reciclável
+    recitável
+    reclinável
+    recobrável
+    recusável
+    redobrável
+    reformável
+    refutável
+    regravável
+    relevável
+    renovável
+    reparável
+    repassável
+    reprovável
+    resgatável
+    respeitável
+    respirável
+    responsável
+    retocável
+    retratável
+    revogável
+    separável
+    situável
+    sociável
+    subornável
+    superável
+    suportável
+    sustentável
+    tolerável
+    transformável
+    transitável
+    transportável
+    tributável
+    variável
+    venerável
+    violável
+    visitável
+    vulnerável
+    abirritável
+    abominável
+    aconselhável
+    acumulável
+    alienável
+    amortizável
+    analisável
+    apreciável
+    apresentável
+    apropriável
+    aproveitável
+    aproximável
+    articulável
+    assimilável
+    assinalável
+    associável
+    avaliável
+    bivariável
+    cantarolável
+    classificável
+    comemorável
+    comensurável
+    comerciável
+    compaginável
+    comunicável
+    conciliável
+    concretizável
+    configurável
+    considerável
+    contrariável
+    corresponsável
+    desagradável
+    desamorável
+    descapotável
+    desconfiável
+    desconfortável
+    desconversável
+    descortinável
+    desestimável
+    desfavorável
+    desfigurável
+    desintegrável
+    desnavegável
+    determinável
+    dissimulável
+    dissociável
+    domesticável
+    edificável
+    elogiável
+    enumerável
+    enunciável
+    equiparável
+    executável
+    extraditável
+    extraviável
+    falsificável
+    financiável
+    homologável
+    imaginável
+    imemorável
+    imensurável
+    impartilhável
+    impenetrável
+    impenhorável
+    impenterável
+    imperdoável
+    impermeável
+    imperscrutável
+    imperturbável
+    imponderável
+    impraticável
+    improrrogável
+    inabalável
+    inabarcável
+    inabitável
+    inabordável
+    inacabável
+    inaceitável
+    inadaptável
+    inadiável
+    inafundável
+    inalcançável
+    inalistável
+    inalterável
+    inapagável
+    inapelável
+    inaplicável
+    inassinável
+    inatacável
+    inavegável
+    inavistável
+    incalculável
+    incensurável
+    incinerável
+    incomparável
+    incomportável
+    inconfessável
+    inconfiável
+    inconfortável
+    inconjugável
+    inconquistável
+    inconsolável
+    inconsultável
+    incontactável
+    incontestável
+    incontornável
+    incontrolável
+    inconversável
+    incriticável
+    incultivável
+    indecifrável
+    indeclinável
+    indefensável
+    indeformável
+    indelegável
+    indemnizável
+    indemonstrável
+    inderrogável
+    indesculpável
+    indesejável
+    indesligável
+    indesmontável
+    indestrinçável
+    indestronável
+    indesvendável
+    indetectável
+    indisfarçável
+    indispensável
+    indisputável
+    indivulgável
+    indominável
+    indubitável
+    ineducável
+    inelutável
+    inenarrável
+    inencontrável
+    inensinável
+    inescapável
+    inescrutável
+    inescusável
+    inesgotável
+    inesperável
+    inestimável
+    inevitável
+    inexcitável
+    inexorável
+    inexpiável
+    inexplicável
+    inexplorável
+    inexpugnável
+    inextricável
+    infatigável
+    ingovernável
+    inigualável
+    inimitável
+    inimputável
+    ininflamável
+    inintegrável
+    inobservável
+    inolvidável
+    inominável
+    inoperável
+    inoxidável
+    inquebrantável
+    insaciável
+    inseparável
+    insituável
+    insociável
+    insofismável
+    insubornável
+    insuperável
+    insuportável
+    insustentável
+    interminável
+    interpretável
+    intolerável
+    intransitável
+    intransportável
+    intributável
+    inumerável
+    invariável
+    inviolável
+    invulnerável
+    irrecusável
+    irreformável
+    irrefragável
+    irrefreável
+    irrefutável
+    irreparável
+    irresgatável
+    irrespirável
+    irresponsável
+    irretratável
+    irrevogável
+    justificável
+    localizável
+    manipulável
+    manuseável
+    mencionável
+    menosprezável
+    minimizável
+    mobilizável
+    modificável
+    negociável
+    nobelizável
+    noticiável
+    orientável
+    panificável
+    prefigurável
+    pronunciável
+    qualificável
+    quantificável
+    questionável
+    readaptável
+    reajustável
+    realizável
+    recarregável
+    recomendável
+    reconfortável
+    reconvocável
+    recultivável
+    recuperável
+    reeducável
+    reembolsável
+    reencontrável
+    reexplicável
+    reexplorável
+    reexportável
+    reintegrável
+    remanejável
+    remediável
+    rememorável
+    representável
+    republicável
+    reunificável
+    reutilizável
+    subdelegável
+    ultrapassável
+    unificável
+    utilizável
+    valorizável
+    verificável
+    abalienável
+    antissociável
+    autoaplicável
+    autossustentável
+    biodegradável
+    capitalizável
+    circum-navegável
+    colecionável
+    comparticipável
+    contabilizável
+    criminalizável
+    desaconselhável
+    desamortizável
+    desaproveitável
+    desarticulável
+    descodificável
+    desmobilizável
+    desvalorizável
+    deteriorável
+    diagnosticável
+    diferenciável
+    escamoteável
+    generalizável
+    hiperexcitável
+    identificável
+    imemoriável
+    imodificável
+    impressionável
+    impronunciável
+    inacreditável
+    inacumulável
+    inafiançável
+    inalienável
+    inanalisável
+    inapreciável
+    inapresentável
+    inaproveitável
+    inarticulável
+    inassimilável
+    inassinalável
+    inclassificável
+    incomensurável
+    incomerciável
+    incomunicável
+    inconciliável
+    incontrariável
+    indescortinável
+    indeterminável
+    indissimulável
+    indissociável
+    indomesticável
+    inegociável
+    inexecutável
+    infalsificável
+    influenciável
+    inimaginável
+    ininterpretável
+    injustificável
+    inqualificável
+    inquestionável
+    intercambiável
+    inultrapassável
+    inutilizável
+    inverificável
+    irrealizável
+    irrecuperável
+    irremediável
+    irrenunciável
+    irrepresentável
+    ministeriável
+    negligenciável
+    parametrizável
+    predeterminável
+    presidenciável
+    reclassificável
+    reconciliável
+    reedificável
+    legislável
+    maleável
+    manejável
+    maneável
+    manobrável
+    melhorável
+    memorável
+    mensurável
+    miserável
+    misturável
+    navegável
+    observável
+    obviável
+    odiável
+    operável
+    oxidável
+    partilhável
+    penetrável
+    penhorável
+    perdoável
+    perdurável
+    permeável
+    permutável
+    ponderável
+    pontuável
+    praticável
+    procurável
+    programável
+    projetável
+    propagável
+    prorrogável
+    protestável
+    publicável
+    razoável
+    reciclável
+    recitável
+    reclinável
+    recobrável
+    recusável
+    redobrável
+    reformável
+    refutável
+    regravável
+    relevável
+    renovável
+    reparável
+    repassável
+    reprovável
+    resgatável
+    respeitável
+    respirável
+    responsável
+    retocável
+    retratável
+    revogável
+    separável
+    situável
+    sociável
+    subornável
+    superável
+    suportável
+    sustentável
+    tolerável
+    transformável
+    transitável
+    transportável
+    tributável
+    variável
+    venerável
+    violável
+    visitável
+    vulnerável
+    abirritável
+    abominável
+    aconselhável
+    acumulável
+    alienável
+    amortizável
+    analisável
+    apreciável
+    apresentável
+    apropriável
+    aproveitável
+    aproximável
+    articulável
+    assimilável
+    assinalável
+    associável
+    avaliável
+    bivariável
+    cantarolável
+    classificável
+    comemorável
+    comensurável
+    comerciável
+    compaginável
+    comunicável
+    conciliável
+    concretizável
+    configurável
+    considerável
+    contrariável
+    corresponsável
+    desagradável
+    desamorável
+    descapotável
+    desconfiável
+    desconfortável
+    desconversável
+    descortinável
+    desestimável
+    desfavorável
+    desfigurável
+    desintegrável
+    desnavegável
+    determinável
+    dissimulável
+    dissociável
+    domesticável
+    edificável
+    elogiável
+    enumerável
+    enunciável
+    equiparável
+    executável
+    extraditável
+    extraviável
+    falsificável
+    financiável
+    homologável
+    imaginável
+    imemorável
+    imensurável
+    impartilhável
+    impenetrável
+    impenhorável
+    impenterável
+    imperdoável
+    impermeável
+    imperscrutável
+    imperturbável
+    imponderável
+    impraticável
+    improrrogável
+    inabalável
+    inabarcável
+    inabitável
+    inabordável
+    inacabável
+    inaceitável
+    inadaptável
+    inadiável
+    inafundável
+    inalcançável
+    inalistável
+    inalterável
+    inapagável
+    inapelável
+    inaplicável
+    inassinável
+    inatacável
+    inavegável
+    inavistável
+    incalculável
+    incensurável
+    incinerável
+    incomparável
+    incomportável
+    inconfessável
+    inconfiável
+    inconfortável
+    inconjugável
+    inconquistável
+    inconsolável
+    inconsultável
+    incontactável
+    incontestável
+    incontornável
+    incontrolável
+    inconversável
+    incriticável
+    incultivável
+    indecifrável
+    indeclinável
+    indefensável
+    indeformável
+    indelegável
+    indemnizável
+    indemonstrável
+    inderrogável
+    indesculpável
+    indesejável
+    indesligável
+    indesmontável
+    indestrinçável
+    indestronável
+    indesvendável
+    indetectável
+    indisfarçável
+    indispensável
+    indisputável
+    indivulgável
+    indominável
+    indubitável
+    ineducável
+    inelutável
+    inenarrável
+    inencontrável
+    inensinável
+    inescapável
+    inescrutável
+    inescusável
+    inesgotável
+    inesperável
+    inestimável
+    inevitável
+    inexcitável
+    inexorável
+    inexpiável
+    inexplicável
+    inexplorável
+    inexpugnável
+    inextricável
+    infatigável
+    ingovernável
+    inigualável
+    inimitável
+    inimputável
+    ininflamável
+    inintegrável
+    inobservável
+    inolvidável
+    inominável
+    inoperável
+    inoxidável
+    inquebrantável
+    insaciável
+    inseparável
+    insituável
+    insociável
+    insofismável
+    insubornável
+    insuperável
+    insuportável
+    insustentável
+    interminável
+    interpretável
+    intolerável
+    intransitável
+    intransportável
+    intributável
+    inumerável
+    invariável
+    inviolável
+    invulnerável
+    irrecusável
+    irreformável
+    irrefragável
+    irrefreável
+    irrefutável
+    irreparável
+    irresgatável
+    irrespirável
+    irresponsável
+    irretratável
+    irrevogável
+    justificável
+    localizável
+    manipulável
+    manuseável
+    mencionável
+    menosprezável
+    minimizável
+    mobilizável
+    modificável
+    negociável
+    nobelizável
+    noticiável
+    orientável
+    panificável
+    prefigurável
+    pronunciável
+    qualificável
+    quantificável
+    questionável
+    readaptável
+    reajustável
+    realizável
+    recarregável
+    recomendável
+    reconfortável
+    reconvocável
+    recultivável
+    recuperável
+    reeducável
+    reembolsável
+    reencontrável
+    reexplicável
+    reexplorável
+    reexportável
+    reintegrável
+    remanejável
+    remediável
+    rememorável
+    representável
+    republicável
+    reunificável
+    reutilizável
+    subdelegável
+    ultrapassável
+    unificável
+    utilizável
+    valorizável
+    verificável
+    abalienável
+    antissociável
+    autoaplicável
+    autossustentável
+    biodegradável
+    capitalizável
+    circum-navegável
+    colecionável
+    comparticipável
+    contabilizável
+    criminalizável
+    desaconselhável
+    desamortizável
+    desaproveitável
+    desarticulável
+    descodificável
+    desmobilizável
+    desvalorizável
+    deteriorável
+    diagnosticável
+    diferenciável
+    escamoteável
+    generalizável
+    hiperexcitável
+    identificável
+    imemoriável
+    imodificável
+    impressionável
+    impronunciável
+    inacreditável
+    inacumulável
+    inafiançável
+    inalienável
+    inanalisável
+    inapreciável
+    inapresentável
+    inaproveitável
+    inarticulável
+    inassimilável
+    inassinalável
+    inclassificável
+    incomensurável
+    incomerciável
+    incomunicável
+    inconciliável
+    incontrariável
+    indescortinável
+    indeterminável
+    indissimulável
+    indissociável
+    indomesticável
+    inegociável
+    inexecutável
+    infalsificável
+    influenciável
+    inimaginável
+    ininterpretável
+    injustificável
+    inqualificável
+    inquestionável
+    intercambiável
+    inultrapassável
+    inutilizável
+    inverificável
+    irrealizável
+    irrecuperável
+    irremediável
+    irrenunciável
+    irrepresentável
+    ministeriável
+    negligenciável
+    parametrizável
+    predeterminável
+    presidenciável
+    reclassificável
+    reconciliável
+    reedificável
+    legislável
+    maleável
+    manejável
+    maneável
+    manobrável
+    melhorável
+    memorável
+    mensurável
+    miserável
+    misturável
+    navegável
+    observável
+    obviável
+    odiável
+    operável
+    oxidável
+    partilhável
+    penetrável
+    penhorável
+    perdoável
+    perdurável
+    permeável
+    permutável
+    ponderável
+    pontuável
+    praticável
+    procurável
+    programável
+    projetável
+    propagável
+    prorrogável
+    protestável
+    publicável
+    razoável
+    reciclável
+    recitável
+    reclinável
+    recobrável
+    recusável
+    redobrável
+    reformável
+    refutável
+    regravável
+    relevável
+    renovável
+    reparável
+    repassável
+    reprovável
+    resgatável
+    respeitável
+    respirável
+    responsável
+    retocável
+    retratável
+    revogável
+    separável
+    situável
+    sociável
+    subornável
+    superável
+    suportável
+    sustentável
+    tolerável
+    transformável
+    transitável
+    transportável
+    tributável
+    variável
+    venerável
+    violável
+    visitável
+    vulnerável
+    abirritável
+    abominável
+    aconselhável
+    acumulável
+    alienável
+    amortizável
+    analisável
+    apreciável
+    apresentável
+    apropriável
+    aproveitável
+    aproximável
+    articulável
+    assimilável
+    assinalável
+    associável
+    avaliável
+    bivariável
+    cantarolável
+    classificável
+    comemorável
+    comensurável
+    comerciável
+    compaginável
+    comunicável
+    conciliável
+    concretizável
+    configurável
+    considerável
+    contrariável
+    corresponsável
+    desagradável
+    desamorável
+    descapotável
+    desconfiável
+    desconfortável
+    desconversável
+    descortinável
+    desestimável
+    desfavorável
+    desfigurável
+    desintegrável
+    desnavegável
+    determinável
+    dissimulável
+    dissociável
+    domesticável
+    edificável
+    elogiável
+    enumerável
+    enunciável
+    equiparável
+    executável
+    extraditável
+    extraviável
+    falsificável
+    financiável
+    homologável
+    imaginável
+    imemorável
+    imensurável
+    impartilhável
+    impenetrável
+    impenhorável
+    impenterável
+    imperdoável
+    impermeável
+    imperscrutável
+    imperturbável
+    imponderável
+    impraticável
+    improrrogável
+    inabalável
+    inabarcável
+    inabitável
+    inabordável
+    inacabável
+    inaceitável
+    inadaptável
+    inadiável
+    inafundável
+    inalcançável
+    inalistável
+    inalterável
+    inapagável
+    inapelável
+    inaplicável
+    inassinável
+    inatacável
+    inavegável
+    inavistável
+    incalculável
+    incensurável
+    incinerável
+    incomparável
+    incomportável
+    inconfessável
+    inconfiável
+    inconfortável
+    inconjugável
+    inconquistável
+    inconsolável
+    inconsultável
+    incontactável
+    incontestável
+    incontornável
+    incontrolável
+    inconversável
+    incriticável
+    incultivável
+    indecifrável
+    indeclinável
+    indefensável
+    indeformável
+    indelegável
+    indemnizável
+    indemonstrável
+    inderrogável
+    indesculpável
+    indesejável
+    indesligável
+    indesmontável
+    indestrinçável
+    indestronável
+    indesvendável
+    indetectável
+    indisfarçável
+    indispensável
+    indisputável
+    indivulgável
+    indominável
+    indubitável
+    ineducável
+    inelutável
+    inenarrável
+    inencontrável
+    inensinável
+    inescapável
+    inescrutável
+    inescusável
+    inesgotável
+    inesperável
+    inestimável
+    inevitável
+    inexcitável
+    inexorável
+    inexpiável
+    inexplicável
+    inexplorável
+    inexpugnável
+    inextricável
+    infatigável
+    ingovernável
+    inigualável
+    inimitável
+    inimputável
+    ininflamável
+    inintegrável
+    inobservável
+    inolvidável
+    inominável
+    inoperável
+    inoxidável
+    inquebrantável
+    insaciável
+    inseparável
+    insituável
+    insociável
+    insofismável
+    insubornável
+    insuperável
+    insuportável
+    insustentável
+    interminável
+    interpretável
+    intolerável
+    intransitável
+    intransportável
+    intributável
+    inumerável
+    invariável
+    inviolável
+    invulnerável
+    irrecusável
+    irreformável
+    irrefragável
+    irrefreável
+    irrefutável
+    irreparável
+    irresgatável
+    irrespirável
+    irresponsável
+    irretratável
+    irrevogável
+    justificável
+    localizável
+    manipulável
+    manuseável
+    mencionável
+    menosprezável
+    minimizável
+    mobilizável
+    modificável
+    negociável
+    nobelizável
+    noticiável
+    orientável
+    panificável
+    prefigurável
+    pronunciável
+    qualificável
+    quantificável
+    questionável
+    readaptável
+    reajustável
+    realizável
+    recarregável
+    recomendável
+    reconfortável
+    reconvocável
+    recultivável
+    recuperável
+    reeducável
+    reembolsável
+    reencontrável
+    reexplicável
+    reexplorável
+    reexportável
+    reintegrável
+    remanejável
+    remediável
+    rememorável
+    representável
+    republicável
+    reunificável
+    reutilizável
+    subdelegável
+    ultrapassável
+    unificável
+    utilizável
+    valorizável
+    verificável
+    abalienável
+    antissociável
+    autoaplicável
+    autossustentável
+    biodegradável
+    capitalizável
+    circum-navegável
+    colecionável
+    comparticipável
+    contabilizável
+    criminalizável
+    desaconselhável
+    desamortizável
+    desaproveitável
+    desarticulável
+    descodificável
+    desmobilizável
+    desvalorizável
+    deteriorável
+    diagnosticável
+    diferenciável
+    escamoteável
+    generalizável
+    hiperexcitável
+    identificável
+    imemoriável
+    imodificável
+    impressionável
+    impronunciável
+    inacreditável
+    inacumulável
+    inafiançável
+    inalienável
+    inanalisável
+    inapreciável
+    inapresentável
+    inaproveitável
+    inarticulável
+    inassimilável
+    inassinalável
+    inclassificável
+    incomensurável
+    incomerciável
+    incomunicável
+    inconciliável
+    incontrariável
+    indescortinável
+    indeterminável
+    indissimulável
+    indissociável
+    indomesticável
+    inegociável
+    inexecutável
+    infalsificável
+    influenciável
+    inimaginável
+    ininterpretável
+    injustificável
+    inqualificável
+    inquestionável
+    intercambiável
+    inultrapassável
+    inutilizável
+    inverificável
+    irrealizável
+    irrecuperável
+    irremediável
+    irrenunciável
+    irrepresentável
+    ministeriável
+    negligenciável
+    parametrizável
+    predeterminável
+    presidenciável
+    reclassificável
+    reconciliável
+    reedificável
+    legislável maleável manejável maneável manobrável melhorável memorável mensurável miserável misturável navegável observável obviável odiável operável oxidável partilhável penetrável penhorável perdoável perdurável permeável permutável ponderável pontuável praticável procurável programável projetável propagável prorrogável protestável publicável razoável reciclável recitável reclinável recobrável recusável redobrável reformável refutável regravável relevável renovável reparável repassável reprovável resgatável respeitável respirável responsável retocável retratável revogável separável situável sociável subornável superável suportável sustentável tolerável transformável transitável transportável tributável variável venerável violável visitável vulnerável
 
 abirritável abominável aconselhável acumulável alienável amortizável analisável apreciável apresentável apropriável aproveitável aproximável articulável assimilável assinalável associável avaliável bivariável cantarolável classificável comemorável comensurável comerciável compaginável comunicável conciliável concretizável configurável considerável contrariável corresponsável desagradável desamorável descapotável desconfiável desconfortável desconversável descortinável desestimável desfavorável desfigurável desintegrável desnavegável determinável dissimulável dissociável domesticável edificável elogiável enumerável enunciável equiparável executável extraditável extraviável falsificável financiável homologável imaginável imemorável imensurável impartilhável impenetrável impenhorável impenterável imperdoável impermeável imperscrutável imperturbável imponderável impraticável improrrogável inabalável inabarcável inabitável inabordável inacabável inaceitável inadaptável inadiável inafundável inalcançável inalistável inalterável inapagável inapelável inaplicável inassinável inatacável inavegável inavistável incalculável incensurável incinerável incomparável incomportável inconfessável inconfiável inconfortável inconjugável inconquistável inconsolável inconsultável incontactável incontestável incontornável incontrolável inconversável incriticável incultivável indecifrável indeclinável indefensável indeformável indelegável indemnizável indemonstrável inderrogável indesculpável indesejável indesligável indesmontável indestrinçável indestronável indesvendável indetectável indisfarçável indispensável indisputável indivulgável indominável indubitável ineducável inelutável inenarrável inencontrável inensinável inescapável inescrutável inescusável inesgotável inesperável inestimável inevitável inexcitável inexorável inexpiável inexplicável inexplorável inexpugnável inextricável infatigável ingovernável inigualável inimitável inimputável ininflamável inintegrável inobservável inolvidável inominável inoperável inoxidável inquebrantável insaciável inseparável insituável insociável insofismável insubornável insuperável insuportável insustentável interminável interpretável intolerável intransitável intransportável intributável inumerável invariável inviolável invulnerável irrecusável irreformável irrefragável irrefreável irrefutável irreparável irresgatável irrespirável irresponsável irretratável irrevogável justificável localizável manipulável manuseável mencionável menosprezável minimizável mobilizável modificável negociável nobelizável noticiável orientável panificável prefigurável pronunciável qualificável quantificável questionável readaptável reajustável realizável recarregável recomendável reconfortável reconvocável recultivável recuperável reeducável reembolsável reencontrável reexplicável reexplorável reexportável reintegrável remanejável remediável rememorável representável republicável reunificável reutilizável subdelegável ultrapassável unificável utilizável valorizável verificável
 
@@ -11262,31 +13309,827 @@ abalienável antissociável autoaplicável autossustentável biodegradável capi
 autoexecutável autofinanciável comercializável descapitalizável descriminalizável ecolocalizável indiferenciável inicializável inidentificável ininfluenciável instrumentalizável irreconciliável irrenegociável micromanipulável responsabilizável universalizável
 
 autossugestionável
-cinto finto minto pinto plinto quinto sinto tinto
-absinto arinto assinto consinto corinto desminto destinto distinto extinto faminto filinto instinto jacinto precinto pressinto recinto requinto retinto salpinto sucinto tilinto
-indistinto inextinto labirinto
-acosso adoço almoço aposso caroço colosso desosso destroço emboço empoço endosso engrosso esboço insosso pescoço remoço tremoço
-alvoroço arcabouço calabouço entreouço
+cinto
+finto
+minto
+pinto
+plinto
+quinto
+sinto
+tinto
+absinto
+arinto
+assinto
+consinto
+corinto
+desminto
+destinto
+distinto
+extinto
+faminto
+filinto
+instinto
+jacinto
+precinto
+pressinto
+recinto
+requinto
+retinto
+salpinto
+sucinto
+tilinto
+indistinto
+inextinto
+labirinto
+acosso
+adoço
+almoço
+aposso
+caroço
+colosso
+desosso
+destroço
+emboço
+empoço
+endosso
+engrosso
+esboço
+insosso
+pescoço
+remoço
+tremoço
+alvoroço
+arcabouço
+calabouço
+entreouço
 aeromoço
 pequeno-almoço
-cosso coço fosso grosso moço osso ouço posso poço roço
-costo gosto mosto posto rosto tosto
-agosto aposto arrosto composto deposto desgosto disposto encosto exposto imposto oposto posposto preposto proposto recosto reposto sol-posto subposto suposto transposto
+cosso
+coço
+fosso
+grosso
+moço
+osso
+ouço
+posso
+poço
+roço
+costo
+gosto
+mosto
+posto
+rosto
+tosto
+agosto
+aposto
+arrosto
+composto
+deposto
+desgosto
+disposto
+encosto
+exposto
+imposto
+oposto
+posposto
+preposto
+proposto
+recosto
+reposto
+sol-posto
+subposto
+suposto
+transposto
+antegosto
+anteposto
+anterrosto
+bem-disposto
+contragosto
+contraposto
+decomposto
+descomposto
+desencosto
+entrecosto
+entreposto
+incomposto
+indisposto
+inexposto
+interposto
+justaposto
+maldisposto
+predisposto
+pressuposto
+sobreposto
+superposto
 
-antegosto anteposto anterrosto bem-disposto contragosto contraposto decomposto descomposto desencosto entrecosto entreposto incomposto indisposto inexposto interposto justaposto maldisposto predisposto pressuposto sobreposto superposto
-
-autoimposto sobrecomposto
-abasteço aborreço aconteço adereço adoeço adormeço agradeço alvoreço amanheço amoleço amorteço anoiteço apareço apeteço apodreço arrefeço arremesso compadeço compareço desapreço desavesso desconheço desfaleço desguarneço desimpeço desvaneço emagreço embeveço embraveço embruteço empobreço emudeço enalteço encabeço encareço endereço endoideço endureço enegreço enfureço engrandeço enobreço enraiveço enrijeço entardeço entorpeço entreteço entristeço envaideço envelheço envileço escarneço esclareço escureço esmoreço espaireço estremeço esvaeço esvaneço favoreço fortaleço obedeço obscureço ofereço permaneço prevaleço recomeço reconheço reexpeço resplandeço robusteço transpareço umedeço
-amadureço antecomeço desapareço desobedeço empalideço empequeneço ensoberbeço estabeleço reabasteço reapareço restabeleço
+autoimposto
+sobrecomposto
+abasteço
+aborreço
+aconteço
+adereço
+adoeço
+adormeço
+agradeço
+alvoreço
+amanheço
+amoleço
+amorteço
+anoiteço
+apareço
+apeteço
+apodreço
+arrefeço
+arremesso
+compadeço
+compareço
+desapreço
+desavesso
+desconheço
+desfaleço
+desguarneço
+desimpeço
+desvaneço
+emagreço
+embeveço
+embraveço
+embruteço
+empobreço
+emudeço
+enalteço
+encabeço
+encareço
+endereço
+endoideço
+endureço
+enegreço
+enfureço
+engrandeço
+enobreço
+enraiveço
+enrijeço
+entardeço
+entorpeço
+entreteço
+entristeço
+envaideço
+envelheço
+envileço
+escarneço
+esclareço
+escureço
+esmoreço
+espaireço
+estremeço
+esvaeço
+esvaneço
+favoreço
+fortaleço
+obedeço
+obscureço
+ofereço
+permaneço
+prevaleço
+recomeço
+reconheço
+reexpeço
+resplandeço
+robusteço
+transpareço
+umedeço
+amadureço
+antecomeço
+desapareço
+desobedeço
+empalideço
+empequeneço
+ensoberbeço
+estabeleço
+reabasteço
+reapareço
+restabeleço
 preestabeleço
-apreço avesso burgesso cabeço careço começo condesso confesso conheço desmeço despeço espesso expeço faleço forneço guarneço impeço mereço padeço pareço pereço revesso tropeço
-gesso meço peço preço teço
+apreço
+avesso
+burgesso
+cabeço
+careço
+começo
+condesso
+confesso
+conheço
+desmeço
+despeço
+espesso
+expeço
+faleço
+forneço
+guarneço
+impeço
+mereço
+padeço
+pareço
+pereço
+revesso
+tropeço
+gesso
+meço
+peço
+preço
+teço
 impróprio
 amor-próprio
 próprio
-clone cone fone
-camone carbone ciclone destrone detone sazone trombone
-abandone acantone acione apaixone cicerone desabone desmorone empavone escalone espione fanfarrone flexione fracione friccione funcione gramofone lecione megafone mencione microfone pressione questione racione sancione saxofone silicone telefone tencione tracione turbilhone vibrafone xilofone
-adicione ambicione anticiclone aprisione atraicione colecione comissione condicione confeccione congestione convencione decepcione dimensione direcione emocione emulsione equacione estacione impressione impulsione inflacione inspecione ocasione ovacione particione posicione proporcione provisione recepcione relacione rotacione selecione solucione subvencione sugestione
-acondicione correlacione descongestione recondicione redimensione redirecione reparticione revolucione supervisione televisione
+clone
+cone
+fone
+camone
+carbone
+ciclone
+destrone
+detone
+sazone
+trombone
+abandone
+acantone
+acione
+apaixone
+cicerone
+desabone
+desmorone
+empavone
+escalone
+espione
+fanfarrone
+flexione
+fracione
+friccione
+funcione
+gramofone
+lecione
+megafone
+mencione
+microfone
+pressione
+questione
+racione
+sancione
+saxofone
+silicone
+telefone
+tencione
+tracione
+turbilhone
+vibrafone
+xilofone
+adicione
+ambicione
+anticiclone
+aprisione
+atraicione
+colecione
+comissione
+condicione
+confeccione
+congestione
+convencione
+decepcione
+dimensione
+direcione
+emocione
+emulsione
+equacione
+estacione
+impressione
+impulsione
+inflacione
+inspecione
+ocasione
+ovacione
+particione
+posicione
+proporcione
+provisione
+recepcione
+relacione
+rotacione
+selecione
+solucione
+subvencione
+sugestione
+acondicione
+correlacione
+descongestione
+recondicione
+redimensione
+redirecione
+reparticione
+revolucione
+supervisione
+televisione
 interrelacione
+crer  
+der  
+er  
+ler  
+per  
+ser  
+ter  
+ver
+abner  
+abster  
+acker  
+arder  
+ater  
+bater  
+beber  
+benzer  
+caber  
+ceder  
+chofer  
+chover  
+colher  
+comer  
+conter  
+correr  
+coser  
+couber  
+cozer  
+crescer  
+descer  
+descrer  
+deter  
+dever  
+disser  
+dizer  
+doer  
+doppler  
+encher  
+erguer  
+ester  
+euler  
+fazer  
+feder  
+fender  
+ferver  
+fizer  
+gemer  
+haver  
+hitler  
+houver  
+inter  
+jazer  
+lamber  
+laser  
+lazer  
+manter  
+meter  
+mexer  
+mister  
+moer  
+morder  
+morrer  
+mover  
+nascer  
+obter  
+pender  
+perder  
+poder  
+prazer  
+premer  
+prender  
+prever  
+prover  
+puder  
+puser  
+querer  
+quiser  
+ranger  
+reger  
+reler  
+render  
+reter  
+rever  
+roer  
+romper  
+saber  
+sofrer  
+sorver  
+souber  
+super  
+suster  
+tanger  
+tecer  
+temer  
+tender  
+tiver  
+tolher  
+torcer  
+trailer 
+trazer  
+tremer  
+tresler  
+trouxer  
+valer  
+varrer  
+vencer  
+vender  
+verter  
+vier  
+viver  
+volver  
+walter
+abater  
+abranger  
+absolver  
+absorver  
+abstiver  
+aceder  
+acender  
+acolher  
+acorrer  
+acrescer  
+advier  
+afazer  
+antever  
+aprazer  
+aprender  
+aquecer  
+ascender  
+atender  
+ativer  
+atrever  
+avier  
+bendisser  
+bendizer 
+benquerer  
+caracter  
+carecer
+combater
+cometer
+comover
+comprazer
+compuser
+conceber
+conceder
+concorrer
+condisser
+condizer
+condoer
+conhecer
+constranger
+contender
+contiver
+contorcer
+convencer
+converter
+convier
+conviver
+corroer
+corromper
+debater
+decorrer
+decrescer
+defender
+demover
+depender
+depuser
+derreter
+descender
+descrever
+desdisser
+desdizer
+desfazer
+desfizer
+despender
+desprazer
+desprender
+desprover
+destorcer
+desvaler
+detiver
+devolver
+discorrer
+dispuser
+dissolver
+distender
+distorcer
+eleger
+embater
+embeber
+encolher
+entender
+entreter
+entrever
+envolver
+escolher
+esconder
+escorrer
+escrever
+esmoler
+espremer
+esquecer
+estender
+estiver
+evolver
+exceder
+exercer
+expuser
+falecer
+florescer
+fornecer
+fourier
+guarnecer
+hamburger
+impuser
+incender
+incorrer
+inscrever
+inverter
+irromper
+maldisser
+maldizer
+mantiver
+merecer
+navier
+obtiver
+ocorrer
+ofender
+opuser
+padecer
+parecer
+perceber
+percorrer
+perecer
+perfazer
+perfizer
+pertencer
+perverter
+pospuser
+precaver
+preceder
+predisser
+predizer
+preencher
+prepuser
+prescrever
+pretender
+proceder
+prometer
+promover
+propuser
+prorromper
+proteger
+provier
+reaver
+rebater
+receber
+recolher
+recorrer
+recrescer
+reerguer
+refazer
+referver
+refizer
+remeter
+remexer
+remoer
+remover
+renascer
+reouver
+repuser
+requerer
+requiser
+rescrever
+resolver
+responder
+retiver
+retorcer
+revender
+reverter
+reviver
+revolver
+socorrer
+soerguer
+submeter
+subscrever
+subverter
+suceder
+supuser
+suspender
+transcender
+transcorrer
+transcrever
+transpuser
+ureter
+xavier
+abastecer
+aborrecer
+acometer
+acontecer
+adoecer
+adormecer
+agradecer
+alvorecer
+amanhecer
+amolecer
+amortecer
+anoitecer
+anteceder
+antepuser
+aparacer
+aparecer
+aperceber
+apetecer
+apodrecer
+apreender
+aquiescer
+arborescer
+arrefecer
+arremeter
+arrepender
+circunscrever
+coalescer
+compadecer
+comparecer
+compreender
+comprometer
+condescender
+contradisser
+contradizer
+contrafazer
+contrafizer
+contrapuser
+convalescer
+coresponder
+corresponder
+decompuser
+depreender
+desaquecer
+desatender
+desavier
+desconhecer
+desentender
+desenvolver
+desfalecer
+desguarnecer
+desperceber
+desproteger
+desvanecer
+efervescer
+eflorescer
+eliezer
+emagrecer
+embevecer
+embranquecer
+embravecer
+embrutecer
+empobrecer
+empreender
+emudecer
+enaltecer
+encarecer
+endoidecer
+endurecer
+enegrecer
+enfraquecer
+enfurecer
+engrandecer
+enlouquecer
+enobrecer
+enraivecer
+enrijecer
+enriquecer
+enrubescer
+entardecer
+enternecer
+entorpecer
+entretecer
+entristecer
+entumescer
+envaidecer
+envelhecer
+envilecer
+equivaler
+escarnecer
+esclarecer
+escurecer
+esmaecer
+esmorecer
+espairecer
+estremecer
+esvaecer
+esvanecer
+favorecer
+fortalecer
+fosforescer
+independer
+indispuser
+interceder
+interpuser
+interromper
+intervier
+intrometer
+intumescer
+locomover
+malavier
+obedecer
+obscurecer
+oferecer
+permanecer
+predispuser
+pressupuser
+prevalecer
+rarefazer
+rarefizer
+reacender
+reaprender
+reascender
+reconhecer
+recrudescer
+reescrever
+reflorescer
+remanescer
+repreender
+resplandecer
+retroceder
+revivescer
+robustecer
+satisfazer
+satisfizer
+sobrepuser
+sobrescrever
+sobrestiver
+sobrevier
+sobreviver
+subentender
+superpuser
+supreender
+surpreender
+transparecer
+umedecer
+amadurecer
+desaparecer
+desobedecer
+empalidecer
+empequenecer
+ensoberbecer
+estabelecer
+reabastecer
+reaparecer
+rejuvenescer
+restabelecer
+superaquecer
+superintender
+preestabelecer
+culto  
+multo  
+vulto
+adulto  
+ausculto  
+avulto  
+consulto  
+desculto  
+estulto  
+exulto  
+faculto  
+inculto  
+indulto  
+insulto  
+oculto  
+resulto  
+sepulto  
+tumulto
+dificulto  
+inconsulto  
+insepulto  
+semiculto
+jurisconsulto  
+semissepulto
+
+deite  
+leite  
+peite
+aceite  
+ajeite  
+aleite  
+azeite  
+confeite  
+coveite  
+deleite  
+empreite  
+enfeite  
+enjeite  
+espreite  
+estreite  
+receite  
+rejeite  
+respeite  
+sujeite  
+suspeite
+aproveite  
+desenfeite  
+endireite  
+sobreleite
+desaproveite  
+reaproveite

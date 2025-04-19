@@ -39,7 +39,7 @@ export function UserNav() {
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom">Profile</TooltipContent>
+          <TooltipContent side="bottom">Perfil</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
@@ -58,6 +58,12 @@ export function UserNav() {
             <Link href="/versificacao" className="flex items-center">
               <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
               Dashboard
+            </Link>
+          </DropdownMenuItem>
+            <DropdownMenuItem className="hover:cursor-pointer" asChild>
+            <Link href="/custosfixos" className="flex items-center">
+              <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
+              Custos Fixos
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem className="hover:cursor-pointer" asChild>

@@ -1,5 +1,3 @@
-// components/Menu.tsx
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -16,8 +14,6 @@ interface WordItem {
   numSyllables?: number;
 }
 
-// Função básica para estimar a contagem de sílabas para palavras em português.
-// Isso conta grupos de vogais contíguos como sílabas.
 function countSyllables(word: string): number {
   const matches = word.toLowerCase().match(/[aeiouáéíóúâêîôûãõ]+/g);
   return matches ? matches.length : 0;
@@ -29,17 +25,16 @@ export function Menu({ isOpen }: MenuProps) {
 
   const [query, setQuery] = useState("");
   const [concept, setConcept] = useState("");
-  const [language, setLanguage] = useState<"en" | "pt">("en");
-  const [groupedResults, setGroupedResults] = useState<{
-    1: string[];
-    2: string[];
-    3: string[];
-    4: string[];
-  }>({ 1: [], 2: [], 3: [], 4: [] });
+  const [startLetter, setStartLetter] = useState("");
+  const [language, setLanguage] = useState<"en" | "pt">("pt");
+  const [groupedResults, setGroupedResults] = useState({
+    1: [] as string[],
+    2: [] as string[],
+    3: [] as string[],
+    4: [] as string[]
+  });
   const [ptVocabulary, setPtVocabulary] = useState<WordItem[]>([]);
 
-  // Carregar vocabulário em português do arquivo txt.
-  // Coloque vocabulary.txt na sua pasta /public com uma palavra por linha.
   useEffect(() => {
     if (language === "pt") {
       fetch("/vocabulary.txt")
@@ -53,8 +48,6 @@ export function Menu({ isOpen }: MenuProps) {
             let normalizedWord = word;
             normalizedWord = restoreAccents(normalizedWord);
             normalizedWord = toSentenceCase(normalizedWord);
-            // Se você tiver uma maneira de detectar verbos, pode adicionar:
-            // normalizedWord = isVerb(normalizedWord) ? normalizeVerb(normalizedWord) : normalizedWord;
             return {
               word: normalizedWord,
               numSyllables: countSyllables(normalizedWord)
@@ -66,18 +59,21 @@ export function Menu({ isOpen }: MenuProps) {
     }
   }, [language]);
 
-  // Função simples para determinar se duas palavras rimam usando seus últimos quatro caracteres.
   const wordsRhyme = (wordA: string, wordB: string) => {
     if (wordA.length < 4 || wordB.length < 4) return false;
     return wordA.slice(-4).toLowerCase() === wordB.slice(-4).toLowerCase();
   };
 
-  // Filtrar e agrupar palavras com base na consulta de pesquisa e conceito.
   useEffect(() => {
+    if (query.trim().length === 0) {
+      setGroupedResults({ 1: [], 2: [], 3: [], 4: [] });
+      return;
+    }
+
     if (query.trim().length > 0) {
       if (language === "pt") {
         let filtered = ptVocabulary.filter((item) =>
-          wordsRhyme(item.word, query)
+          wordsRhyme(item.word.toLowerCase(), query.toLowerCase())
         );
 
         if (concept.trim().length > 0) {
@@ -86,9 +82,19 @@ export function Menu({ isOpen }: MenuProps) {
           );
         }
 
-        const groups = { 1: [], 2: [], 3: [], 4: [] } as {
-          [key: number]: string[];
+        if (startLetter.trim().length > 0) {
+          filtered = filtered.filter((item) =>
+            item.word.toLowerCase().startsWith(startLetter.toLowerCase())
+          );
+        }
+
+        const groups = {
+          1: [] as string[],
+          2: [] as string[],
+          3: [] as string[],
+          4: [] as string[]
         };
+        
         filtered.forEach((item) => {
           if (item.numSyllables) {
             if (item.numSyllables === 1) groups[1].push(item.word);
@@ -99,7 +105,6 @@ export function Menu({ isOpen }: MenuProps) {
         });
         setGroupedResults(groups);
       } else {
-        // Para inglês, use a API Datamuse.
         let apiUrl = `https://api.datamuse.com/words?rel_rhy=${encodeURIComponent(
           query
         )}&md=s`;
@@ -109,8 +114,11 @@ export function Menu({ isOpen }: MenuProps) {
         fetch(apiUrl)
           .then((res) => res.json())
           .then((data: any) => {
-            const groups = { 1: [], 2: [], 3: [], 4: [] } as {
-              [key: number]: string[];
+            const groups = {
+              1: [] as string[],
+              2: [] as string[],
+              3: [] as string[],
+              4: [] as string[]
             };
             (data as WordItem[]).forEach((item) => {
               if (item.numSyllables) {
@@ -125,10 +133,12 @@ export function Menu({ isOpen }: MenuProps) {
           .catch((err) => console.error("Erro ao buscar rimas:", err));
       }
     } else {
-      // Se não houver consulta, opcionalmente mostre todas as palavras em português (agrupadas por sílabas).
       if (language === "pt") {
-        const groups = { 1: [], 2: [], 3: [], 4: [] } as {
-          [key: number]: string[];
+        const groups = {
+          1: [] as string[],
+          2: [] as string[],
+          3: [] as string[],
+          4: [] as string[]
         };
         ptVocabulary.forEach((item) => {
           if (item.numSyllables) {
@@ -143,7 +153,15 @@ export function Menu({ isOpen }: MenuProps) {
         setGroupedResults({ 1: [], 2: [], 3: [], 4: [] });
       }
     }
-  }, [query, concept, language, ptVocabulary]);
+  }, [query, concept, startLetter, language, ptVocabulary]);
+
+  const getCardHeight = (wordsCount: number) => {
+    if (wordsCount === 0) return 'h-8';
+    if (wordsCount <= 5) return 'h-24';
+    if (wordsCount <= 10) return 'h-32';
+    if (wordsCount <= 20) return 'h-48';
+    return 'h-64';
+  };
 
   return (
     <div
@@ -180,6 +198,17 @@ export function Menu({ isOpen }: MenuProps) {
               bg-transparent
             "
           />
+          <input
+            type="text"
+            placeholder="Letra inicial (ex: s)"
+            value={startLetter}
+            onChange={(e) => setStartLetter(e.target.value)}
+            className="
+              w-full p-1 text-sm
+              border border-gray-300 rounded
+              bg-transparent
+            "
+          />
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value as "en" | "pt")}
@@ -199,10 +228,11 @@ export function Menu({ isOpen }: MenuProps) {
         {[1, 2, 3, 4].map((group) => (
           <div
             key={group}
-            className="
+            className={`
               border border-gray-300 dark:border-gray-700
               rounded
-            "
+              ${groupedResults[group as keyof typeof groupedResults].length === 0 ? 'h-8' : ''}
+            `}
           >
             <div
               className="
@@ -213,32 +243,34 @@ export function Menu({ isOpen }: MenuProps) {
             >
               <h1 className="text-sm font-semibold">
                 {group === 4
-                  ? "4 Sílabas"
-                  : `${group} Sílaba${group > 1 ? "s" : ""}`}
+                  ? `4 Sílabas (${groupedResults[4].length})`
+                  : `${group} Sílaba${group > 1 ? "s" : ""} (${groupedResults[group as keyof typeof groupedResults].length})`}
               </h1>
             </div>
 
-            <div
-              className="
-                p-2 flex flex-wrap gap-2
-                h-24
-                overflow-y-auto
-              "
-            >
-              {groupedResults[group].map((word) => (
-                <span
-                  key={word}
-                  className="
-                    text-sm 
-                    bg-gray-200 dark:bg-gray-700
-                    px-2 py-1 
-                    rounded
-                  "
-                >
-                  {word}
-                </span>
-              ))}
-            </div>
+            {groupedResults[group as keyof typeof groupedResults].length > 0 && (
+              <div
+                className={`
+                  p-2 flex flex-wrap gap-2
+                  ${getCardHeight(groupedResults[group as keyof typeof groupedResults].length)}
+                  overflow-y-auto
+                `}
+              >
+                {groupedResults[group as keyof typeof groupedResults].map((word) => (
+                  <span
+                    key={word}
+                    className="
+                      text-sm 
+                      bg-gray-200 dark:bg-gray-700
+                      px-2 py-1 
+                      rounded
+                    "
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>

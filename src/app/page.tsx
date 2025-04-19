@@ -5,12 +5,15 @@ import { ArrowRightIcon, GitHubLogoIcon } from "@radix-ui/react-icons";
 
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
+import Metronome from "@/components/admin-panel/estrofes/metronome";
 
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="z-[50] sticky top-0 w-full bg-background/95 border-b backdrop-blur-sm dark:bg-black/[0.6] border-border/40">
+        
         <div className="container h-14 flex items-center">
+          
           <Link
             href="/"
             className="flex justify-start items-center hover:opacity-85 transition-opacity duration-300"
@@ -19,6 +22,10 @@ export default function HomePage() {
             <span className="font-bold">PRETOS MUSIC</span>
    
           </Link>
+
+
+
+
           <nav className="ml-auto flex items-center gap-2">
             <Button
               variant="outline"
@@ -34,6 +41,9 @@ export default function HomePage() {
           </nav>
         </div>
       </header>
+
+
+
       <main className="min-h-[calc(100vh-57px-97px)] flex-1">
         <div className="container relative pb-10">
           <section className="mx-auto flex max-w-[980px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-6">

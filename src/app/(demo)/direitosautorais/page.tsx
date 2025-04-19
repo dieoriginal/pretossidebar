@@ -14,22 +14,22 @@ import { Rocket, AlertCircle, CheckCircle } from "lucide-react";
 const registrationGroups = [
   {
     title: "Organizações de Direitos de Performance",
-    entities: ["SAUTORES", "SONGTRUST"],
+    entities: ["Spautores", "Songtrust"],
     description: "Essencial para a coleta de royalties de performance pública",
   },
   {
     title: "Administradores de Publicação",
-    entities: ["Songtrust", "Harryfox Agency", "FundaçÃo GDA"],
+    entities: ["Songtrust", "Harryfox Agency", "Portal GDA"],
     description: "Gestão de direitos mecânicos e licenciamento de sincronização",
   },
   {
     title: "Distribuição Digital",
-    entities: ["DistroKid", "Soundcloud For Artists", "Audiogest ISRC"],
+    entities: ["DistroKid", "Soundcloud para Artistas", "Audiogest ISRC"],
     description: "Distribuição em plataformas e direitos conexos",
   },
   {
     title: "Letras & Metadados",
-    entities: ["Genius", "LyricFind", "MusixMatch"],
+    entities: ["Genius", "LyricFind", "MusixMatch (Letra, Sync e Translation)"],
     description: "Licenciamento de letras e gestão de metadados",
   },
 ];
@@ -127,7 +127,7 @@ export default function MusicRegistrationChecklistPage() {
         {!allChecked && (
           <Alert variant="destructive" className="border-red-500/30">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Action Required</AlertTitle>
+            <AlertTitle>Ação requirida.</AlertTitle>
             <AlertDescription>
               Só podes ir ao próximo paço com um ISWC e ISRC português.
             </AlertDescription>
