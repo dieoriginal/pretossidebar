@@ -130,7 +130,7 @@ const FilmingBudgetPage = () => {
   return (
     <div className="p-8 space-y-8">
       <h1 className="text-3xl font-bold">
-        Orçamentalização
+        Orçamento
       </h1>
       <h5>Adicione todos os custos necessários para realização das filmagens.
       </h5>

@@ -461,6 +461,50 @@ const SortableVerse = ({ verse, stropheIndex, verseIndex, onVerseChange, onRemov
           onChange={(e) => onVerseChange({ ...verse, adlib: e.target.value.toUpperCase() })}
           className="w-32 text-sm border-2 border-yellow-500 bg-slate-700-500 focus:border-yellow-500 focus:bg-black"
         />
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="h-10">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Sugestões de Adlibs</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4">
+              {adlibCategories.map((category, index) => (
+                <div key={index} className="space-y-2">
+                  <h3 className="font-bold">{category.name}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {category.adlibs.map((adlib, i) => (
+                      <Button
+                        key={i}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onVerseChange({ ...verse, adlib })}
+                      >
+                        {adlib}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Input
+              placeholder="Adicionar novo adlib"
+              className="mt-2"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const target = e.target as HTMLInputElement;
+                  if (target.value.trim()) {
+                    adlibCategories[3].adlibs.push(target.value.toUpperCase());
+                    target.value = '';
+                  }
+                }
+              }}
+            />
+          </DialogContent>
+        </Dialog>
 
         <div className="flex gap-2 flex-1 min-w-[200px]">
           <select
@@ -721,6 +765,26 @@ const exportStoryboard = async (strophes: Strophe[]) => {
   doc.save('storyboard.pdf');
 };
 
+// Adicione isso junto com as outras constantes no início do arquivo
+const adlibCategories = [
+  {
+    name: "Sons de Arma",
+    adlibs: ["PAH!", "BANG!", "RATATAT!", "POW!", "BLAM!"]
+  },
+  {
+    name: "Sons de Fumaça",
+    adlibs: ["PSSSSH!", "WHOOSH!", "FUMO!", "VAPOR!", "NÉVOA!"]
+  },
+  {
+    name: "Sinais de Partida",
+    adlibs: ["VAI!", "GO!", "JÁ!", "AGORA!", "PARTIU!"]
+  },
+  {
+    name: "Expressões",
+    adlibs: ["GAZ!", "FAVAS!", "DURUDU!", "SOPRO!", "PXIU!", "Uhuhuh", "BREH!", "YA!", "BAZA!", "FOMOS"]
+  }
+];
+
 const Dashboard = () => {
   const { settings } = useSidebar();
   const [activeTab, setActiveTab] = useState("versos");
@@ -886,6 +950,25 @@ const Dashboard = () => {
       alert('Erro ao analisar a métrica');
     }
   };
+
+  const adlibCategories = [
+    {
+      name: "Sons de Arma",
+      adlibs: ["PAH!", "BANG!", "RATATAT!", "POW!", "BLAM!"]
+    },
+    {
+      name: "Sons de Fumaça",
+      adlibs: ["PSSSSH!", "WHOOSH!", "FUMO!", "VAPOR!", "NÉVOA!"]
+    },
+    {
+      name: "Sinais de Partida",
+      adlibs: ["VAI!", "GO!", "JÁ!", "AGORA!", "PARTIU!"]
+    },
+    {
+      name: "Expressões",
+      adlibs: ["GAZ!", "FAVAS!", "DURUDU!", "SOPRO!", "PXIU!", "Uhuhuh", "BREH!", "YA!", "BAZA!", "FOMOS"]
+    }
+  ];
 
   return (
     <ContentLayout title="Versificação">

@@ -34,7 +34,7 @@ const DashboardElements = () => {
               "Versificação",
               "Gravação",
               "Cinematografia",
-              "Orçamentalização",
+              "Orçamento",
               "Filmagens",
               "Contratualização",
               "Direitos Autorais",

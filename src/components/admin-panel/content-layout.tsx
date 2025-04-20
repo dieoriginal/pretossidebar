@@ -48,7 +48,10 @@ const MultiStepper: React.FC<MultiStepperProps> = ({ steps, currentStep, onStepC
         />
       </div>
       
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative">
+        <div className="absolute left-[30%] top-0 h-full w-px bg-gray-300 dark:bg-gray-600" />
+        <div className="absolute left-[70%] top-0 h-full w-px bg-gray-300 dark:bg-gray-600" />
+        
         {steps.map((step, index) => (
           <div key={step.name} className="flex flex-col items-center flex-1 min-w-[80px]">
             <div className="flex items-center w-full">
@@ -158,7 +161,7 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
       description: "Produzir e provar figurinos para vídeo e material de imprensa"
     },
     { 
-      name: "Orçamentalização", 
+      name: "Orçamento", 
       link: "/orcamento", 
       timeframe: "Mês 2",
       description: "Distribuir verba entre estúdio, equipe, figurino e reserva"
