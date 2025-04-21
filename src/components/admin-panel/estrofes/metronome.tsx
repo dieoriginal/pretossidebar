@@ -14,6 +14,8 @@ interface MetronomeState {
   beatsPerMeasure: number;
   overlayInterval: number;
   overlayCount: number;
+  barCount: number;
+  stressedBeat: number;
 }
 
 class Metronome extends Component<{}, MetronomeState> {
@@ -30,8 +32,10 @@ class Metronome extends Component<{}, MetronomeState> {
       count: 0,
       bpm: 100,
       beatsPerMeasure: 4,
-      overlayInterval: 3,
+      overlayInterval: 4,
       overlayCount: 0,
+      barCount: 0,
+      stressedBeat: 0,
     };
 
     this.click1 = new Audio(click1);
@@ -41,7 +45,6 @@ class Metronome extends Component<{}, MetronomeState> {
 
   handleBpmChange = (event: ChangeEvent<HTMLInputElement>): void => {
     const bpm = Number(event.target.value);
-
     if (this.state.isPlaying) {
       clearInterval(this.timer);
       this.timer = setInterval(this.playClick, (60 / bpm) * 1000);
@@ -53,7 +56,7 @@ class Metronome extends Component<{}, MetronomeState> {
 
   handleBeatsPerMeasureChange = (event: ChangeEvent<HTMLSelectElement>): void => {
     const beatsPerMeasure = Number(event.target.value);
-    this.setState({ beatsPerMeasure, count: 0 });
+    this.setState({ beatsPerMeasure, count: 0, stressedBeat: 0 });
   };
 
   handleOverlayIntervalChange = (event: ChangeEvent<HTMLInputElement>): void => {
@@ -61,39 +64,67 @@ class Metronome extends Component<{}, MetronomeState> {
     this.setState({ overlayInterval, overlayCount: 0 });
   };
 
-  playClick = (): void => {
-    const { count, beatsPerMeasure, overlayCount, overlayInterval } = this.state;
-
-    if (count % beatsPerMeasure === 0) {
-      this.click2.play();
-    } else {
-      this.click1.play();
-    }
-
-    if (overlayCount % overlayInterval === 0) {
-      this.overlayClick.play();
-      this.overlayClick.currentTime = 0;
-    }
-
-    this.setState((prevState) => ({
-      count: (prevState.count + 1) % prevState.beatsPerMeasure,
-      overlayCount: (prevState.overlayCount + 1) % prevState.overlayInterval,
+  handlePrevAccent = (): void => {
+    this.setState(prev => ({
+      stressedBeat: (prev.stressedBeat - 1 + prev.beatsPerMeasure) % prev.beatsPerMeasure,
     }));
   };
 
+  handleNextAccent = (): void => {
+    this.setState(prev => ({
+      stressedBeat: (prev.stressedBeat + 1) % prev.beatsPerMeasure,
+    }));
+  };
+
+  playClick = (): void => {
+    this.setState(prev => {
+      const { count, beatsPerMeasure, overlayCount, overlayInterval, stressedBeat, barCount } = prev;
+      // play click based on stressedBeat
+      if (count === stressedBeat) {
+        this.click2.play();
+      } else {
+        this.click1.play();
+      }
+      // overlay accent (unchanged)
+      if (overlayCount % overlayInterval === 0) {
+        this.overlayClick.currentTime = 0;
+        this.overlayClick.play();
+      }
+      const newCount = (count + 1) % beatsPerMeasure;
+      const newBar = newCount === 0 ? barCount + 1 : barCount;
+      // reset after 2 bars
+      if (newBar >= 2) {
+        return { count: 0, overlayCount: 1, barCount: 0 };
+      }
+      return {
+        count: newCount,
+        overlayCount: overlayCount + 1,
+        barCount: newBar,
+      };
+    });
+  };
+
   startStop = (): void => {
+    const interval = (60 / this.state.bpm) * 1000;
     if (this.state.isPlaying) {
       clearInterval(this.timer);
-      this.setState({ isPlaying: false });
+      this.setState({ isPlaying: false, count: 0, overlayCount: 1, barCount: 0 });
     } else {
-      this.timer = setInterval(this.playClick, (60 / this.state.bpm) * 1000);
-      this.setState({ count: 0, overlayCount: 0, isPlaying: true }, this.playClick);
+      // reset state and play first click immediately
+      this.setState(
+        { isPlaying: true, count: 0, overlayCount: 1, barCount: 0 },
+        () => {
+          // immediate first click
+          this.playClick();
+          // schedule subsequent clicks
+          this.timer = setInterval(this.playClick, interval);
+        }
+      );
     }
   };
 
   render() {
-    const { isPlaying, bpm, beatsPerMeasure, overlayInterval, count } = this.state;
-
+    const { isPlaying, bpm, beatsPerMeasure, overlayInterval, count, barCount, stressedBeat } = this.state;
     return (
       <>
         <div className="metronome flex items-center gap-4">
@@ -108,7 +139,6 @@ class Metronome extends Component<{}, MetronomeState> {
               className="w-24"
             />
           </div>
-
           <div className="flex items-center gap-2 text-sm">
             <label htmlFor="beatsPerMeasure">Beats:</label>
             <select
@@ -117,14 +147,9 @@ class Metronome extends Component<{}, MetronomeState> {
               onChange={this.handleBeatsPerMeasureChange}
               className="w-16"
             >
-              {[2, 3, 4, 5, 6, 7, 8].map((num) => (
-                <option key={num} value={num}>
-                  {num}
-                </option>
-              ))}
+              {[2, 3, 4, 5, 6, 7, 8].map(num => <option key={num} value={num}>{num}</option>)}
             </select>
           </div>
-
           <div className="flex items-center gap-2 text-sm">
             <label htmlFor="overlayInterval">Overlay:</label>
             <input
@@ -137,31 +162,27 @@ class Metronome extends Component<{}, MetronomeState> {
               className="w-12"
             />
           </div>
-
-          <button 
-            onClick={this.startStop}
-            className="px-4 py-1 bg-gray-200 dark:bg-gray-700 rounded"
-          >
+          <div className="flex items-center gap-1">
+            <button onClick={this.handlePrevAccent} className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">&lt;</button>
+            <span className="text-sm">Accent: {stressedBeat + 1}</span>
+            <button onClick={this.handleNextAccent} className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">&gt;</button>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span>Bar: {barCount + 1}/2</span>
+          </div>
+          <button onClick={this.startStop} className="px-4 py-1 bg-gray-200 dark:bg-gray-700 rounded">
             {isPlaying ? "Parar" : "Tocar"}
           </button>
         </div>
-        <div className="flex space-x-1 mt-2">
-          {Array.from({ length: beatsPerMeasure }).map((_, index) => (
-            <div
-              key={index}
-              className={`h-6 w-6 rounded-full ${
-                index === 0
-                  ? 'bg-red-500' // Primeiro batimento (forte)
-                  : index % overlayInterval === 0
-                  ? 'bg-yellow-500' // Acentos métricos
-                  : 'bg-gray-400' // Batimentos normais
-              } ${
-                isPlaying && count === index
-                  ? 'scale-125 transform transition-transform'
-                  : ''
-              }`}
-            />
-          ))}
+        <div className="beat-indicator flex space-x-1 mt-2">
+          {Array.from({ length: beatsPerMeasure }).map((_, idx) => {
+            const isActive = isPlaying && count === idx;
+            const classes = ["beat-circle"];
+            if (idx === stressedBeat) classes.push("stressed");
+            if (idx % overlayInterval === 0) classes.push("overlay-accent");
+            if (isActive) classes.push("active");
+            return <div key={idx} className={classes.join(" ")} />;
+          })}
         </div>
       </>
     );

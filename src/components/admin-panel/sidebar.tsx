@@ -15,14 +15,18 @@ export function Sidebar() {
   
   const sidebar = useStore(useSidebar, (x) => x);
   
+  // Agora podemos fazer a verificação condicional
   if (!sidebar) return null;
   const { isOpen, toggleOpen, getOpenState, setIsHover, settings } = sidebar;
   
+  // Função para filtrar palavras
   const filterWords = (letter: string) => {
+    // Aqui você implementaria a lógica para buscar as palavras
+    // Exemplo de dados mockados:
     const mockData = [
-      {syllable: 'omo', count: 8, words: ['como', 'domo', 'gnomo', 'gomo', 'momo', 'pomo', 'somo', 'tomo']},
-      {syllable: 'pomo', count: 18, words: ['assomo', 'compomo', 'depomo', 'diplomo', 'dispomo', 'embromo', 'engomo', 'expomo', 'impomo', 'mordomo', 'opomo', 'pospomo', 'prepomo', 'propomo', 'repomo', 'retomo', 'supomo', 'transpomo']},
-      {syllable: 'pomo4', count: 11, words: ['antepomo', 'contrapomo', 'cromossomo', 'decompomo', 'desengomo', 'indispomo', 'interpomo', 'predispomo', 'pressupomo', 'sobrepomo', 'superpomo']},
+      {syllable: 'sa', count: 15, words: ['saber', 'saco', 'sagaz']},
+      {syllable: 'se', count: 8, words: ['selva', 'seda', 'seguro']},
+      {syllable: 'si', count: 5, words: ['sinal', 'sino']},
     ];
     setResults(mockData);
   };
@@ -42,6 +46,7 @@ export function Sidebar() {
         onMouseLeave={() => setIsHover(false)}
         className="relative h-full flex flex-col px-3 py-4 overflow-y-auto shadow-md dark:shadow-zinc-800"
       >
+        {/* Novo campo de filtro */}
         <div className="mb-4">
           <input
             type="text"
@@ -50,11 +55,12 @@ export function Sidebar() {
               setFilter(e.target.value);
               filterWords(e.target.value);
             }}
-            placeholder="Filtrar rimas..."
+            placeholder="Filtrar por letra..."
             className="w-full p-2 border rounded"
           />
         </div>
 
+        {/* Exibição dos resultados */}
         {results.map((result, index) => (
           <div
             key={index}
@@ -96,7 +102,7 @@ export function Sidebar() {
                   : "translate-x-0 opacity-100"
               )}
             >
-              Rimas MultiSilábicas
+              Rimas
             </h1>
           </Link>
         </Button>

@@ -17,6 +17,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSidebar } from "@/hooks/use-sidebar";
 import Metronome from "./estrofes/metronome";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface ContentLayoutProps {
   title: string;
@@ -209,11 +217,69 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
               <div className="w-full">
                 <Card className="w-full mb-4">
                   <CardHeader className="items-center">
-                    <MultiStepper
-                      steps={steps}
-                      currentStep={currentStep}
-                      onStepClick={handleStepClick}
-                    />
+                    <div className="flex items-center gap-4 w-full">
+                      <MultiStepper
+                        steps={steps}
+                        currentStep={currentStep}
+                        onStepClick={handleStepClick}
+                      />
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="icon" className="w-8 h-8">
+                            <span className="text-sm">i</span>
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-[800px]">
+                          <DialogHeader>
+                            <DialogTitle>Ciclo Trimestral de Execução</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <p>
+                              Cada trimestre funciona como um sprint de 3 meses, passando por pré‑produção, produção e pós‑produção/liberação.
+                            </p>
+                            
+                            <div>
+                              <h3 className="font-semibold mb-2">Mês 1 – Pré‑Produção</h3>
+                              <ol className="list-decimal pl-6 space-y-2">
+                                <li><strong>Instrumental</strong> - Criar arranjos e demos para definir a base sonora.</li>
+                                <li><strong>Contextualização</strong> - Definir conceito, moodboard, roteiro e tratamento.</li>
+                                <li><strong>Versificação</strong> - Finalizar letras e estrutura poética.</li>
+                              </ol>
+                            </div>
+
+                            <div>
+                              <h3 className="font-semibold mb-2">Mês 2 – Produção</h3>
+                              <ol className="list-decimal pl-6 space-y-2" start={4}>
+                                <li><strong>Gravação</strong> - Agendar estúdio e gravar todas as faixas.</li>
+                                <li><strong>Vestuário</strong> - Produzir e provar figurinos para vídeo e material de imprensa.</li>
+                                <li><strong>Orçamentalização</strong> - Distribuir verba entre estúdio, equipe, figurino e reserva.</li>
+                                <li><strong>Filmagens</strong> - Executar gravação de vídeo e bastidores.</li>
+                              </ol>
+                            </div>
+
+                            <div>
+                              <h3 className="font-semibold mb-2">Mês 3 – Pós‑Produção & Lançamento</h3>
+                              <ol className="list-decimal pl-6 space-y-2" start={8}>
+                                <li><strong>Contratualização</strong> - Fechar contratos com artistas, equipe, distribuidores e plataformas.</li>
+                                <li><strong>Direitos Autorais</strong> - Registrar obras, liberar samples e licenciar sincronizações.</li>
+                                <li><strong>Lançamento</strong> - Implementar distribuição digital, PR, marketing e monitorar resultados.</li>
+                              </ol>
+                            </div>
+
+                            <div>
+                              <h3 className="font-semibold mb-2">Revisão e Ajustes</h3>
+                              <ul className="list-disc pl-6 space-y-2">
+                                <li>Ao final do trimestre, avaliar KPIs (streams, views, engajamento) e lições aprendidas.</li>
+                                <li>Ajustar o plano do próximo trimestre com base nos resultados e feedback.</li>
+                              </ul>
+                              <p className="mt-2">
+                                Repita este ciclo a cada três meses para manter ritmo, controle orçamentário e capacidade de adaptação rápida.
+                              </p>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </CardHeader>
                   <CardContent className="py-0" />
                 </Card>

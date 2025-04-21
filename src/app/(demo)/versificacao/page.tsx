@@ -33,8 +33,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { restrictToVerticalAxis, restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { X, Plus, Trash2, Eye, FileText, Video, Image, Info } from "lucide-react";
+import { X, Plus, Trash2, Eye, FileText, Video, Image, Info, Save } from "lucide-react";
 import { Select } from "@/components/ui/select";
+import { debounce } from "lodash";
+import { db, auth, syncProjectToCloud, saveProjectLocally, saveProjectToFirebase } from "@/lib/firebase";
+import { salvarProjeto, carregarProjeto } from '@/lib/storage';
+import { setCookie, getCookie } from '@/lib/cookies';
+import { Switch } from "@/components/ui/switch";
 
 interface VerseWord {
   text: string;
@@ -389,13 +394,14 @@ const VerseTag = ({ tag, onChange }: { tag: string; onChange: (newTag: string) =
   );
 };
 
-const SortableVerse = ({ verse, stropheIndex, verseIndex, onVerseChange, onRemove, onDragStart }: {
+const SortableVerse = ({ verse, stropheIndex, verseIndex, onVerseChange, onRemove, onDragStart, modoNietzsche }: {
   verse: Verse;
   stropheIndex: number;
   verseIndex: number;
   onVerseChange: (newVerse: Verse) => void;
   onRemove: () => void;
   onDragStart: (id: string) => void;
+  modoNietzsche: boolean;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: verse.id });
   const bgColorMapping = { A: "#ef4444", B: "#3b82f6", C: "#84cc16", D: "#eab308" };
@@ -435,6 +441,15 @@ const SortableVerse = ({ verse, stropheIndex, verseIndex, onVerseChange, onRemov
     }
     return "";
   };
+
+  const [contextoCompleto, setContextoCompleto] = useState(false);
+
+  useEffect(() => {
+    // Verifica se todos os campos de contexto foram preenchidos
+    const completo = verse.voiceType && verse.figura && verse.function && 
+                     verse.technique && verse.metaTool && verse.persona && verse.threeAct;
+    setContextoCompleto(!!completo);
+  }, [verse]);
 
   return (
     <div ref={setNodeRef} style={style} className="p-4 mb-4 border rounded-lg relative group bg-white dark:bg-gray-800">
@@ -506,6 +521,7 @@ const SortableVerse = ({ verse, stropheIndex, verseIndex, onVerseChange, onRemov
           </DialogContent>
         </Dialog>
 
+        {/* Componentes de seleção sempre visíveis */}
         <div className="flex gap-2 flex-1 min-w-[200px]">
           <select
             value={verse.voiceType}
@@ -628,36 +644,48 @@ const SortableVerse = ({ verse, stropheIndex, verseIndex, onVerseChange, onRemov
       
       </div>
 
-      <DndContext
-        sensors={useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor))}
-        collisionDetection={closestCenter}
-        onDragEnd={({ active, over }) => {
-          if (over && active.id !== over.id) {
-            const oldIndex = verse.words.findIndex(w => w.text === active.id);
-            const newIndex = verse.words.findIndex(w => w.text === over.id);
-            const newWords = arrayMove(verse.words, oldIndex, newIndex);
-            onVerseChange({ ...verse, words: newWords });
-          }
-        }}
-      >
-        <SortableContext items={verse.words.map(w => w.text)} strategy={horizontalListSortingStrategy}>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {verse.words.map((word, wordIndex) => (
-              <WordTag
-                key={word.text + wordIndex}
-                word={word.text}
-                color={word.customColor}
-                isRhymed={wordIndex === verse.words.length - 1}
-                onChange={(newWord) => handleWordChange(wordIndex, newWord)}
-                onColorChange={(newColor) => handleWordColorChange(wordIndex, newColor)}
-                onRemove={() => handleRemoveWord(wordIndex)}
-                rhymedColor={bgColorMapping[verse.tag]}
-              />
-            ))}
-            <Button onClick={handleAddWord} size="sm">+</Button>
-          </div>
-        </SortableContext>
-      </DndContext>
+      {/* Campo de versos condicional */}
+      {(!modoNietzsche || contextoCompleto) && (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={({ active, over }) => {
+            if (over && active.id !== over.id) {
+              const oldIndex = verse.words.findIndex(w => w.text === active.id);
+              const newIndex = verse.words.findIndex(w => w.text === over.id);
+              const newWords = arrayMove(verse.words, oldIndex, newIndex);
+              onVerseChange({ ...verse, words: newWords });
+            }
+          }}
+        >
+          <SortableContext items={verse.words.map(w => w.text)} strategy={horizontalListSortingStrategy}>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {verse.words.map((word, wordIndex) => (
+                <WordTag
+                  key={word.text + wordIndex}
+                  word={word.text}
+                  color={word.customColor}
+                  isRhymed={wordIndex === verse.words.length - 1}
+                  onChange={(newWord) => handleWordChange(wordIndex, newWord)}
+                  onColorChange={(newColor) => handleWordColorChange(wordIndex, newColor)}
+                  onRemove={() => handleRemoveWord(wordIndex)}
+                  rhymedColor={bgColorMapping[verse.tag]}
+                />
+              ))}
+              <Button onClick={handleAddWord} size="sm">+</Button>
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+
+      {/* Mensagem quando o Modo Nietzsche está ativo e o contexto não está completo */}
+      {modoNietzsche && !contextoCompleto && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded mt-4">
+          <p className="text-sm text-yellow-800">
+            Complete o contexto acima para desbloquear o campo de versos.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
@@ -801,6 +829,7 @@ const Dashboard = () => {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
+  const [modoNietzsche, setModoNietzsche] = useState(false);
 
   const [trackNames, setTrackNames] = useState<string[]>([
     "Vida Louca",
@@ -969,6 +998,77 @@ const Dashboard = () => {
       adlibs: ["GAZ!", "FAVAS!", "DURUDU!", "SOPRO!", "PXIU!", "Uhuhuh", "BREH!", "YA!", "BAZA!", "FOMOS"]
     }
   ];
+
+  const [state, setState] = useState({
+    strophes,
+    songInfo,
+    analysisResult,
+    showAnalysis,
+    selectedVerses,
+    trackNames,
+    projectNames,
+    producerNames,
+    artistNames
+  });
+
+  const debouncedLocalSave = debounce(async (state) => {
+    await saveProjectLocally(state);
+  }, 2000);
+
+  const debouncedCloudSync = debounce(async (state) => {
+    const user = auth.currentUser;
+    if (user) await syncProjectToCloud(user.uid, state);
+  }, 30000);
+
+  useEffect(() => {
+    debouncedLocalSave(state);
+    debouncedCloudSync(state);
+    
+    return () => {
+      debouncedLocalSave.cancel();
+      debouncedCloudSync.cancel();
+    };
+  }, [state]);
+
+  const handleSaveProject = async () => {
+    try {
+      const projectId = Date.now().toString(); // Ou use um ID específico
+      const projectData = {
+        strophes,
+        songInfo,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const success = await saveProjectToFirebase(projectId, projectData);
+      
+      if (success) {
+        alert("Projeto salvo com sucesso!");
+      } else {
+        alert("Erro ao salvar projeto.");
+      }
+    } catch (error) {
+      console.error("Erro ao salvar projeto:", error);
+      alert("Erro ao salvar projeto.");
+    }
+  };
+
+  // Carrega as estrofes ao iniciar o componente
+  useEffect(() => {
+    const projetoCarregado = carregarProjeto();
+    if (projetoCarregado && projetoCarregado.strophes) {
+      setStrophes(projetoCarregado.strophes);
+    }
+  }, []);
+
+  // Salva as estrofes sempre que houver mudança
+  useEffect(() => {
+    const projetoAtual = {
+      strophes: strophes,
+      ultimaAtualizacao: new Date().toISOString()
+    };
+    salvarProjeto(projetoAtual);
+  }, [strophes]);
 
   return (
     <ContentLayout title="Versificação">
@@ -1181,12 +1281,23 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
-                  <TabsTrigger value="versos">Versificação</TabsTrigger>
-                  <TabsTrigger value="cinematografia">Cinematografia</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="flex items-center justify-between">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList>
+                    <TabsTrigger value="versos">Versificação</TabsTrigger>
+                    <TabsTrigger value="cinematografia">Cinematografia</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="modo-nietzsche">Modo Nietzsche</Label>
+                  <Switch
+                    id="modo-nietzsche"
+                    checked={modoNietzsche}
+                    onCheckedChange={setModoNietzsche}
+                  />
+                </div>
+              </div>
             </div>
           </CardHeader>
         </Card>
@@ -1279,6 +1390,7 @@ const Dashboard = () => {
                           setStrophes(newStrophes);
                         }}
                         onDragStart={setDraggedVerseId}
+                        modoNietzsche={modoNietzsche} // Passando o estado para o componente
                       />
                     ))}
                   </SortableContext>
@@ -1687,6 +1799,15 @@ const Dashboard = () => {
                   <Video className="mr-2" /> Exportar Storyboard
                 </Button>
               )}
+
+              <Button 
+                onClick={handleSaveProject}
+                variant="primary"
+                className="bg-green-500 hover:bg-green-600"
+              >
+                <Save className="mr-2" />
+                Salvar Projeto
+              </Button>
             </div>
 
             <Dialog>
