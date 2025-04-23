@@ -145,8 +145,8 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
       description: "Criar arranjos e demos para definir a base sonora"
     },
     { 
-      name: "Contextualização", 
-      link: "/contextualizacao", 
+      name: "Narratologia", 
+      link: "/narratologia", 
       timeframe: "Mês 1",
       description: "Definir conceito, moodboard, roteiro e tratamento"
     },

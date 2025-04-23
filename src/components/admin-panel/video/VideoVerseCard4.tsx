@@ -8,6 +8,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import jsPDF from 'jspdf';
 
 // Equipment options with pricing in Euros
 const cameraOptions = [
@@ -125,6 +126,48 @@ const FilmingBudgetPage = () => {
   // Handler to remove a custom item by index
   const handleRemoveCustomItem = (index: number) => {
     setCustomItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Título
+    doc.setFontSize(18);
+    doc.text('Orçamento de Filmagem', 10, 10);
+    
+    // Equipamentos selecionados
+    doc.setFontSize(12);
+    let yPosition = 20;
+    
+    const addItemToPDF = (label: string, value: string, options: any[]) => {
+      const item = options.find(opt => opt.value === value);
+      if (item) {
+        doc.text(`${label}: ${item.label} - ${item.price}€`, 10, yPosition);
+        yPosition += 10;
+      }
+    };
+    
+    addItemToPDF('Câmera', selectedCamera, cameraOptions);
+    addItemToPDF('Lente', selectedLens, lensOptions);
+    addItemToPDF('Estabilização', selectedStabilization, stabilizationOptions);
+    addItemToPDF('Iluminação', selectedLighting, lightingOptions);
+    
+    // Itens personalizados
+    if (customItems.length > 0) {
+      doc.text('Itens Personalizados:', 10, yPosition);
+      yPosition += 10;
+      customItems.forEach(item => {
+        doc.text(`- ${item.label}: ${item.price}€`, 15, yPosition);
+        yPosition += 10;
+      });
+    }
+    
+    // Total
+    doc.setFontSize(14);
+    doc.text(`Total: ${totalBudget}€`, 10, yPosition + 10);
+    
+    // Salvar PDF
+    doc.save('orcamento_filmagem.pdf');
   };
 
   return (
@@ -271,9 +314,14 @@ const FilmingBudgetPage = () => {
           <h2 className="text-2xl font-bold">Orçamento Total</h2>
           <p className="text-xl">{totalBudget} €</p>
         </div>
-        <Button variant="outline" onClick={() => window.location.href = "/filmagem"}>
-          Confirmar Orçamento
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => window.location.href = "/filmagem"}>
+            Confirmar Orçamento
+          </Button>
+          <Button onClick={handleExportPDF}>
+            Exportar PDF
+          </Button>
+        </div>
         <h1> <a href="https://rentacamera.pt/" target="_blank" rel="noopener noreferrer" className="text-blue-500">rentacamera.pt</a></h1>
       </div>
     </div>

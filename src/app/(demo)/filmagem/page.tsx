@@ -112,7 +112,7 @@ function LocationCard({ location, onUpdate, onRemove, crew, equipments }: Locati
         {/* Left Column: Date, Times, Address, Scenes */}
         <div className="space-y-4">
           <div>
-            <Label className="text-gray-700 dark:text-gray-300">Date</Label>
+            <Label className="text-gray-700 dark:text-gray-300">Dia</Label>
             <Input
               type="date"
               value={location.date}
@@ -122,7 +122,7 @@ function LocationCard({ location, onUpdate, onRemove, crew, equipments }: Locati
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
-              <Label className="text-gray-700 dark:text-gray-300">Start Time</Label>
+              <Label className="text-gray-700 dark:text-gray-300">Hora de Começo</Label>
               <Input
                 type="time"
                 value={location.startTime}
@@ -131,7 +131,7 @@ function LocationCard({ location, onUpdate, onRemove, crew, equipments }: Locati
               />
             </div>
             <div className="flex-1">
-              <Label className="text-gray-700 dark:text-gray-300">Wrap Up Time</Label>
+              <Label className="text-gray-700 dark:text-gray-300">Hora de Bazar</Label>
               <Input
                 type="time"
                 value={location.wrapUpTime}
@@ -141,7 +141,7 @@ function LocationCard({ location, onUpdate, onRemove, crew, equipments }: Locati
             </div>
           </div>
           <div>
-            <Label className="text-gray-700 dark:text-gray-300">Address</Label>
+            <Label className="text-gray-700 dark:text-gray-300">Morada Completa</Label>
             <Input
               value={location.address}
               onChange={(e) => onUpdate("address", e.target.value)}
@@ -149,7 +149,7 @@ function LocationCard({ location, onUpdate, onRemove, crew, equipments }: Locati
             />
           </div>
           <div>
-            <Label className="text-gray-700 dark:text-gray-300">Scenes (Ficam Versos para filmar)</Label>
+            <Label className="text-gray-700 dark:text-gray-300">Versos por Filmar Nesta Morada</Label>
             <div className="flex flex-wrap gap-2 mb-2">
               {location.scenes.map((tag) => (
                 <Badge
@@ -174,7 +174,7 @@ function LocationCard({ location, onUpdate, onRemove, crew, equipments }: Locati
         {/* Right Column: Crew and Equipment */}
         <div className="space-y-4">
           <div>
-            <Label className="text-gray-700 dark:text-gray-300">Crew Present</Label>
+            <Label className="text-gray-700 dark:text-gray-300">Equipa Presente</Label>
             <div className="flex flex-wrap gap-2">
               {crew.map((member) => (
                 <Button
@@ -196,7 +196,7 @@ function LocationCard({ location, onUpdate, onRemove, crew, equipments }: Locati
             </div>
           </div>
           <div>
-            <Label className="text-gray-700 dark:text-gray-300">Equipment Assigned</Label>
+            <Label className="text-gray-700 dark:text-gray-300">Equipamento Adquirido</Label>
             <div className="flex flex-wrap gap-2">
               {equipments.map((equip) => (
                 <Button
@@ -253,9 +253,9 @@ function TransportCard({ transport, onUpdate, onRemove, crew, equipments }: Tran
                 <SelectValue placeholder="Select vehicle" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-                <SelectItem value="Van">Van</SelectItem>
-                <SelectItem value="Car">Car</SelectItem>
-                <SelectItem value="Truck">Equipment Truck</SelectItem>
+                <SelectItem value="Van">Bolt Van</SelectItem>
+                <SelectItem value="Car">Carro</SelectItem>
+             
               </SelectContent>
             </Select>
           </div>
@@ -278,7 +278,7 @@ function TransportCard({ transport, onUpdate, onRemove, crew, equipments }: Tran
             </Select>
           </div>
           <div>
-            <Label className="text-gray-700 dark:text-gray-300">Route</Label>
+            <Label className="text-gray-700 dark:text-gray-300">Rota</Label>
             <Input
               value={transport.route}
               onChange={(e) => onUpdate("route", e.target.value)}
@@ -289,7 +289,7 @@ function TransportCard({ transport, onUpdate, onRemove, crew, equipments }: Tran
         {/* Right Column: Passengers and Equipment */}
         <div className="space-y-4">
           <div>
-            <Label className="text-gray-700 dark:text-gray-300">Passengers</Label>
+            <Label className="text-gray-700 dark:text-gray-300">Passegeiros</Label>
             <div className="flex flex-wrap gap-2">
               {crew.map((member) => (
                 <Button
@@ -311,7 +311,7 @@ function TransportCard({ transport, onUpdate, onRemove, crew, equipments }: Tran
             </div>
           </div>
           <div>
-            <Label className="text-gray-700 dark:text-gray-300">Equipment Transported</Label>
+            <Label className="text-gray-700 dark:text-gray-300">Equipamento por Transportar</Label>
             <div className="flex flex-wrap gap-2">
               {equipments.map((equip) => (
                 <Button
@@ -333,12 +333,12 @@ function TransportCard({ transport, onUpdate, onRemove, crew, equipments }: Tran
           </div>
           <div className="bg-muted dark:bg-muted-dark p-4 rounded-lg">
             <div className="flex justify-between items-center">
-              <span className="font-medium text-gray-900 dark:text-gray-100">Total Cost:</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">Custo Total:</span>
               <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 {(() => {
                   switch (transport.vehicle) {
              
-                    case "Car":
+                    case "Carro":
                       return "20€";
                     default:
                       return "0€";
@@ -537,6 +537,16 @@ export default function ShootingDayPage() {
     const doc = new jsPDF();
     const margin = 20;
     let yPos = margin;
+    const pageHeight = doc.internal.pageSize.height;
+    const lineHeight = 10;
+
+    // Função para adicionar nova página se necessário
+    const checkPageBreak = (heightNeeded: number) => {
+      if (yPos + heightNeeded > pageHeight - margin) {
+        doc.addPage();
+        yPos = margin;
+      }
+    };
 
     // PDF Styles
     const primaryColor = "#2d3748";
@@ -546,13 +556,14 @@ export default function ShootingDayPage() {
     // Header
     doc.setFontSize(24);
     doc.setTextColor(primaryColor);
-    doc.text("Itinerário do Dia de Filmagem", margin, yPos);
+    doc.text("Plano de Filmagem", margin, yPos);
     yPos += 20;
 
     // Crew Section
+    checkPageBreak(30);
     doc.setFontSize(18);
     doc.setTextColor(primaryColor);
-    doc.text("Equipa Núcleo", margin, yPos);
+    doc.text("Equipa", margin, yPos);
     yPos += 10;
     doc.setLineWidth(0.5);
     doc.setDrawColor(secondaryColor);
@@ -561,36 +572,35 @@ export default function ShootingDayPage() {
 
     doc.setFontSize(12);
     doc.setTextColor(secondaryColor);
-    crew.forEach((member, index) => {
+    crew.forEach((member) => {
+      checkPageBreak(lineHeight);
       doc.text(`${member.name} - ${member.role}`, margin, yPos);
-      yPos += 10;
-      if (index % 5 === 0 && index !== 0) {
-        doc.addPage();
-        yPos = margin;
-      }
+      yPos += lineHeight;
     });
 
     // Locations Section
+    checkPageBreak(30);
     yPos += 10;
     doc.setFontSize(18);
     doc.setTextColor(primaryColor);
-    doc.text("Moradas", margin, yPos);
+    doc.text("Locais de Filmagem", margin, yPos);
     yPos += 10;
     doc.line(margin, yPos, 210 - margin, yPos);
     yPos += 15;
 
-    locations.forEach((location, locIndex) => {
+    locations.forEach((location) => {
+      checkPageBreak(50);
       doc.setFontSize(12);
       doc.setTextColor(primaryColor);
-      doc.text(`Morada ${locIndex + 1}:`, margin, yPos);
-      yPos += 10;
+      doc.text(`Local: ${location.address}`, margin, yPos);
+      yPos += lineHeight;
 
       const locationDetails = [
-        `Data: ${location.date}`,
-        `Localização: ${location.address}`,
-        `Versos para Gravar: ${location.scenes.join(", ")}`,
-        `Crew Presente: ${location.crew.map(id => crew.find(m => m.id === id)?.name).join(", ")}`,
-        `Equipmentos: ${location.equipment
+        `Dia: ${location.date}`,
+        `Horário: ${location.startTime} - ${location.wrapUpTime}`,
+        `Cenas por Filmar nesta Morada: ${location.scenes.join(", ")}`,
+        `Equipa: ${location.crew.map(id => crew.find(m => m.id === id)?.name).join(", ")}`,
+        `Equipamentos: ${location.equipment
           .map(eid => {
             const eq = equipments.find(e => e.id === eid);
             return eq ? `${eq.name} (${eq.category})` : "";
@@ -599,64 +609,71 @@ export default function ShootingDayPage() {
       ];
 
       locationDetails.forEach(detail => {
+        checkPageBreak(lineHeight);
         doc.setTextColor(secondaryColor);
         doc.text(detail, margin + 5, yPos);
-        yPos += 8;
+        yPos += lineHeight;
       });
 
       yPos += 10;
     });
 
     // Meals Section
+    checkPageBreak(30);
     doc.setFontSize(18);
     doc.setTextColor(primaryColor);
-    doc.text("Meals", margin, yPos);
+    doc.text("Refeições", margin, yPos);
     yPos += 10;
     doc.line(margin, yPos, 210 - margin, yPos);
     yPos += 15;
 
-    meals.forEach((meal, mealIndex) => {
+    meals.forEach((meal) => {
+      checkPageBreak(50);
       doc.setFontSize(12);
       doc.setTextColor(primaryColor);
-      doc.text(`Meal ${mealIndex + 1}: ${meal.vendor}`, margin, yPos);
-      yPos += 10;
+      doc.text(`Refeição: ${meal.vendor}`, margin, yPos);
+      yPos += lineHeight;
 
       doc.setTextColor(secondaryColor);
       meal.people.forEach(person => {
+        checkPageBreak(lineHeight);
         const member = crew.find(m => m.id === person.personId);
         doc.text(`${member?.name}: €${person.cost.toFixed(2)}`, margin + 5, yPos);
-        yPos += 8;
+        yPos += lineHeight;
       });
 
+      checkPageBreak(lineHeight);
       doc.setTextColor(accentColor);
       doc.text(`Total: €${calculateMealCost(meal).toFixed(2)}`, 160, yPos);
       yPos += 15;
     });
 
     // Transport Section
+    checkPageBreak(30);
     doc.setFontSize(18);
     doc.setTextColor(primaryColor);
-    doc.text("Transport", margin, yPos);
+    doc.text("Transportes", margin, yPos);
     yPos += 10;
     doc.line(margin, yPos, 210 - margin, yPos);
     yPos += 15;
 
-    transports.forEach((transport, transIndex) => {
+    transports.forEach((transport) => {
+      checkPageBreak(50);
       doc.setFontSize(12);
       doc.setTextColor(primaryColor);
-      doc.text(`Transport ${transIndex + 1}: ${transport.vehicle}`, margin, yPos);
-      yPos += 10;
+      doc.text(`Transporte: ${transport.vehicle}`, margin, yPos);
+      yPos += lineHeight;
       doc.setTextColor(secondaryColor);
-      doc.text(`Driver: ${transport.driver}`, margin + 5, yPos);
-      yPos += 8;
+      doc.text(`Condutor: ${transport.driver}`, margin + 5, yPos);
+      yPos += lineHeight;
       doc.text(
-        `Passengers: ${transport.passengers.map(id => crew.find(m => m.id === id)?.name).join(", ")}`,
+        `Passageiros: ${transport.passengers.map(id => crew.find(m => m.id === id)?.name).join(", ")}`,
         margin + 5,
         yPos
       );
-      yPos += 8;
-      doc.text(`Route: ${transport.route}`, margin + 5, yPos);
-      yPos += 8;
+      yPos += lineHeight;
+      doc.text(`Rota: ${transport.route}`, margin + 5, yPos);
+      yPos += lineHeight;
 
       const transportCost = () => {
         switch (transport.vehicle) {
@@ -667,17 +684,19 @@ export default function ShootingDayPage() {
         }
       };
 
+      checkPageBreak(lineHeight);
       doc.setTextColor(accentColor);
-      doc.text(`Cost: €${transportCost().toFixed(2)}`, 160, yPos);
+      doc.text(`Custo: €${transportCost().toFixed(2)}`, 160, yPos);
       yPos += 15;
     });
 
     // Overall Total
+    checkPageBreak(30);
     doc.setFontSize(20);
     doc.setTextColor(primaryColor);
-    doc.text(`Grand Total: €${overallTotal.toFixed(2)}`, margin, yPos);
+    doc.text(`Total Geral: €${overallTotal.toFixed(2)}`, margin, yPos);
 
-    doc.save("shooting-day-plan.pdf");
+    doc.save("plano-filmagem.pdf");
   };
 
   return (
@@ -685,23 +704,23 @@ export default function ShootingDayPage() {
       <div className="pt-4 space-y-8">
         {/* Crew Management Section */}
         <section className="bg-muted dark:bg-muted-dark p-6 rounded-xl">
-          <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Crew & Talent</h2>
+          <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Adicionar Crew</h2>
           <div className="flex flex-col gap-2 mb-4 max-w-xs">
             <Input
               value={newCrewName}
               onChange={(e) => setNewCrewName(e.target.value)}
               onKeyDown={handleCrewKeyDown}
-              placeholder="Name"
+              placeholder="Nome"
               className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
             <Input
               value={newCrewRole}
               onChange={(e) => setNewCrewRole(e.target.value)}
               onKeyDown={handleCrewKeyDown}
-              placeholder="Role"
+              placeholder="Função"
               className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
-            <Button onClick={addCrewMember}>Add Crew Member</Button>
+            <Button onClick={addCrewMember}>Adicionar Membro</Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {crew.map((member) => (
@@ -718,12 +737,12 @@ export default function ShootingDayPage() {
 
         {/* Equipment Inventory Section */}
         <section className="bg-muted dark:bg-muted-dark p-6 rounded-xl">
-          <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Equipment Inventory</h2>
+          <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Equipamentos Adquiridos</h2>
           <div className="flex flex-col gap-2 mb-4 max-w-xs">
             <Input
               value={newEquipmentName}
               onChange={(e) => setNewEquipmentName(e.target.value)}
-              placeholder="Equipment name"
+              placeholder="Nome do Equipamento"
               className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
             <Select
@@ -741,7 +760,7 @@ export default function ShootingDayPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={addEquipment}>Add Equipment</Button>
+            <Button onClick={addEquipment}>Adicionar Equipamento</Button>
           </div>
           <div className="flex flex-wrap gap-2">
             {equipments.map((equip) => (
@@ -773,7 +792,7 @@ export default function ShootingDayPage() {
         {meals.map((meal, idx) => (
           <section key={meal.id} className="bg-card dark:bg-card-dark p-6 rounded-xl shadow-sm">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Meal {idx + 1}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Refeição {idx + 1}</h2>
               <Button variant="ghost" size="sm" onClick={() => removeMeal(meal.id)}>
                 ✕
               </Button>
@@ -782,7 +801,7 @@ export default function ShootingDayPage() {
               {/* Left Column: Vendor and Dietary */}
               <div className="space-y-4">
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300">Vendor</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">Providenciador</Label>
                   <Select
                     value={meal.vendor}
                     onValueChange={(v) => {
@@ -800,7 +819,7 @@ export default function ShootingDayPage() {
                     }}
                   >
                     <SelectTrigger className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-                      <SelectValue placeholder="Select vendor" />
+                      <SelectValue placeholder="Selecionar providenciador" />
                     </SelectTrigger>
                     <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                       {mealVendors.map((vendor) => (
@@ -812,7 +831,7 @@ export default function ShootingDayPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300">Dietary Notes</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">Dietas</Label>
                   <Input
                     value={meal.dietary}
                     onChange={(e) => handleUpdate(setMeals, meal.id, "dietary", e.target.value)}
@@ -823,7 +842,7 @@ export default function ShootingDayPage() {
               {/* Right Column: Crew assignment & Cost per person */}
               <div className="space-y-4">
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300">Assign Crew to Meal</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">Quem vai comer esta refeição?</Label>
                   <div className="flex flex-wrap gap-2">
                     {crew.map((member) => {
                       const isAssigned = meal.people.some((p) => p.personId === member.id);

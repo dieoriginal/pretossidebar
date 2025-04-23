@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import jsPDFInvoiceTemplate from "jspdf-invoice-template";
+import { jsPDF } from "jspdf";
 
 // HEAD OPTIONS
 const hairstyleOptions = [
@@ -216,90 +216,56 @@ const WardrobePlanningPage = () => {
     totalPrice,
   ]);
 
-  // Function to handle export of invoice using jsPDFInvoiceTemplate
+  // Function to handle export of invoice using jsPDF
   const handleExportInvoice = () => {
-    const invoiceItems = [];
-    let serial = 1;
+    const doc = new jsPDF();
 
-    // Helper to push found items from a category
-    const pushItems = (selectedArray, options, categoryLabel) => {
+    // Configurações básicas
+    doc.setFontSize(18);
+    doc.text("Fatura", 10, 20);
+    doc.setFontSize(12);
+
+    // Adicionar itens
+    let yPosition = 30;
+    const addItem = (description: string, price: number) => {
+      doc.text(description, 10, yPosition);
+      doc.text(`€${price.toFixed(2)}`, 180, yPosition, { align: "right" });
+      yPosition += 10;
+    };
+
+    // Adicionar itens selecionados
+    const addItems = (selectedArray, options, categoryLabel) => {
       selectedArray.forEach((val) => {
         const option = options.find((item) => item.value === val);
         if (option) {
-          invoiceItems.push({
-            serial: serial++,
-            description: `${categoryLabel}: ${option.label}`,
-            quantity: 1,
-            price: option.price,
-            tax: 0,
-          });
+          addItem(`${categoryLabel}: ${option.label}`, option.price);
         }
       });
     };
 
-    pushItems(selectedHairstyles, hairstyleOptions, "Cabelo");
-    pushItems(selectedGlasses, glassesOptions, "Óculos");
-    pushItems(selectedHeadWear, headWearOptions, "Head Wear");
-    pushItems(selectedSuperior, superiorOptions, "Parte Superior");
-    pushItems(selectedPants, pantsOptions, "Pants");
-    pushItems(selectedShoes, shoesOptions, "Shoes");
-    pushItems(selectedNeckAccessories, neckAccessoryOptions, "Neck Accessories");
-    pushItems(selectedBracelets, braceletOptions, "Bracelet");
-    pushItems(selectedWatch, watchOptions, "Watch");
-    pushItems(selectedBelt, beltOptions, "Belt");
+    addItems(selectedHairstyles, hairstyleOptions, "Cabelo");
+    addItems(selectedGlasses, glassesOptions, "Óculos");
+    addItems(selectedHeadWear, headWearOptions, "Head Wear");
+    addItems(selectedSuperior, superiorOptions, "Parte Superior");
+    addItems(selectedPants, pantsOptions, "Pants");
+    addItems(selectedShoes, shoesOptions, "Shoes");
+    addItems(selectedNeckAccessories, neckAccessoryOptions, "Neck Accessories");
+    addItems(selectedBracelets, braceletOptions, "Bracelet");
+    addItems(selectedWatch, watchOptions, "Watch");
+    addItems(selectedBelt, beltOptions, "Belt");
 
-    // Also add custom items
+    // Adicionar itens personalizados
     customItems.forEach((item) => {
-      invoiceItems.push({
-        serial: serial++,
-        description: `Custom (${item.category}): ${item.name}`,
-        quantity: 1,
-        price: item.price,
-        tax: 0,
-      });
+      addItem(`Custom (${item.category}): ${item.name}`, item.price);
     });
 
-    const propsObject = {
-      outputType: "blob", // Alternatively: "save"
-      returnJsPDFDocObject: true,
-      fileName: "fatura.pdf",
-      orientationLandscape: false,
-      logo: {
-        src: "https://via.placeholder.com/150", // Replace with your logo
-        type: "PNG",
-        width: 50,
-        height: 50,
-      },
-      business: {
-        name: "Wardrobe Planning Inc.",
-        address: "123 Fashion Ave",
-        phone: "123-456-7890",
-        email: "info@wardrobe.com",
-      },
-      contact: {
-        label: "Cliente",
-        name: "Nome do Cliente",
-        address: "",
-        phone: "",
-        email: "",
-      },
-      invoice: {
-        label: "Fatura",
-        num: new Date().getTime().toString(),
-        date: new Date().toLocaleDateString(),
-      },
-      invoice_items: invoiceItems,
-      additionalRows: [
-        {
-          col1: "Total Estimado",
-          col2: `€${totalPrice.toFixed(2)}`,
-        },
-      ],
-      footer: "Obrigado pela sua compra!",
-    };
+    // Adicionar total
+    yPosition += 10;
+    doc.setFontSize(14);
+    doc.text(`Total: €${totalPrice.toFixed(2)}`, 10, yPosition);
 
-    // Use the default export function (this avoids the "undefined" error)
-    jsPDFInvoiceTemplate.default(propsObject);
+    // Salvar o PDF
+    doc.save("fatura.pdf");
   };
 
   return (

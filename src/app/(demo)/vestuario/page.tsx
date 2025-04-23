@@ -25,13 +25,7 @@ export default function Vestuario() {
 
   return (
     <ContentLayout title="Vídeo & Cinematografia">
-      <div className="pt-4 gap-4">
-        {verses.map((verseId, idx) => (
-          <VideoVerseCard3 key={verseId} index={idx + 1} />
-        ))}
-      </div>
-      
-      <Dialog>
+       <Dialog>
         <DialogTrigger asChild>
           <Button className="mt-4">Ver Medidas de Vestuário</Button>
         </DialogTrigger>
@@ -53,6 +47,13 @@ export default function Vestuario() {
           </div>
         </DialogContent>
       </Dialog>
+      <div className="pt-4 gap-4">
+        {verses.map((verseId, idx) => (
+          <VideoVerseCard3 key={verseId} index={idx + 1} />
+        ))}
+      </div>
+      
+   
     </ContentLayout>
   );
 }

@@ -64,22 +64,6 @@ interface Verse {
     stabilization: string;
     location: string;
     relatedVerses?: number[]; // Adicionando campo para versos relacionados
-    iso?: string;
-    shutterSpeed?: string;
-    ndFilter?: string;
-    intExt?: string;
-    characters?: string;
-    props?: string;
-    style?: string;
-    objective?: string;
-    tags?: string;
-    specialEffects?: string;
-    cameraMovement?: string;
-    coverage?: string;
-    cast?: string;
-    propsCostumes?: string;
-    rhythmStyle?: string;
-    sceneType?: string;
   };
   function?: string;
   technique?: string;
@@ -1214,13 +1198,6 @@ const Dashboard = () => {
     setMusicStructure(prev => prev.filter(v => v !== value));
   };
 
-  const [storyConfig, setStoryConfig] = useState({
-    introduction: "",
-    elements: "",
-    focalization: "",
-    structure: ""
-  });
-
   return (
     <ContentLayout title="Versificação">
       <div className="w-full mx-auto max-w-[1800px] px-4">
@@ -1454,106 +1431,7 @@ const Dashboard = () => {
           </CardHeader>
         </Card>
 
-        {/* New Story Types Configuration Card */}
-        <Card className="w-[1732px] mb-6 shadow-md rounded-lg">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-4 gap-4">
-              {/* Introduction Section */}
-              <div className="flex flex-col">
-                <h3 className="text-xl font-semibold mb-2">Introdução</h3>
-                <div className="text-sm">
-                  <select
-                    className="w-full p-2 border rounded mb-2"
-                    value={storyConfig.introduction}
-                    onChange={(e) => setStoryConfig({ ...storyConfig, introduction: e.target.value })}
-                  >
-                    <option value="">Selecione o tipo de introdução</option>
-                    <option value="in_medias_res">In medias res</option>
-                    <option value="exposicao">Exposição gradual</option>
-                    <option value="dialogo">Diálogo inicial</option>
-                    <option value="descricao">Descrição do cenário</option>
-                  </select>
-                  {storyConfig.introduction && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded">
-                      <p className="text-gray-600">Selecionado: {storyConfig.introduction}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Elements Section */}
-              <div className="flex flex-col">
-                <h3 className="text-xl font-semibold mb-2">Elementos</h3>
-                <div className="text-sm">
-                  <select
-                    className="w-full p-2 border rounded mb-2"
-                    value={storyConfig.elements}
-                    onChange={(e) => setStoryConfig({ ...storyConfig, elements: e.target.value })}
-                  >
-                    <option value="">Selecione os elementos principais</option>
-                    <option value="personagens">Personagens complexos</option>
-                    <option value="ambiente">Ambiente detalhado</option>
-                    <option value="objetos">Objetos simbólicos</option>
-                    <option value="conflito">Conflito central</option>
-                  </select>
-                  {storyConfig.elements && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded">
-                      <p className="text-gray-600">Selecionado: {storyConfig.elements}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Focalization Section */}
-              <div className="flex flex-col">
-                <h3 className="text-xl font-semibold mb-2">Focalização</h3>
-                <div className="text-sm">
-                  <select
-                    className="w-full p-2 border rounded mb-2"
-                    value={storyConfig.focalization}
-                    onChange={(e) => setStoryConfig({ ...storyConfig, focalization: e.target.value })}
-                  >
-                    <option value="">Selecione a perspectiva</option>
-                    <option value="primeira_pessoa">Primeira pessoa</option>
-                    <option value="terceira_pessoa">Terceira pessoa</option>
-                    <option value="onisciente">Onisciente</option>
-                    <option value="limitada">Onisciência limitada</option>
-                  </select>
-                  {storyConfig.focalization && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded">
-                      <p className="text-gray-600">Selecionado: {storyConfig.focalization}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Structure Section */}
-              <div className="flex flex-col">
-                <h3 className="text-xl font-semibold mb-2">Estrutura</h3>
-                <div className="text-sm">
-                  <select
-                    className="w-full p-2 border rounded mb-2"
-                    value={storyConfig.structure}
-                    onChange={(e) => setStoryConfig({ ...storyConfig, structure: e.target.value })}
-                  >
-                    <option value="">Selecione a estrutura</option>
-                    <option value="linear">Linear</option>
-                    <option value="nao_linear">Não-linear</option>
-                    <option value="circular">Circular</option>
-                    <option value="fragmentada">Fragmentada</option>
-                  </select>
-                  {storyConfig.structure && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded">
-                      <p className="text-gray-600">Selecionado: {storyConfig.structure}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Existing Music Structure Card */}
+        {/* New Sortable Music Structure Card */}
         <Card className="w-full mb-6">
           <CardHeader>
             <div className="flex flex-col gap-4">
@@ -1781,27 +1659,12 @@ const Dashboard = () => {
                 <div className="mt-4 flex gap-4">
                   <input
                     type="text"
-                    placeholder="Digite o verso e pressione Enter (3x para nova estrofe)"
+                    placeholder="Digite o verso e pressione Enter"
                     className="border p-2 rounded flex-1"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         const target = e.target as HTMLInputElement;
-                        const value = target.value.trim();
-                        
-                        // Verifica se o usuário pressionou Enter 3 vezes
-                        if (value === "") {
-                          const enterCount = (target.dataset.enterCount || 0) as number;
-                          if (enterCount >= 2) {
-                            handleAddStrophe();
-                            target.dataset.enterCount = "0";
-                            return;
-                          }
-                          target.dataset.enterCount = (enterCount + 1).toString();
-                          return;
-                        }
-
-                        // Adiciona novo verso
-                        const words = value.split(" ").map(text => ({ text: text.toUpperCase() }));
+                        const words = target.value.split(" ").map(text => ({ text: text.toUpperCase() }));
                         const newStrophes = [...strophes];
                         newStrophes[stropheIndex].verses.push({
                           id: Date.now().toString(),
@@ -1817,21 +1680,10 @@ const Dashboard = () => {
                         });
                         setStrophes(newStrophes);
                         target.value = "";
-                        target.dataset.enterCount = "0";
                       }
                     }}
                   />
                   
-                  {/* Botão para adicionar nova estrofe */}
-                  <Button 
-                    onClick={handleAddStrophe}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Nova Estrofe
-                  </Button>
-
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="outline">Adicionar Letra Completa</Button>
@@ -1882,77 +1734,114 @@ const Dashboard = () => {
           <>
             <Card className="mb-6">
               <CardHeader>
-                <h3 className="text-xl font-bold">Configurações Gerais do Projeto</h3>
+                <h3 className="text-xl font-bold">Configurações de Câmera</h3>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
+           
                   <div>
-                    <Label>Rácio de Aspeto</Label>
+                    <Label>Linhas de Grade</Label>
+                    <select className="w-full p-2 border rounded">
+                      <option value="none">Nenhuma</option>
+                      <option value="ruleOfThirds">Regra dos Terços</option>
+                      <option value="goldenRatio">Proporção Áurea</option>
+                      <option value="center">Centro</option>
+                    </select>
+                  </div>
+            
+                  <div>
+                    <Label>Proporção de Tela</Label>
                     <select className="w-full p-2 border rounded">
                       <option value="16:9">16:9 (Widescreen)</option>
-                      <option value="1.85:1">1.85:1</option>
-                      <option value="2.39:1">2.39:1</option>
                       <option value="4:3">4:3 (Fullscreen)</option>
+                      <option value="1:1">1:1 (Quadrado)</option>
+                      <option value="21:9">21:9 (CinemaScope)</option>
                     </select>
                   </div>
                   <div>
-                    <Label>Espaço de Cor e LUTs</Label>
+                    <Label>Balanço de Branco</Label>
                     <select className="w-full p-2 border rounded">
-                      <option value="rec709">Rec.709</option>
-                      <option value="logc">Log-C</option>
-                      <option value="raw">RAW</option>
+                      <option value="auto">Automático</option>
+                      <option value="daylight">Luz do Dia</option>
+                      <option value="tungsten">Tungstênio</option>
+                      <option value="fluorescent">Fluorescente</option>
                     </select>
                   </div>
                   <div>
-                    <Label>Formato de Gravação e Codecs</Label>
-                    <div className="flex gap-2">
-                      <select className="w-1/2 p-2 border rounded">
-                        <option value="prores">ProRes</option>
-                        <option value="redcode">REDCODE</option>
-                        <option value="braw">BRAW</option>
-                      </select>
-                      <Input placeholder="Bitrate" className="w-1/2" />
-                    </div>
+                    <Label>ISO</Label>
+                    <Input 
+                      placeholder="Ex: 100"
+                      className="w-full"
+                    />
                   </div>
                   <div>
-                    <Label>Frame Rate Base</Label>
+                    <Label>Velocidade do Obturador</Label>
+                    <Input 
+                      placeholder="Ex: 1/60"
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label>Estabilização</Label>
                     <select className="w-full p-2 border rounded">
-                      <option value="24">24 fps</option>
-                      <option value="25">25 fps</option>
-                      <option value="60">60 fps</option>
+                      <option value="none">Nenhuma</option>
+                      <option value="digital">Digital</option>
+                      <option value="optical">Óptica</option>
+                      <option value="gimbal">Gimbal</option>
                     </select>
                   </div>
-                  <div>
-                    <Label>Gestão de Dados (DIT)</Label>
-                    <div className="flex gap-2">
-                      <Input placeholder="Workflow" className="w-1/2" />
-                      <Input placeholder="Backups" className="w-1/2" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Monitorização e Calibração</Label>
-                    <div className="flex gap-2">
-                      <select className="w-1/2 p-2 border rounded">
-                        <option value="hdr">HDR</option>
-                        <option value="scopes">Scopes</option>
-                      </select>
-                      <Input placeholder="Visor de Câmara" className="w-1/2" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Segurança e Logística</Label>
-                    <div className="flex gap-2">
-                      <Input placeholder="Geradores" className="w-1/2" />
-                      <Input placeholder="Cablagem" className="w-1/2" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Continuidade e Referências Visuais</Label>
-                    <div className="flex gap-2">
-                      <Input placeholder="Script Photos" className="w-1/2" />
-                      <Input placeholder="Moodboards" className="w-1/2" />
-                    </div>
-                  </div>
+                <div>
+                  <Label>Taxa de Quadros (FPS)</Label>
+                  <select className="w-full p-2 border rounded">
+                    <option value="24">24 fps (Cinema)</option>
+                    <option value="25">25 fps (PAL)</option>
+                    <option value="30">30 fps (TV)</option>
+                    <option value="60">60 fps (Slow Motion)</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Abertura (f-stop)</Label>
+                  <select className="w-full p-2 border rounded">
+                    <option value="1.8">f/1.8</option>
+                    <option value="2.8">f/2.8</option>
+                    <option value="4">f/4</option>
+                    <option value="5.6">f/5.6</option>
+                    <option value="8">f/8</option>
+                    <option value="11">f/11</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Balanço de Branco (K)</Label>
+                  <Input 
+                    placeholder="Ex: 5600K"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label>Distância Focal (mm)</Label>
+                  <Input 
+                    placeholder="Ex: 35mm"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label>Perfil de Cor</Label>
+                  <select className="w-full p-2 border rounded">
+                    <option value="slog2">S-Log2</option>
+                    <option value="braw">Blackmagic RAW</option>
+                    <option value="rec709">Rec.709</option>
+                    <option value="logc">Log C</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Software de Edição</Label>
+                  <select className="w-full p-2 border rounded">
+                    <option value="premiere">Adobe Premiere</option>
+                    <option value="davinci">DaVinci Resolve</option>
+                    <option value="finalcut">Final Cut Pro</option>
+                    <option value="vegas">Vegas Pro</option>
+                  </select>
+                </div>
                 </div>
               </CardContent>
             </Card>
@@ -2017,306 +1906,30 @@ const Dashboard = () => {
                               }}
                               className="w-full p-2 border rounded"
                             >
-                              <option value="plano_aberto">Plano aberto (full body) para ambientação</option>
-                              <option value="plano_medio">Plano médio (torso/quadril) para ação e movimentação</option>
-                              <option value="close_up">Close-up (rosto/detalhe) para expressão e emoção</option>
+                              {shotTypeOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
                             </select>
                           </div>
 
                           <div>
                             <Label>Movimento de Câmera</Label>
                             <select
-                              value={verse.cameraSettings?.cameraMovement}
+                              value={verse.cameraSettings?.movement}
                               onChange={(e) => {
                                 const newStrophes = [...strophes];
                                 const verseIndex = newStrophes
                                   .flatMap(s => s.verses)
                                   .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.cameraMovement = e.target.value;
+                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.movement = e.target.value;
                                 setStrophes(newStrophes);
                               }}
                               className="w-full p-2 border rounded"
                             >
-                              <option value="pan_tilt">Pan/tilt para revelar detalhes</option>
-                              <option value="travelling">Travelling/dolly para seguir personagens</option>
-                              <option value="steadicam">Steadicam/gimbal para movimentos fluidos</option>
-                              <option value="zoom">Zoom suave ou dolly-zoom para efeito dramático</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <Label>Cobertura e Ambiente</Label>
-                            <Input
-                              placeholder="Exterior (EXT) vs Interior (INT)"
-                              value={verse.cameraSettings?.coverage || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.coverage = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Elenco e Personagens</Label>
-                            <Input
-                              placeholder="Número e papel de cada personagem"
-                              value={verse.cameraSettings?.cast || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.cast = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Adereços e Figurinos</Label>
-                            <Input
-                              placeholder="Lista de props e figurinos"
-                              value={verse.cameraSettings?.propsCostumes || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.propsCostumes = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Ritmo e Estilo</Label>
-                            <select
-                              value={verse.cameraSettings?.rhythmStyle}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.rhythmStyle = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full p-2 border rounded"
-                            >
-                              <option value="slow_motion">Slow motion (60-120 fps)</option>
-                              <option value="speed_ramp">Speed ramp (variação de velocidade)</option>
-                              <option value="visual_poetry">Poesia visual (composições simétricas)</option>
-                              <option value="force_demo">Demonstração de força (planos sequência)</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <Label>Tipo de Cena</Label>
-                            <select
-                              value={verse.cameraSettings?.sceneType}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.sceneType = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full p-2 border rounded"
-                            >
-                              <option value="dialogo">Diálogo (master, over-the-shoulder)</option>
-                              <option value="luta">Luta/ação (planos dinâmicos)</option>
-                              <option value="demonstracao">Demonstração (close-ups e ângulos dramáticos)</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <Label>ISO</Label>
-                            <Input
-                              type="number"
-                              placeholder="Ex: 100"
-                              value={verse.cameraSettings?.iso || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.iso = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Velocidade do Obturador</Label>
-                            <Input
-                              placeholder="Ex: 1/60"
-                              value={verse.cameraSettings?.shutterSpeed || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.shutterSpeed = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Filtros ND</Label>
-                            <select
-                              value={verse.cameraSettings?.ndFilter || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.ndFilter = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full p-2 border rounded"
-                            >
-                              <option value="0.3">0.3 (1 stop)</option>
-                              <option value="0.6">0.6 (2 stops)</option>
-                              <option value="0.9">0.9 (3 stops)</option>
-                              <option value="1.2">1.2 (4 stops)</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <Label>INT/EXT</Label>
-                            <select
-                              value={verse.cameraSettings?.intExt || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.intExt = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full p-2 border rounded"
-                            >
-                              <option value="interior">Interior</option>
-                              <option value="exterior">Exterior</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <Label>Personagens</Label>
-                            <Input
-                              placeholder="Número, gênero, idades"
-                              value={verse.cameraSettings?.characters || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.characters = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Props</Label>
-                            <Input
-                              placeholder="Lista de adereços"
-                              value={verse.cameraSettings?.props || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.props = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Estilo e Ritmo</Label>
-                            <select
-                              value={verse.cameraSettings?.style || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.style = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full p-2 border rounded"
-                            >
-                              <option value="slow motion">Slow Motion</option>
-                              <option value="speed run">Speed Run</option>
-                              <option value="visual poetry">Visual Poetry</option>
-                              <option value="demonstracao">Demonstração de Força Humana</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <Label>Objetivo em 3 Palavras</Label>
-                            <Input
-                              placeholder="Ex: Amor, Paixão, Dor"
-                              value={verse.cameraSettings?.objective || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.objective = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Tags de Destaque</Label>
-                            <Input
-                              placeholder="Ex: #HighContrast #SlowMotion"
-                              value={verse.cameraSettings?.tags || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.tags = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Efeitos Especiais</Label>
-                            <select
-                              value={verse.cameraSettings?.specialEffects || ''}
-                              onChange={(e) => {
-                                const newStrophes = [...strophes];
-                                const verseIndex = newStrophes
-                                  .flatMap(s => s.verses)
-                                  .findIndex(v => v.id === verse.id);
-                                newStrophes.flatMap(s => s.verses)[verseIndex].cameraSettings!.specialEffects = e.target.value;
-                                setStrophes(newStrophes);
-                              }}
-                              className="w-full p-2 border rounded"
-                            >
-                              <option value="levitacao">Levitação</option>
-                              <option value="duplicacao">Duplicação de Personagens</option>
-                              <option value="reverse">Reverse Motion</option>
+                              <option value="pan">Panorâmica</option>
+                              <option value="tilt">Tilt</option>
+                              <option value="dolly">Travelling</option>
+                              <option value="zoom">Zoom</option>
                             </select>
                           </div>
                         </div>
