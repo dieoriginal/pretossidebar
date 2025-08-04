@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ContentLayout } from "@/components/admin-panel/content-layout";
-
+import { ContentLayout } from "@/app/(demo)/obraeurudita/page";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -47,35 +46,28 @@ export default function RecordingProcessPage() {
         {
           id: "pre-1",
           label:
-            "Limpeza Geral com Luvas",
+            "Limpeza Geral do Estúdio",
           completed: false,
           required: true,
         },
         {
           id: "pre-2",
           label:
-            "Organização estrategica e sistemática",
+            "Organização Estratégica e Sistemática dos Equipamentos",
           completed: false,
           required: true,
         },
         {
           id: "pre-3",
           label:
-            "Preparar Água",
+            "Água",
           completed: false,
           required: true,
         },
         {
           id: "pre-3",
           label:
-            "Comer o Almoço",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "pre-3",
-          label:
-            "Snacks",
+            "Comida",
           completed: false,
           required: true,
         },
@@ -89,7 +81,7 @@ export default function RecordingProcessPage() {
         {
           id: "pre-3",
           label:
-            "Impressão das Letras Musicais",
+            "Dispor das Letras Musicais",
           completed: false,
           required: true,
         },
@@ -106,77 +98,36 @@ export default function RecordingProcessPage() {
         {
           id: "gear-1",
           label:
-            "UAD APOLLO - Gravação em Tempo Real",
+            "UAD APOLLO",
           completed: false,
           required: true,
         },
         {
           id: "gear-2",
-          label: "NEUMANN TLM 103 - Qualidade de Alta Definição",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "gear-3",
-          label: "BOOTH - Isolamento Acústico Robusto",
+          label: "Microfone",
           completed: false,
           required: true,
         },
         {
           id: "gear-4",
-          label: "K&M 21430 - Tripé com altitude tipo Lil Wayne",
+          label: "Tripé",
           completed: false,
           required: true,
         },
         {
           id: "gear-4",
-          label: "SUPORTE DE COMPUTADOR - Deixar o Computador Fora do Booth",
+          label: "Monitores",
           completed: false,
           required: true,
         },
         {
           id: "gear-4",
-          label: "MONITOR NO BOOTH - Ver o Ecrã do PC dentro do Booth",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "gear-4",
-          label: "TRIPÉ DE MONITOR - Suportar o monitor no Booth",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "gear-4",
-          label: "MOUSE SEM FIOS - Opcional para controle do PC dentro do Booth",
+          label: "Auscutadores",
           completed: false,
           required: true,
         },
 
-        {
-          id: "gear-4",
-          label: "PreSonus Faderport V2 OU Tascam DP-02CF - Controle de DAW profissional",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "gear-4",
-          label: "Beyerdynamics DT-770 250 OHM - Auscutadores de Alta definição",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "gear-4",
-          label: "Shiit DAC - TOPPING L70, DX3, A50 II, Atom Amp, JDS Labs Atom+,  Topping L30 II/E30 II stack  - Para dar energia 250 Ohm para os auscutadores",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "gear-4",
-          label: "Schiit Loki Mini+ - Para equalizar os auscutadores",
-          completed: false,
-          required: true,
-        },
+
       ],
       
     },

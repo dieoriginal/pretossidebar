@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ContentLayout } from "@/components/admin-panel/content-layout";
-
+import { ContentLayout } from "@/app/(demo)/obraeurudita/page";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";

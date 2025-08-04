@@ -1,0 +1,9 @@
+---
+created: 2025-08-03T07:00:04.677Z
+updated: 2025-08-03T07:00:04.672Z
+assigned: ""
+progress: 0
+tags: []
+---
+
+# METER CHECK BOXES OU CORES PARA CHECAR NA CINEMATOGRAFIA SE JÁ TEM O VÍDEO OU NÃO, RED OU GREEN

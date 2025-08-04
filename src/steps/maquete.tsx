@@ -3,8 +3,7 @@
 import React, { useState, ChangeEvent } from "react";
 import Link from "next/link";
 
-import { ContentLayout } from "@/components/admin-panel/content-layout";
-
+import { ContentLayout } from "@/app/(demo)/obraeurudita/page";
 import PlaceholderContentUpload from "@/components/demo/placeholder-contentupload";
 
 // Import your Player component and its Track type.

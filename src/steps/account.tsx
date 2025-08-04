@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import PlaceholderContent from "@/components/demo/placeholder-content";
-import { ContentLayout } from "@/components/admin-panel/content-layout";
+import { ContentLayout } from "@/app/(demo)/obraeurudita/page";
 
 
 export default function AccountPage() {
@@ -9,6 +9,7 @@ export default function AccountPage() {
     <ContentLayout title="Account">
     
       <PlaceholderContent />
+      
     </ContentLayout>
   );
 }

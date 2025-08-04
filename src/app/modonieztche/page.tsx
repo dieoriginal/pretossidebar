@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { ContentLayout } from "@/components/admin-panel/content-layout";
+import { ContentLayout } from "@/app/(demo)/obraeurudita/page";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { Sidebar } from "@/components/admin-panel/sidebar";
 import AdminPanelLayout from "@/components/admin-panel/admin-panel-layout";
@@ -750,59 +750,198 @@ const analyzeMeter = async (text: string) => {
   }
 };
 
-const exportStoryboard = async (strophes: Strophe[]) => {
-  const doc = new jsPDF();
-  let yPosition = 20;
+const exportStoryboard = async (strophes: Strophe[], songInfo: SongInfo) => {
+  const doc = new jsPDF('p', 'pt', 'a4');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 40;
+  let yPosition = margin;
+  const lineHeight = 16;
+  const sectionSpacing = 25;
+
+  // Helper function to check page break
+  const checkPageBreak = (heightNeeded: number) => {
+    if (yPosition + heightNeeded > pageHeight - margin) {
+      doc.addPage();
+      yPosition = margin;
+    }
+  };
+
+  // Helper function to add section header
+  const addSectionHeader = (title: string, fontSize: number = 14) => {
+    checkPageBreak(lineHeight + 10);
+    doc.setFontSize(fontSize);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(44, 62, 80); // Dark blue-gray
+    doc.text(title, margin, yPosition);
+    yPosition += lineHeight + 5;
+  };
+
+  // Helper function to add info row
+  const addInfoRow = (label: string, value: string, indent: number = 0) => {
+    checkPageBreak(lineHeight);
+    doc.setFontSize(8); // Reduced from 10 to 8
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(52, 73, 94); // Medium gray
+    doc.text(`${label}:`, margin + indent, yPosition);
+    doc.setTextColor(44, 62, 80); // Dark blue-gray
+    doc.text(value, margin + indent + 100, yPosition); // Increased spacing from 80 to 100
+    yPosition += lineHeight;
+  };
+
+  // Helper function to add media preview
+  const addMediaPreview = async (verse: any, index: number) => {
+    if (verse.media instanceof File && verse.media.type.startsWith("image")) {
+      try {
+        const imgData = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(verse.media as File);
+        });
+        
+        checkPageBreak(80);
+        doc.addImage(imgData, 'JPEG', margin, yPosition, 120, 80);
+        yPosition += 85;
+      } catch (error) {
+        console.error('Error adding image to PDF:', error);
+      }
+    }
+  };
 
   const versesFlat = strophes.flatMap(strophe => strophe.verses);
+  
   for (const [index, verse] of versesFlat.entries()) {
     if (verse.cameraSettings) {
-      // Add media preview
-      if (verse.media instanceof File) {
-        if (verse.media.type.startsWith("image")) {
-          const imgData = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(verse.media as File);
-          });
-          doc.addImage(imgData, 'JPEG', 15, yPosition, 50, 30);
-          yPosition += 35;
-        }
-      }
+      // Add scene header
+      addSectionHeader(`CENA ${index + 1}`, 16);
+      
+      // Add verse text
+      checkPageBreak(lineHeight);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(26, 32, 44); // Very dark blue
+      const verseText = verse.words.map((w: { text: string }) => w.text).join(" ");
+      doc.text(verseText, margin, yPosition);
+      yPosition += lineHeight + 10;
 
-      const pageWidth = doc.internal.pageSize.getWidth();
+              // Add media preview if available
+        await addMediaPreview(verse, index);
+
+        // Add gap space after media
+        yPosition += 20;
+
+        // Add musical context information
+        addSectionHeader('Contexto Musical', 12);
+        
+        // Helper function for right-aligned info rows
+        const addRightAlignedInfoRow = (label: string, value: string) => {
+          checkPageBreak(lineHeight);
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(52, 73, 94); // Medium gray
+          doc.text(`${label}:`, margin, yPosition);
+          doc.setTextColor(44, 62, 80); // Dark blue-gray
+          doc.text(value, pageWidth - margin - doc.getTextWidth(value), yPosition, { align: 'right' });
+          yPosition += lineHeight;
+        };
+        
+        addRightAlignedInfoRow('Artista Musical', songInfo.artist || 'Artista não definido');
+        addRightAlignedInfoRow('Título da Música', songInfo.title || 'Título não definido');
+        addRightAlignedInfoRow('Produtor de Música', songInfo.producer || 'Produtor não definido');
+        if (songInfo.featuring && songInfo.featuring.length > 0) {
+          addRightAlignedInfoRow('Featuring', songInfo.featuring.join(', '));
+        }
+
+        // Add detailed cinematography information
+        addSectionHeader('Configurações Profissionais', 12);
       
-      doc.setFontSize(14);
-      const sceneText = `CENA ${index + 1} - ${verse.words.map((w: { text: string }) => w.text).join(" ")}`;
-      const sceneTextWidth = doc.getStringUnitWidth(sceneText) * doc.getFontSize() / doc.internal.scaleFactor;
-      doc.text(sceneText, (pageWidth - sceneTextWidth) / 2, yPosition);
-      yPosition += 10;
+      // Camera Settings
+      addInfoRow('Tipo de Plano', shotTypeOptions.find(opt => opt.value === verse.cameraSettings?.shotType)?.label || 'Não definido');
+      addInfoRow('Movimento de Câmera', verse.cameraSettings.movement.toUpperCase());
+      addInfoRow('Cobertura e Ambiente', verse.cameraSettings.location.toUpperCase());
       
-      doc.setFontSize(10);
-      const settings = [
-        `Tipo de Plano: ${shotTypeOptions.find(opt => opt.value === verse.cameraSettings?.shotType)?.label || ''}`,
-        `Movimento: ${verse.cameraSettings.movement.toUpperCase()}`,
-        `Resolução: ${verse.cameraSettings.resolution.toUpperCase()}`,
-        `Estabilização: ${verse.cameraSettings.stabilization.toUpperCase()}`,
-        `Localização: ${verse.cameraSettings.location.toUpperCase()}`
-      ];
+      // Technical Settings
+      addSectionHeader('Configurações Técnicas', 12);
+      addInfoRow('Resolução', verse.cameraSettings.resolution.toUpperCase());
+      addInfoRow('Estabilização', verse.cameraSettings.stabilization.toUpperCase());
       
-      settings.forEach(setting => {
-        const textWidth = doc.getStringUnitWidth(setting) * doc.getFontSize() / doc.internal.scaleFactor;
-        doc.text(setting, (pageWidth - textWidth) / 2, yPosition);
-        yPosition += 8;
-      });
+      // Professional Details
+      addSectionHeader('Detalhes Profissionais', 12);
+      addInfoRow('ISO', '100');
+      addInfoRow('Velocidade do Obturador', '1/60');
+      addInfoRow('Filtros ND', '0.3 (1 stop)');
+      addInfoRow('INT/EXT', 'Interior');
       
-      yPosition += 15;
+      // Cast and Characters
+      addSectionHeader('Elenco e Personagens', 12);
+      addInfoRow('Número de Personagens', '2');
+      addInfoRow('Gênero', 'Misto');
+      addInfoRow('Idades', '25-35 anos');
       
-      if(yPosition > 280) {
+      // Props and Wardrobe
+      addSectionHeader('Adereços e Figurinos', 12);
+      addInfoRow('Props', 'Lista de adereços específicos');
+      addInfoRow('Figurinos', 'Estilo contemporâneo');
+      
+      // Style and Rhythm
+      addSectionHeader('Ritmo e Estilo', 12);
+      addInfoRow('Estilo', 'Slow motion (60-120 fps)');
+      addInfoRow('Tipo de Cena', 'Diálogo (master, over-the-shoulder)');
+      addInfoRow('Objetivo em 3 Palavras', 'Amor, Paixão, Dor');
+      addInfoRow('Tags de Destaque', '#HighContrast #SlowMotion');
+      
+      // Special Effects
+      addSectionHeader('Efeitos Especiais', 12);
+      addInfoRow('Efeitos', 'Levitação');
+      
+      // Location Details
+      addSectionHeader('Localização', 12);
+      addInfoRow('Local', verse.cameraSettings.location.toUpperCase());
+      addInfoRow('Versos Relacionados', verseText.substring(0, 50) + '...');
+      addInfoRow('Descrição da Cena', 'Cena detalhada com foco na narrativa visual');
+      
+      // Add spacing between scenes
+      yPosition += sectionSpacing;
+      
+      // Check if we need a new page
+      if (yPosition > pageHeight - margin - 100) {
         doc.addPage();
-        yPosition = 20;
+        yPosition = margin;
       }
     }
   }
 
-  doc.save('storyboard.pdf');
+  // Add summary page at the end
+  doc.addPage();
+  yPosition = margin;
+  
+  addSectionHeader('RESUMO DO PROJETO CINEMATOGRÁFICO', 18);
+  yPosition += 20;
+  
+  const totalScenes = versesFlat.filter(v => v.cameraSettings).length;
+  const totalVerses = versesFlat.length;
+  
+  addInfoRow('Total de Cenas', totalScenes.toString());
+  addInfoRow('Total de Versos', totalVerses.toString());
+  addInfoRow('Formato', '16:9 Widescreen');
+  addInfoRow('Resolução', '4K UHD');
+  addInfoRow('Codec', 'ProRes 422 HQ');
+  
+  yPosition += 20;
+  addSectionHeader('EQUIPAMENTOS PRINCIPAIS', 14);
+  addInfoRow('Câmera', 'Sony FX3');
+  addInfoRow('Lente', 'Sony 24-70mm f/2.8 GM');
+  addInfoRow('Estabilização', 'DJI RS 3 Pro');
+  addInfoRow('Iluminação', 'Aputure 600D Pro');
+  
+  yPosition += 20;
+  addSectionHeader('EQUIPE TÉCNICA', 14);
+  addInfoRow('Diretor de Fotografia', 'Nome do DOP');
+  addInfoRow('Operador de Câmera', 'Nome do Operador');
+  addInfoRow('Assistente de Câmera', 'Nome do AC');
+  addInfoRow('Gaffer', 'Nome do Gaffer');
+
+  doc.save('storyboard_detalhado.pdf');
 };
 
 // Adicione isso junto com as outras constantes no início do arquivo
@@ -829,7 +968,7 @@ const musicStructureOptions = [
   {
     value: "introducao",
     label: "🎼 Introdução",
-    description: "Início instrumental ou vocal, estabelece tom e atmosfera",
+    description: "Início maquete ou vocal, estabelece tom e atmosfera",
     example: "Guitarra em 'Smoke on the Water'"
   },
   {
@@ -865,7 +1004,7 @@ const musicStructureOptions = [
   {
     value: "solo",
     label: "🎸 Solo",
-    description: "Secção instrumental, normalmente improvisada",
+    description: "Secção maquete, normalmente improvisada",
     example: "Solo de guitarra em 'Hotel California'"
   },
   {
@@ -2045,7 +2184,7 @@ const Dashboard = () => {
               </Button>
 
               {activeTab === "cinematografia" && (
-                <Button onClick={() => exportStoryboard(strophes)} variant="outline">
+                <Button onClick={() => exportStoryboard(strophes, songInfo)} variant="outline">
                   <Video className="mr-2" /> Exportar Storyboard
                 </Button>
               )}

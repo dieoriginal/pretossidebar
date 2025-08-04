@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ContentLayout } from "@/components/admin-panel/content-layout";
+import { ContentLayout } from "@/app/(demo)/obraeurudita/page";
 import VideoVerseCard3 from "@/components/admin-panel/video/VideoVerseCard";
 import { Button } from "@/components/ui/button";
 import {

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { ContentLayout } from "@/components/admin-panel/content-layout";
+import { ContentLayout } from "@/app/(demo)/obraeurudita/page";
 
 import { Button } from "@/components/ui/button";
 import jsPDF from 'jspdf';

@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ContentLayout } from "@/components/admin-panel/content-layout";
-
+import { ContentLayout } from "@/app/(demo)/obraeurudita/page";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -80,32 +79,8 @@ export default function PromotionProcessPage() {
           required: true,
         },
         {
-          id: "youtube-vz",
-          label: "Fazer e Carregar Visualizer",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "youtube-1",
-          label: "Fazer e Carregar Video Letra",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "youtube-1",
-          label: "Pôr as Letras no Youtbe de acordo com o Tempo",
-          completed: false,
-          required: true,
-        },
-        {
           id: "youtube2-1",
           label: "Anúncio Youtube",
-          completed: false,
-          required: true,
-        },
-        {
-          id: "youtube2-2",
-          label: "Youtube Playlists",
           completed: false,
           required: true,
         },

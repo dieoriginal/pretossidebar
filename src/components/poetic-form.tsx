@@ -339,7 +339,7 @@ export default function PoeticForm() {
                     </Button>
                   ) : (
                     <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                      <Link href="http://localhost:3000/versificacao">
+                      <Link href="http://localhost:3000/obraeurudita">
                         Iniciar Criação
                       </Link>
                     </Button>

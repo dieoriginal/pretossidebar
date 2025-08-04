@@ -1,0 +1,10 @@
+---
+created: 2025-07-27T06:00:09.608Z
+updated: 2025-08-03T04:37:28.510Z
+assigned: ""
+progress: 0
+tags: []
+started: 2025-08-03T04:37:28.510Z
+---
+
+# JUNTAR TODOS OS TSX NUM MONOLITH PARA TER FLUXO ENTRE AS VÁRIAS FASES

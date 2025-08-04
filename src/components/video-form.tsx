@@ -360,7 +360,7 @@ export default function VideoForm() {
                 Próximo
               </button>
             ) : (
-              <a href="http://localhost:3000/versificacao" className="bg-green-600 text-white px-6 py-2 rounded inline-block">
+              <a href="http://localhost:3000/obraeurudita" className="bg-green-600 text-white px-6 py-2 rounded inline-block">
                 Gerar Poema
               </a>
             )}

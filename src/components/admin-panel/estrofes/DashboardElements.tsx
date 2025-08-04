@@ -29,12 +29,12 @@ const DashboardElements = () => {
         <Breadcrumb>
           <BreadcrumbList>
             {[
-              "Instrumental",
+              "maquete",
               "Contextualização",
               "Versificação",
               "Gravação",
               "Cinematografia",
-              "Orçamento",
+              "Orçamento e Aluguer",
               "Filmagens",
               "Contratualização",
               "Direitos Autorais",
