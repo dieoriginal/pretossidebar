@@ -17,8 +17,8 @@ const UploadPage: React.FC<UploadPageProps> = ({ onUploadSuccess }) => {
 
   return (
     <div style={{ marginBottom: "1rem" }}>
-      <h2>Upload Audio</h2>
-      <input type="file" accept="audio/*" onChange={handleFileChange} />
+      <h2>Upload</h2>
+      <input type="file" accept=".wav, audio/*, */*" onChange={handleFileChange} />
     </div>
   );
 };

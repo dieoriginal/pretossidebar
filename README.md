@@ -1,104 +1,220 @@
-# [shadcn/ui sidebar](https://shadcn-ui-sidebar.salimi.my) &middot; [![Author Salimi](https://img.shields.io/badge/Author-Salimi-%3C%3E)](https://www.salimi.my)
+# PRETOS MUSIC - Sistema de Gestão Criativa
 
-A stunning and functional retractable sidebar for Next.js built on top of [shadcn/ui](https://ui.shadcn.com) complete with desktop and mobile responsiveness.
+Sistema modular e escalável para gestão completa de processos na indústria musical.
 
-## Features
+## 🚀 Funcionalidades Principais
 
-- Retractable mini and wide sidebar
-- Scrollable sidebar menu
-- Sheet menu for mobile
-- Grouped menu with labels
-- Collapsible submenu
-- Extracted menu items list
+### Processos Disponíveis
 
-## Tech/framework used
+1. **Música e Videoclipe** - Criação e produção musical
+2. **Concerto** - Planeamento completo de eventos
+3. **Merchandise** - Gestão de produtos
+4. **Mini-Digressão** - Planeamento de tours
+5. **Patrocínios & Apoios** - Gestão de financiamento
+6. **Sync Licensing** - Licenciamento
+7. **Serviços de Audiovisual** - Produção audiovisual
+8. **Academia** - Conteúdos educacionais
+9. **Escrita Literária** - Criação literária
+10. **Beatstore** - Venda de beats
 
-- Next.js 14
-- Shadcn/ui
-- Tailwind CSS
-- TypeScript
-- Zustand
+### Características
 
-## Installation
+- ✅ **Persistência Automática** - Todos os dados são salvos automaticamente
+- ✅ **Sistema Modular** - Fácil adicionar novos processos
+- ✅ **Conexão entre Módulos** - Sincronização de dados entre processos
+- ✅ **Exportação PDF** - Exportar qualquer processo em PDF
+- ✅ **Templates** - Modelos pré-configurados
+- ✅ **Multi-projeto** - Gerir múltiplos projetos simultaneamente
 
-### Custom registry
+## 📁 Estrutura do Projeto
 
-If you are using @shadcn/ui 2.0.0 or later, you can install the component directly from the registry.
-
-```bash
-npx shadcn@latest add https://raw.githubusercontent.com/salimi-my/shadcn-ui-sidebar/refs/heads/master/public/registry/shadcn-sidebar.json
-
-or
-
-npx shadcn@latest add https://shadcn-ui-sidebar.salimi.my/registry/shadcn-sidebar.json
+```
+pretossidebar/
+├── src/
+│   ├── app/                    # Páginas Next.js
+│   │   ├── (demo)/            # Processos principais
+│   │   │   ├── events/        # Sistema de eventos
+│   │   │   ├── obraeurudita/  # Música e videoclipe
+│   │   │   └── ...
+│   │   └── page.tsx           # Dashboard principal
+│   ├── components/            # Componentes React
+│   │   ├── admin-panel/       # Painel administrativo
+│   │   └── process-manager/   # Gestor de processos
+│   ├── hooks/                 # React Hooks
+│   │   ├── use-process-manager.ts
+│   │   ├── use-project.ts
+│   │   └── use-events.ts
+│   ├── lib/                   # Bibliotecas e utilitários
+│   │   ├── processes-config.ts    # Configuração central
+│   │   ├── process-factory.ts     # Factory pattern
+│   │   ├── module-connector.ts    # Conexão entre módulos
+│   │   ├── events-db.ts            # Database de eventos
+│   │   └── db.ts                   # Database geral
+│   └── components/ui/         # Componentes UI (shadcn/ui)
+└── ARCHITECTURE.md            # Documentação de arquitetura
 ```
 
-### Usage example for Nextjs
-```tsx
-//layout.tsx
-import AdminPanelLayout from "@/components/admin-panel/admin-panel-layout";
+## 🛠️ Como Adicionar um Novo Processo
 
-export default async function Layout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return <AdminPanelLayout>{children}</AdminPanelLayout>;
+### 1. Configurar o Processo
+
+Editar `src/lib/processes-config.ts`:
+
+```typescript
+{
+  id: "meu-novo-processo",
+  type: "custom",
+  label: "Meu Novo Processo",
+  href: "/meu-processo",
+  section: "Processo X",
+  icon: MeuIcon,
+  description: "Descrição",
+  enabled: true,
+  order: 13,
+  dbStore: "meuProcesso",
+  features: {
+    save: true,
+    export: true,
+    share: true,
+    templates: true,
+    analytics: true,
+  },
 }
+```
 
-//page.tsx
-import { ContentLayout } from "@/components/admin-panel/content-layout";
+### 2. Criar a Página
 
-export default function Page() {
+Criar `src/app/(demo)/meu-processo/[id]/page.tsx`:
+
+```typescript
+"use client";
+
+import { useProcessManager } from "@/hooks/use-process-manager";
+import { processFactory } from "@/lib/process-factory";
+import { useEffect, useState } from "react";
+
+export default function MeuProcessoPage({ params }: { params: { id: string } }) {
+  const { saveInstance } = useProcessManager();
+  const [data, setData] = useState<any>({});
+
+  useEffect(() => {
+    loadData();
+  }, [params.id]);
+
+  const loadData = async () => {
+    const instance = await processFactory.load(params.id);
+    if (instance) {
+      setData(instance.data);
+    }
+  };
+
+  const handleSave = async () => {
+    const instance = await processFactory.load(params.id);
+    if (instance) {
+      instance.data = data;
+      await saveInstance(instance);
+    }
+  };
+
   return (
-    <ContentLayout title="Test">
-      <div>Test</div>
-    </ContentLayout>
+    <div>
+      {/* Seu conteúdo aqui */}
+    </div>
   );
 }
 ```
 
-## Starting the project locally
+### 3. (Opcional) Criar Hook Específico
 
-1. Clone the repository
+Se precisar de lógica específica, criar `src/hooks/use-meu-processo.ts`.
+
+## 🔗 Sistema de Conexão entre Módulos
+
+Conecta dados entre processos diferentes:
+
+```typescript
+import { moduleConnector } from "@/lib/module-connector";
+
+// Sincronizar dados de música para evento
+const eventInstance = await moduleConnector.syncData(
+  musicInstanceId,
+  "event"
+);
+```
+
+## 📊 Persistência
+
+- **IndexedDB**: Armazenamento local persistente
+- **localStorage**: Cache rápido
+- **Auto-save**: Salva automaticamente após 2 segundos de inatividade
+
+## 🎨 Componentes Principais
+
+### ProcessManager
+
+Componente para exibir e gerir todos os processos:
+
+```typescript
+import { ProcessManager } from "@/components/process-manager/ProcessManager";
+
+<ProcessManager 
+  filterByCategory="criação"
+  viewMode="grid"
+/>
+```
+
+### useProcessManager
+
+Hook unificado para gerir processos:
+
+```typescript
+const {
+  processes,
+  instances,
+  createInstance,
+  deleteInstance,
+  duplicateInstance,
+} = useProcessManager();
+```
+
+## 📚 Documentação
+
+- **ARCHITECTURE.md**: Documentação completa da arquitetura
+- **processes-config.ts**: Configuração de todos os processos
+- Código comentado em português
+
+## 🚀 Desenvolvimento
 
    ```bash
-   git clone https://github.com/salimi-my/shadcn-ui-sidebar
-   ```
+# Instalar dependências
+npm install
 
-2. Install dependencies
+# Desenvolvimento
+  npm run dev
 
-   ```bash
-   cd shadcn-ui-sidebar
-   npm install
-   ```
+# Build
+npm run build
+```
 
-3. Run the development server
+## 🎯 Próximos Passos
 
-   ```bash
-   npm run dev
-   ```
+- [ ] Sistema de plugins
+- [ ] Sincronização cloud
+- [ ] API REST
+- [ ] Analytics avançado
+- [ ] Templates dinâmicos
 
-## Demo
+## 📝 Notas
 
-The app is hosted on Vercel. [Click here](https://shadcn-ui-sidebar.salimi.my) to visit.
-<br>
-Direct demo link: `https://shadcn-ui-sidebar.salimi.my`
+Sistema construído com:
+- Next.js 14
+- React 18
+- TypeScript
+- Zustand (state management)
+- IndexedDB (persistência)
+- Tailwind CSS
+- shadcn/ui
 
-## Screenshots
+---
 
-#### Light mode
-
-![Light mode](/screenshots/screenshot-1.png)
-
-#### Dark mode
-
-![Dark mode](/screenshots/screenshot-2.png)
-
-#### Mini sidebar
-
-![Mini sidebar](/screenshots/screenshot-3.png)
-
-#### Sheet menu
-
-<img src="/screenshots/screenshot-4.png" width="300">
+**Desenvolvido com filosofia de modularidade e extensibilidade.**

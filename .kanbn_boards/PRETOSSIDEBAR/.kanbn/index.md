@@ -9,10 +9,13 @@ completedColumns:
 
 ## Backlog
 
-- [conectact-a-narratologia-com-a-versificaçÃ-o-e-cinematografia](tasks/conectact-a-narratologia-com-a-versificaçÃ-o-e-cinematografia.md)
 - [nas-configurações-gerais-do-projeto-remover-segurança-e-logística-e-continuidade-e-referências-visuais-por-qualidade-4k-1080p](tasks/nas-configurações-gerais-do-projeto-remover-segurança-e-logística-e-continuidade-e-referências-visuais-por-qualidade-4k-1080p.md)
 - [add-tooltip-on-shuter-speed-https-www-tepapa-govt-nz-assets-76067-1687925353-photoworkshop05pt2-pdf](tasks/add-tooltip-on-shuter-speed-https-www-tepapa-govt-nz-assets-76067-1687925353-photoworkshop05pt2-pdf.md)
 - [meter-check-boxes-ou-cores-para-checar-na-cinematografia-se-já-tem-o-ví-deo-ou-nã-o-red-ou-green](tasks/meter-check-boxes-ou-cores-para-checar-na-cinematografia-se-já-tem-o-ví-deo-ou-nã-o-red-ou-green.md)
+- [por-https-dicionario-priberam-org-disponivel-na-pagina-de-letra](tasks/por-https-dicionario-priberam-org-disponivel-na-pagina-de-letra.md)
+- [adicionar-language-tool-para-auto-corrigir-palavras-em-portugues](tasks/adicionar-language-tool-para-auto-corrigir-palavras-em-portugues.md)
+- [mecanismo-de-envio-de-email-automatico](tasks/mecanismo-de-envio-de-email-automatico.md)
+- [por-mú-ltiplas-imagens-em-todas-as-venues](tasks/por-mú-ltiplas-imagens-em-todas-as-venues.md)
 
 ## Todo
 
@@ -24,3 +27,4 @@ completedColumns:
 
 - [editar-os-jsxpdfs](tasks/editar-os-jsxpdfs.md)
 - [adicionar-narratologia](tasks/adicionar-narratologia.md)
+- [conectact-a-narratologia-com-a-versificaçÃ-o-e-cinematografia](tasks/conectact-a-narratologia-com-a-versificaçÃ-o-e-cinematografia.md)

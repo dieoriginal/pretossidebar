@@ -6,7 +6,8 @@ import pyphen
 from string import punctuation
 
 app = Flask(__name__)
-CORS(app, resources={r"/analyze": {"origins": "http://localhost:3000"}})  # Habilitar CORS apenas para a rota /analyze
+# Allow Next.js dev servers on 3000 and 3001
+CORS(app, resources={r"/analyze": {"origins": ["http://localhost:3000", "http://localhost:3001"]}})
 
 # Create a Pyphen dictionary for Portuguese.
 # Use 'pt_PT' for European Portuguese or 'pt_BR' for Brazilian Portuguese.

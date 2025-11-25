@@ -8,23 +8,23 @@ export const metadata: Metadata = {
       ? `https://${process.env.VERCEL_URL}`
       : `http://localhost:${process.env.PORT || 3000}`
   ),
-  title: "FAZ TEU MAMBO",
+  title: "Faz Teu Mambo - Pretos Music Software",
   description:
-    "A stunning and functional retractable sidebar for Next.js built on top of shadcn/ui complete with desktop and mobile responsiveness.",
+    "Pretos Music Software: suite criativa para música, vídeo e narrativa.",
   alternates: {
     canonical: "/"
   },
   openGraph: {
     url: "/",
-    title: "shadcn/ui sidebar",
+    title: "Faz Teu Mambo - Pretos Music Software",
     description:
-      "A stunning and functional retractable sidebar for Next.js built on top of shadcn/ui complete with desktop and mobile responsiveness.",
+      "Pretos Music Software: suite criativa para música, vídeo e narrativa.",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "shadcn/ui sidebar",
+    title: "Faz Teu Mambo - Pretos Music Software",
     description:
-      "A stunning and functional retractable sidebar for Next.js built on top of shadcn/ui complete with desktop and mobile responsiveness."
+      "Pretos Music Software: suite criativa para música, vídeo e narrativa."
   }
 }; 

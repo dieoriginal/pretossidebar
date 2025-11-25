@@ -1,9 +1,10 @@
 ---
 created: 2025-08-01T23:51:53.158Z
-updated: 2025-08-01T23:51:57.065Z
+updated: 2025-10-09T19:02:40.928Z
 assigned: ""
 progress: 0
 tags: []
+completed: 2025-10-09T19:02:40.928Z
 ---
 
 # CONECTACT A NARRATOLOGIA, COM A VERSIFICAÇÃO E CINEMATOGRAFIA

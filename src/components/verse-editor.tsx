@@ -2,6 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -9,10 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Crosshair, Gauge, Palette, Ruler, Sparkles, Wand2 } from "lucide-react";
 
-export function VerseControls({ formState, onParamChange }) {
+export function VerseControls({ formState, onParamChange }: { formState: any; onParamChange: (k: string, v: any) => void }) {
   return (
     <div className="flex flex-wrap gap-4 p-4 border-b bg-muted/40">
       {/* Controles de Métrica */}
@@ -60,11 +60,15 @@ export function VerseControls({ formState, onParamChange }) {
             <span>Apolíneo</span>
             <span>Dionisíaco</span>
           </div>
-          <Slider 
-            value={[formState.apolineo]}
+          <input
+            type="range"
+            min={0}
             max={100}
             step={1}
-            onValueChange={(v) => onParamChange('apolineo', v[0])}
+            value={formState.apolineo ?? 50}
+            onChange={(e) => onParamChange('apolineo', Number(e.target.value))}
+            className="w-full"
+            aria-label="Balanço Apolíneo/Dionisíaco"
           />
         </div>
       </div>
@@ -102,11 +106,11 @@ export function VerseControls({ formState, onParamChange }) {
 }
 
 // Modifique o VerseCard para incluir os controles
-function VerseCard({ index, formParams }) {
-  const [localParams, setLocalParams] = useState(formParams);
+function VerseCard({ index, formParams }: { index: number; formParams: any }) {
+  const [localParams, setLocalParams] = useState<any>(formParams);
 
-  const handleParamChange = (param, value) => {
-    setLocalParams(prev => ({
+  const handleParamChange = (param: string, value: any) => {
+    setLocalParams((prev: any) => ({
       ...prev,
       [param]: value
     }));

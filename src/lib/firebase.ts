@@ -1,9 +1,8 @@
-import { compress, decompress } from 'pako';
+import { deflate, inflate } from 'pako';
 import { doc, setDoc, getDoc, serverTimestamp, getDocs, collection } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { getAnalytics } from 'firebase/analytics';
 import { saveProjectToIndexedDB, loadProjectFromIndexedDB } from './db';
 
 const firebaseConfig = {
@@ -19,13 +18,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const analytics = getAnalytics(app);
+// Avoid importing analytics on the server to prevent window reference errors
+export const analytics = null as unknown as undefined;
 
 export const syncProjectToCloud = async (userId: string, project: any) => {
-  const compressed = compress(JSON.stringify(project.data));
-  
-  await setDoc(doc(db, `users/${userId}/projects/${project.id}`), {
-    ...project,
+  const payload = (project && project.data) ? project.data : project;
+  const id = (project && project.id) ? project.id : 'current-project';
+  const compressed = deflate(JSON.stringify(payload), { to: 'string' });
+
+  await setDoc(doc(db, `users/${userId}/projects/${id}`), {
+    id,
     data: compressed,
     lastSynced: serverTimestamp(),
   });
@@ -34,13 +36,28 @@ export const syncProjectToCloud = async (userId: string, project: any) => {
 export const loadProjectsFromCloud = async (userId: string) => {
   const snapshot = await getDocs(collection(db, `users/${userId}/projects`));
   return snapshot.docs.map(doc => {
-    const data = decompress(doc.data().data);
+    const dataStr = inflate(doc.data().data as string, { to: 'string' });
     return {
       id: doc.id,
       ...doc.data(),
-      data: JSON.parse(data),
-    };
+      data: JSON.parse(dataStr as string),
+    } as any;
   });
+};
+
+// Public publishing of singles (readable across devices)
+export const publishPublicSingle = async (payload: {
+  id: string; title: string; artist?: string; featured?: string[]; producer?: string; coverUrl?: string;
+}) => {
+  const ref = doc(db, `publicSingles/${payload.id}`);
+  await setDoc(ref, { ...payload, updatedAt: new Date().toISOString() });
+};
+
+export const fetchPublicSingles = async (): Promise<Array<{
+  id: string; title: string; artist?: string; featured?: string[]; producer?: string; coverUrl?: string;
+}>> => {
+  const snap = await getDocs(collection(db, 'publicSingles'));
+  return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
 };
 
 export const saveProjectLocally = async (state: any) => {

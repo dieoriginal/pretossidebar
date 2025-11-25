@@ -93,3 +93,19 @@ export const getAllProjectsFromIndexedDB = async () => {
     throw error;
   }
 }; 
+
+export const deleteProjectFromIndexedDB = async (projectId: string) => {
+  try {
+    const db = await initializeDB();
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.delete(projectId);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(true);
+      request.onerror = (event) => reject((event.target as IDBRequest).error);
+    });
+  } catch (error) {
+    console.error('Erro ao apagar projeto do IndexedDB:', error);
+    throw error;
+  }
+};

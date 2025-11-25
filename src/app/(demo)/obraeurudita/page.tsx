@@ -1,40 +1,22 @@
 "use client";
-
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import { useProject } from "@/hooks/use-project";
+import FeaturingManager from "@/components/FeaturingManager";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "@/components/mode-toggle";
-import ControlRoomSidebar from "@/components/control-room-sider";
 import Metronome from "@/components/admin-panel/estrofes/metronome";
+import { TitleSuggestionsDialog, AdlibsDialog, HitFrameworkDialog } from "@/components/library";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import Image from "next/image";
 
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuGroup
-} from "@/components/ui/dropdown-menu";
-import { Sheet, SheetHeader, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Badge } from "@/components/ui/badge";
-import { useSidebar } from "@/hooks/use-sidebar";
-
-
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import jsPDF from "jspdf";
+// dnd-kit imports for drag & drop and sortable lists
 import {
   DndContext,
   closestCenter,
@@ -42,33 +24,38 @@ import {
   useSensors,
   PointerSensor,
   KeyboardSensor,
-  DragEndEvent,
-  DragOverlay,
-  defaultDropAnimation,
 } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  horizontalListSortingStrategy,
   useSortable,
+  horizontalListSortingStrategy,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  restrictToVerticalAxis,
-  restrictToHorizontalAxis,
-} from "@dnd-kit/modifiers";
-import { Label } from "@/components/ui/label";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { DragOverlay, defaultDropAnimation } from "@dnd-kit/core";
+import { jsPDF } from "jspdf";
+// UI inputs and dialogs used below
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  X,
-  Plus,
-  Trash2,
-  Eye,
-  FileText,
-  Video,
-  Image,
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuContent,
+  DropdownMenuGroup
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetHeader, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
+import { useSidebar } from "@/hooks/use-sidebar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Image as ImageIcon,
   Info,
   Save,
   LayoutGrid,
@@ -78,9 +65,14 @@ import {
   PanelsTopLeft,
   ChevronLeft,
   ChevronDown,
-  Dot
+  Dot,
+  Plus,
+  X,
+  Eye,
+  Video,
+  FileText
 } from "lucide-react";
-import { Select } from "@/components/ui/select";
+// (Select imported above with full API)
 import { debounce } from "lodash";
 import {
   db,
@@ -93,6 +85,9 @@ import { salvarProjeto, carregarProjeto } from "@/lib/storage";
 import { setCookie, getCookie } from "@/lib/cookies";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import ReferenceTabs from "@/components/ReferenceTabs";
+import { useToastLite } from "@/components/ui/toast-lite";
 
 import NarratologiaTab from "@/components/narratologia-tab";
 
@@ -104,12 +99,14 @@ import FilmagemStep from "@/steps/filmagem";
 import FotografiaStep from "@/steps/fotografia";
 import GravacaoStep from "@/steps/gravacao";
 import LancamentoStep from "@/steps/lancamento";
-import MaqueteStep from "@/steps/maquete";
+import VideoEditChecklist from "@/steps/edicaodevideo";
 import MonetizacaoStep from "@/steps/monetizacao";
 import NarratologiaStep from "@/steps/narratologia";
 import OrcamentoStep from "@/steps/orcamento";
 import VestuarioStep from "@/steps/vestuario";
+// (useProject imported at top)
 
+// Use static import to avoid dev chunk loading timeouts
 
 interface VerseWord {
   text: string;
@@ -164,6 +161,9 @@ interface Strophe {
   architecture: string;
   architectureDesc?: string;
   description: string;
+  // Optional fields used in UI controls
+  threeAct?: string;
+  musicSection?: string;
 }
 
 interface SongInfo {
@@ -180,169 +180,175 @@ const initialSongInfo: SongInfo = {
   producer: "",
 };
 
-interface LiteraryFigure {
-  name: string;
-  description: string;
-  examples: string[];
-}
+type LiteraryFigure = { name: string; description: string; example: string };
+type Word = { text: string; color?: string; stressed?: boolean };
 
 const literaryFigures: LiteraryFigure[] = [
   {
     name: "Metáfora",
     description: "Comparação implícita entre duas coisas.",
-    examples: ["A vida é um sonho.", "O sol sorriu para nós."],
+    example: "A vida é um sonho.",
   },
   {
     name: "Símile",
     description: "Comparação explícita usando 'como'.",
-    examples: ["Ele é forte como um touro.", "E chora, e grita, e corre, e cai."],
+    example: "Ele é forte como um touro.",
   },
   {
     name: "Hipérbole",
     description: "Exagero para enfatizar uma ideia.",
-    examples: ["Estou morrendo de fome.", "Menos é mais."],
+    example: "Estou morrendo de fome.",
   },
   {
     name: "Ironia",
     description: "Dizer o oposto do que se quer expressar.",
-    examples: ["Que dia lindo! (num dia chuvoso)", "Ah, que bela é a tua hipocrisia vestida de ouro."],
+    example: "Que dia lindo! (num dia chuvoso)",
   },
   {
     name: "Aliteração",
     description: "Repetição de sons consonantais.",
-    examples: ["O rato roeu a roupa do rei de Roma.", "Chove sobre a cidade, chove sobre os campos."],
+    example: "O rato roeu a roupa do rei de Roma.",
   },
   {
     name: "Prosopopeia",
     description: "Atribuir características humanas a seres inanimados.",
-    examples: ["O sol sorriu para nós.", "O rei do pop (Michael Jackson)."],
+    example: "O sol sorriu para nós.",
   },
   {
     name: "Onomatopeia",
     description: "Palavras que imitam sons.",
-    examples: ["O relógio faz tic-tac.", "PSSSSH!", "WHOOSH!", "FUMO!", "VAPOR!", "NÉVOA!"],
+    example: "O relógio faz tic-tac.",
   },
   {
     name: "Eufemismo",
     description: "Suavização de uma expressão.",
-    examples: ["Ele partiu para um lugar melhor.", "E chora, e grita, e corre, e cai."],
+    example: "Ele partiu para um lugar melhor.",
   },
   {
     name: "Antítese",
     description: "Contraposição de ideias.",
-    examples: ["É um mar de rosas, mas também um deserto de espinhos.", "Menos é mais."],
+    example: "É um mar de rosas, mas também um deserto de espinhos.",
   },
   {
     name: "Paradoxo",
     description: "Ideias opostas que geram reflexão.",
-    examples: ["Menos é mais.", "É um mar de rosas, mas também um deserto de espinhos."],
+    example: "Menos é mais.",
   },
   {
     name: "Quiasmo",
-    description: "Inversão na ordem das palavras ou ideias em frases paralelas.",
-    examples: ["Devo viver para comer ou comer para viver?", "Menos é mais."],
+    description:
+      "Inversão na ordem das palavras ou ideias em frases paralelas.",
+    example: "Devo viver para comer ou comer para viver?",
   },
   {
     name: "Anáfora",
-    description: "Repetição de uma palavra ou expressão no início de frases ou versos.",
-    examples: ["Chove sobre a cidade, chove sobre os campos.", "Menos é mais."],
+    description:
+      "Repetição de uma palavra ou expressão no início de frases ou versos.",
+    example: "Chove sobre a cidade, chove sobre os campos.",
   },
   {
     name: "Assíndeto",
     description: "Omissão de conjunções.",
-    examples: ["Vim, vi, venci.", "Menos é mais."],
+    example: "Vim, vi, venci.",
   },
   {
     name: "Polissíndeto",
     description: "Uso excessivo de conjunções.",
-    examples: ["E chora, e grita, e corre, e cai.", "Menos é mais."],
+    example: "E chora, e grita, e corre, e cai.",
   },
   {
     name: "Metonímia",
     description: "Substituição por proximidade de sentido.",
-    examples: ["Bebi um copo.", "Menos é mais."],
+    example: "Bebi um copo.",
   },
   {
     name: "Sinestesia",
     description: "Mistura de sensações de sentidos diferentes.",
-    examples: ["Ouvi um cheiro doce.", "Menos é mais."],
+    example: "Ouvi um cheiro doce.",
   },
   {
     name: "Gradação",
     description: "Sequência crescente ou decrescente de ideias.",
-    examples: ["Chorei, lamentei, desesperei.", "Menos é mais."],
+    example: "Chorei, lamentei, desesperei.",
   },
   {
     name: "Pleonasmo",
     description: "Uso de palavras redundantes para reforçar a ideia.",
-    examples: ["Subir para cima.", "Menos é mais."],
+    example: "Subir para cima.",
   },
   {
     name: "Elipse",
     description: "Omissão de um termo facilmente subentendido.",
-    examples: ["Na sala, apenas dois alunos.", "Menos é mais."],
+    example: "Na sala, apenas dois alunos.",
   },
   {
     name: "Zeugma",
     description: "Omissão de um termo já mencionado anteriormente.",
-    examples: ["Eu gosto de café; ela, de chá.", "Menos é mais."],
+    example: "Eu gosto de café; ela, de chá.",
   },
   {
     name: "Catacrese",
     description: "Metáfora desgastada ou comum no uso cotidiano.",
-    examples: ["Pé da mesa.", "Menos é mais."],
+    example: "Pé da mesa.",
   },
   {
     name: "Antonomásia",
     description: "Uso de uma característica ou título no lugar do nome.",
-    examples: ["O Rei do Pop (Michael Jackson).", "Menos é mais."],
+    example: "O Rei do Pop (Michael Jackson).",
   },
   {
     name: "Apóstrofe",
     description: "Chamamento enfático a uma pessoa ou coisa.",
-    examples: ["Ó deuses, escutem meu clamor!", "Menos é mais."],
+    example: "Ó deuses, escutem meu clamor!",
   },
   {
     name: "Paranomásia",
-    description: "Uso de palavras com sons parecidos, mas significados diferentes.",
-    examples: ["Conhecer para crescer.", "Menos é mais."],
+    description:
+      "Uso de palavras com sons parecidos, mas significados diferentes.",
+    example: "Conhecer para crescer.",
   },
   {
     name: "Hipérbato",
     description: "Inversão da ordem lógica das palavras na frase.",
-    examples: ["De tudo, ao meu amor serei atento.", "Menos é mais."],
+    example: "De tudo, ao meu amor serei atento.",
   },
   {
     name: "Perífrase",
     description: "Uso de várias palavras para se referir a algo ou alguém.",
-    examples: ["A cidade maravilhosa (Rio de Janeiro).", "Menos é mais."],
+    example: "A cidade maravilhosa (Rio de Janeiro).",
   },
 ];
 
 const verseFunctions = [
   {
     name: "Afirmação",
-    description: "Declara algo como verdadeiro. Ex: 'Eu sou o fogo que queima sem cessar.'",
+    description:
+      "Declara algo como verdadeiro. Ex: 'Eu sou o fogo que queima sem cessar.'",
   },
   {
     name: "Ato",
-    description: "Expressa ação, movimento ou mudança. Ex: 'Levanto-me contra o silêncio.'",
+    description:
+      "Expressa ação, movimento ou mudança. Ex: 'Levanto-me contra o silêncio.'",
   },
   {
     name: "Desejo",
-    description: "Revela vontade ou intenção. Ex: 'Quero rasgar o céu com gritos de guerra.'",
+    description:
+      "Revela vontade ou intenção. Ex: 'Quero rasgar o céu com gritos de guerra.'",
   },
   {
     name: "Negação",
-    description: "Recusa, rejeição, oposição. Ex: 'Não sou a sombra que vocês pensam.'",
+    description:
+      "Recusa, rejeição, oposição. Ex: 'Não sou a sombra que vocês pensam.'",
   },
   {
     name: "Pergunta",
-    description: "Interrogativa, direta ou retórica. Ex: 'Quem sou eu diante do abismo?'",
+    description:
+      "Interrogativa, direta ou retórica. Ex: 'Quem sou eu diante do abismo?'",
   },
   {
     name: "Profecia",
-    description: "Anuncia o que virá, com peso visionário. Ex: 'O dia da queda virá ao som dos tambores.'",
+    description:
+      "Anuncia o que virá, com peso visionário. Ex: 'O dia da queda virá ao som dos tambores.'",
   },
   {
     name: "Declaração de guerra",
@@ -350,27 +356,33 @@ const verseFunctions = [
   },
   {
     name: "Confissão",
-    description: "Exposição íntima ou revelação. Ex: 'Carrego pecados em cada palavra.'",
+    description:
+      "Exposição íntima ou revelação. Ex: 'Carrego pecados em cada palavra.'",
   },
   {
     name: "Evocação",
-    description: "Chama ou invoca algo/alguém. Ex: 'Venham, espíritos da noite eterna.'",
+    description:
+      "Chama ou invoca algo/alguém. Ex: 'Venham, espíritos da noite eterna.'",
   },
   {
     name: "Desabafo",
-    description: "Descarga emocional ou mental. Ex: 'Estou farto das máscaras e jogos.'",
+    description:
+      "Descarga emocional ou mental. Ex: 'Estou farto das máscaras e jogos.'",
   },
   {
     name: "Crítica / Ataque",
-    description: "Julgamento ou acusação. Ex: 'Vocês se arrastam na lama e chamam isso de trono.'",
+    description:
+      "Julgamento ou acusação. Ex: 'Vocês se arrastam na lama e chamam isso de trono.'",
   },
   {
     name: "Manifesto / Declaração ideológica",
-    description: "Posição política, social ou espiritual. Ex: 'A ordem será destruída pela verdade nua.'",
+    description:
+      "Posição política, social ou espiritual. Ex: 'A ordem será destruída pela verdade nua.'",
   },
   {
     name: "Autodefinição",
-    description: "Construção da própria identidade. Ex: 'Sou lâmina, sou código, sou negação do caos.'",
+    description:
+      "Construção da própria identidade. Ex: 'Sou lâmina, sou código, sou negação do caos.'",
   },
   {
     name: "Chamado / Convocação",
@@ -378,7 +390,8 @@ const verseFunctions = [
   },
   {
     name: "Maldição / Benção",
-    description: "Desejo de ruína ou proteção. Ex: 'Que tua mentira te devore por dentro.'",
+    description:
+      "Desejo de ruína ou proteção. Ex: 'Que tua mentira te devore por dentro.'",
   },
   {
     name: "Juramento / Promessa",
@@ -386,7 +399,8 @@ const verseFunctions = [
   },
   {
     name: "Despedida / Corte",
-    description: "Fim de algo, separação. Ex: 'Este é o último eco do que fomos.'",
+    description:
+      "Fim de algo, separação. Ex: 'Este é o último eco do que fomos.'",
   },
   {
     name: "Instrução / Ordem",
@@ -394,11 +408,13 @@ const verseFunctions = [
   },
   {
     name: "Ironia / Sarcasmo",
-    description: "Duplo sentido, crítica disfarçada. Ex: 'Ah, que bela é a tua hipocrisia vestida de ouro.'",
+    description:
+      "Duplo sentido, crítica disfarçada. Ex: 'Ah, que bela é a tua hipocrisia vestida de ouro.'",
   },
   {
     name: "Provocação / Desafio",
-    description: "Convite ao confronto. Ex: 'Se és rei, então lute por tua coroa.'",
+    description:
+      "Convite ao confronto. Ex: 'Se és rei, então lute por tua coroa.'",
   },
 ];
 
@@ -414,13 +430,16 @@ const voiceOptions = [
 const dramArqOptions = [
   {
     value: "Prelúdio",
-    description: "Introdução poética que prepara o leitor para o que está por vir",
-    instruction: "Use esta estrofe para criar uma atmosfera e sugerir os temas que serão desenvolvidos, como uma abertura musical que antecipa a sinfonia.",
+    description:
+      "Introdução poética que prepara o leitor para o que está por vir",
+    instruction:
+      "Use esta estrofe para criar uma atmosfera e sugerir os temas que serão desenvolvidos, como uma abertura musical que antecipa a sinfonia.",
   },
   {
     value: "Prólogo",
     description: "Introdução que apresenta o contexto inicial da obra",
-    instruction: "Nesta estrofe, estabeleça o cenário e apresente os personagens principais.",
+    instruction:
+      "Nesta estrofe, estabeleça o cenário e apresente os personagens principais.",
   },
   {
     value: "Parodos (coro)",
@@ -434,40 +453,51 @@ const dramArqOptions = [
     subtypes: [
       {
         value: "Ascensão do herói",
-        description: "O herói é introduzido e ganha destaque, mostrando suas qualidades e ambições iniciais.",
-        instruction: "Apresente o protagonista e estabeleça seus objetivos iniciais.",
+        description:
+          "O herói é introduzido e ganha destaque, mostrando suas qualidades e ambições iniciais.",
+        instruction:
+          "Apresente o protagonista e estabeleça seus objetivos iniciais.",
       },
       {
         value: "Erro trágico (hamartia)",
-        description: "O herói comete um erro crucial, muitas vezes por orgulho ou ignorância, que inicia a reviravolta.",
-        instruction: "Mostre o momento crucial onde o herói comete um erro que altera o curso da história.",
+        description:
+          "O herói comete um erro crucial, muitas vezes por orgulho ou ignorância, que inicia a reviravolta.",
+        instruction:
+          "Mostre o momento crucial onde o herói comete um erro que altera o curso da história.",
       },
       {
         value: "Virada de fortuna (peripeteia)",
-        description: "Ocorre uma mudança drástica na sorte do herói, geralmente de boa para má, intensificando o conflito.",
-        instruction: "Descreva a reviravolta que muda completamente a situação do herói.",
+        description:
+          "Ocorre uma mudança drástica na sorte do herói, geralmente de boa para má, intensificando o conflito.",
+        instruction:
+          "Descreva a reviravolta que muda completamente a situação do herói.",
       },
       {
         value: "Queda (catástrofe)",
-        description: "O herói enfrenta as consequências de seus erros, levando a sofrimento e, frequentemente, à morte.",
+        description:
+          "O herói enfrenta as consequências de seus erros, levando a sofrimento e, frequentemente, à morte.",
         instruction: "Mostre as consequências dramáticas dos erros do herói.",
       },
       {
         value: "Reconhecimento (anagnórise)",
-        description: "O herói ou outros personagens ganham um entendimento crítico da situação, reconhecendo verdades antes ocultas.",
-        instruction: "Descreva o momento de revelação e compreensão da verdade.",
+        description:
+          "O herói ou outros personagens ganham um entendimento crítico da situação, reconhecendo verdades antes ocultas.",
+        instruction:
+          "Descreva o momento de revelação e compreensão da verdade.",
       },
     ],
   },
   {
     value: "Êxodo",
     description: "Conclusão da história",
-    instruction: "Resolva os conflitos e encerre a narrativa de forma satisfatória.",
+    instruction:
+      "Resolva os conflitos e encerre a narrativa de forma satisfatória.",
   },
   {
     value: "Epílogo",
     description: "Texto final que complementa ou encerra a obra",
-    instruction: "Forneça uma reflexão final ou mostre as consequências da história.",
+    instruction:
+      "Forneça uma reflexão final ou mostre as consequências da história.",
   },
 ];
 
@@ -512,7 +542,8 @@ const literaryTechniques = [
       },
       {
         name: "Monólogo interno",
-        description: "Pensamentos ou sentimentos do personagem expressos em sua mente.",
+        description:
+          "Pensamentos ou sentimentos do personagem expressos em sua mente.",
       },
       {
         name: "Stream of consciousness",
@@ -520,7 +551,8 @@ const literaryTechniques = [
       },
       {
         name: "Narrador omnisciente",
-        description: "Conhecimento de todos os pensamentos e ações dos personagens.",
+        description:
+          "Conhecimento de todos os pensamentos e ações dos personagens.",
       },
       {
         name: "Narrador limitado",
@@ -528,11 +560,13 @@ const literaryTechniques = [
       },
       {
         name: "Narrador em terceira pessoa",
-        description: "Narrativa em terceira pessoa, distanciando o leitor dos personagens.",
+        description:
+          "Narrativa em terceira pessoa, distanciando o leitor dos personagens.",
       },
       {
         name: "Narrador em primeira pessoa",
-        description: "Narrativa em primeira pessoa, envolvendo o leitor nos pensamentos do personagem.",
+        description:
+          "Narrativa em primeira pessoa, envolvendo o leitor nos pensamentos do personagem.",
       },
       {
         name: "Narrador dual",
@@ -544,7 +578,8 @@ const literaryTechniques = [
       },
       {
         name: "Narrador ausente",
-        description: "Ausência de um narrador explícito, deixando o leitor interpretar a história.",
+        description:
+          "Ausência de um narrador explícito, deixando o leitor interpretar a história.",
       },
       {
         name: "Narrador ironico",
@@ -565,7 +600,8 @@ const literaryTechniques = [
 const metaNarrativeTools = [
   {
     name: "Meta-comentário",
-    description: "Quando o artista comenta a própria letra ou processo criativo.",
+    description:
+      "Quando o artista comenta a própria letra ou processo criativo.",
   },
   {
     name: "Quebra da quarta parede",
@@ -619,7 +655,8 @@ const personaTechniques = [
     techniques: [
       {
         name: "Não é o autor",
-        description: "A persona é uma voz fictícia, não corresponde ao 'eu' real do autor.",
+        description:
+          "A persona é uma voz fictícia, não corresponde ao 'eu' real do autor.",
       },
       {
         name: "Voz e perspetiva",
@@ -631,11 +668,13 @@ const personaTechniques = [
       },
       {
         name: "Presente em poesia e prosa",
-        description: "Embora comum na poesia, também aparece em romances, contos e outros géneros.",
+        description:
+          "Embora comum na poesia, também aparece em romances, contos e outros géneros.",
       },
       {
         name: "Simples ou complexa",
-        description: "Pode ser uma caracterização direta ou uma construção profunda e multifacetada.",
+        description:
+          "Pode ser uma caracterização direta ou uma construção profunda e multifacetada.",
       },
     ],
   },
@@ -647,11 +686,13 @@ const threeActStructure = [
     techniques: [
       {
         name: "Introdução de personagens",
-        description: "Apresenta os personagens principais e o contexto da história.",
+        description:
+          "Apresenta os personagens principais e o contexto da história.",
       },
       {
         name: "Conflito central",
-        description: "Estabelece o problema ou desafio que impulsiona a narrativa.",
+        description:
+          "Estabelece o problema ou desafio que impulsiona a narrativa.",
       },
       {
         name: "Incidente incitante",
@@ -738,7 +779,7 @@ const WordTag = ({
       ) : (
         <span
           onClick={() => setIsEditing(true)}
-          className={`px-1 uppercase font-bold text-sm ${(word as any).stressed ? "font-black" : ""}`}
+          className={"px-1 uppercase font-bold text-sm"}
         >
           {value || "___"}
         </span>
@@ -816,7 +857,7 @@ const SortableVerse = ({
     transition,
     isDragging,
   } = useSortable({ id: verse.id });
-  const bgColorMapping = {
+  const bgColorMapping: Record<string, string> = {
     A: "#ef4444",
     B: "#3b82f6",
     C: "#84cc16",
@@ -901,7 +942,7 @@ const SortableVerse = ({
         >
           ↕
         </button>
-        <button onClick={onRemove} className="text-red-500">
+        <button onClick={onRemove} className="text-red-500" aria-label="Remover verso" title="Remover verso">
           <X size={16} />
         </button>
       </div>
@@ -922,50 +963,7 @@ const SortableVerse = ({
           }
           className="w-32 text-sm border-2 border-yellow-500 bg-slate-700-500 focus:border-yellow-500 focus:bg-black"
         />
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="h-10">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Sugestões de Adlibs</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4">
-              {adlibCategories.map((category, index) => (
-                <div key={index} className="space-y-2">
-                  <h3 className="font-bold">{category.name}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {category.adlibs.map((adlib, i) => (
-                      <Button
-                        key={i}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onVerseChange({ ...verse, adlib })}
-                      >
-                        {adlib}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Input
-              placeholder="Adicionar novo adlib"
-              className="mt-2"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  const target = e.target as HTMLInputElement;
-                  if (target.value.trim()) {
-                    adlibCategories[3].adlibs.push(target.value.toUpperCase());
-                    target.value = "";
-                  }
-                }
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        <AdlibsDialog onPick={(phrase) => onVerseChange({ ...verse, adlib: phrase.toUpperCase() })} />
 
         {/* Componentes de seleção sempre visíveis */}
         <div className="flex gap-2 flex-1 min-w-[200px]">
@@ -975,7 +973,7 @@ const SortableVerse = ({
               onVerseChange({ ...verse, voiceType: e.target.value })
             }
             className="p-2 border rounded text-sm flex-1 min-w-[120px]"
-            style={{ width: `${verse.voiceType?.length * 8 + 100}px` }}
+            style={{ width: `${(verse.voiceType?.length ?? 0) * 8 + 100}px` }}
           >
             {voiceOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -990,7 +988,7 @@ const SortableVerse = ({
               onVerseChange({ ...verse, figura: e.target.value })
             }
             className="p-2 border rounded text-sm flex-1 min-w-[120px]"
-            style={{ width: `${verse.figura?.length * 8 + 100}px` }}
+            style={{ width: `${(verse.figura?.length ?? 0) * 8 + 100}px` }}
           >
             <option value="">Figura</option>
             {literaryFigures.map((fig) => (
@@ -1006,7 +1004,7 @@ const SortableVerse = ({
               onVerseChange({ ...verse, function: e.target.value })
             }
             className="p-2 border rounded text-sm flex-1 min-w-[120px]"
-            style={{ width: `${verse.function?.length * 8 + 100}px` }}
+            style={{ width: `${(verse.function?.length ?? 0) * 8 + 100}px` }}
           >
             <option value="">Função</option>
             {verseFunctions.map((func) => (
@@ -1022,7 +1020,7 @@ const SortableVerse = ({
               onVerseChange({ ...verse, technique: e.target.value })
             }
             className="p-2 border rounded text-sm flex-1 min-w-[120px]"
-            style={{ width: `${verse.technique?.length * 8 + 100}px` }}
+            style={{ width: `${(verse.technique?.length ?? 0) * 8 + 100}px` }}
           >
             <option value="">Técnica</option>
             {literaryTechniques.map((cat) => (
@@ -1042,7 +1040,7 @@ const SortableVerse = ({
               onVerseChange({ ...verse, metaTool: e.target.value })
             }
             className="p-2 border rounded text-sm flex-1 min-w-[120px]"
-            style={{ width: `${verse.metaTool?.length * 8 + 100}px` }}
+            style={{ width: `${(verse.metaTool?.length ?? 0) * 8 + 100}px` }}
           >
             <option value="">Meta-narrativa</option>
             {metaNarrativeTools.map((tool) => (
@@ -1058,7 +1056,7 @@ const SortableVerse = ({
               onVerseChange({ ...verse, persona: e.target.value })
             }
             className="p-2 border rounded text-sm flex-1 min-w-[120px]"
-            style={{ width: `${verse.persona?.length * 8 + 100}px` }}
+            style={{ width: `${(verse.persona?.length ?? 0) * 8 + 100}px` }}
           >
             <option value="">Persona</option>
             {personaTechniques.map((cat) => (
@@ -1078,7 +1076,7 @@ const SortableVerse = ({
               onVerseChange({ ...verse, threeAct: e.target.value })
             }
             className="p-2 border rounded text-sm flex-1 min-w-[120px]"
-            style={{ width: `${verse.threeAct?.length * 8 + 100}px` }}
+            style={{ width: `${(verse.threeAct?.length ?? 0) * 8 + 100}px` }}
           >
             <option value="">Estrutura em 3 Atos</option>
             {threeActStructure.map((cat) => (
@@ -1239,7 +1237,7 @@ const PreviewModal = ({ verses }: { verses: Word[][] }) => (
 
 const analyzeMeter = async (text: string) => {
   try {
-    const response = await fetch("http://localhost:5000/analyze", {
+    const response = await fetch("/api/analyze", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1321,7 +1319,8 @@ const exportStoryboard = async (strophes: Strophe[], songInfo: SongInfo) => {
 
   const versesFlat = strophes.flatMap(strophe => strophe.verses);
   
-  for (const [index, verse] of versesFlat.entries()) {
+  for (let index = 0; index < versesFlat.length; index++) {
+    const verse = versesFlat[index];
     if (verse.cameraSettings) {
       // Add scene header
       addSectionHeader(`CENA ${index + 1}`, 16);
@@ -1595,7 +1594,7 @@ function Navbar({ title }: NavbarProps) {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && (file.type === "audio/wav" || file.type === "audio/mpeg")) {
+    if (file) {
       setAudioFile(file);
       setAudioUrl(URL.createObjectURL(file));
     }
@@ -1605,14 +1604,7 @@ function Navbar({ title }: NavbarProps) {
     <header className="sticky top-0 z-10 h-[89px] w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
       <div className="mx-4 sm:mx-8 flex items-center justify-between">
         <div id="borda-esquerda" className="border border-transparent h-[59px] w-[141px] rounded-lg">
-          <div id="borda-titulo" className="border border-transparent h-[39px] w-[121px] rounded-lg ml-18 mt-2.5">
-            <div className="items-center ml-8">
-              <h1 className="font-extrabold font-arial text-3xl tracking-tighter -m-1 italic">
-                PRETOS
-                <h1 className="text-lg -mt-4 italic tracking-widest">MUSIC</h1>
-              </h1>
-            </div>
-          </div>
+          
         </div>
 
         <div className="flex items-center flex-1 justify-center">
@@ -1624,7 +1616,7 @@ function Navbar({ title }: NavbarProps) {
                   <div className="relative w-full">
                     <input
                       type="file"
-                      accept=".wav,.mp3"
+                      accept=".wav, audio/*, */*"
                       onChange={handleFileChange}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
@@ -1767,7 +1759,7 @@ const MultiStepper: React.FC<MultiStepperProps> = ({ steps, currentStep, onStepC
             <p>Definir base sonora, conceito e letras</p>
           </TooltipContent>
         </Tooltip>
-        <Tooltip className="-ml-6">
+  <Tooltip>
           <TooltipTrigger>
             <Badge variant="outline" className="bg-green-100 dark:bg-green-900">
               Mês 2 - Produção
@@ -1797,6 +1789,15 @@ const LayoutDepthContext = React.createContext(0);
 export function ContentLayout({ title, children }: ContentLayoutProps) {
   const sidebar = useSidebar();
   const { settings, setSettings } = sidebar;
+  // Stepper sync with global store must be declared before any early return
+  const [currentStep, setCurrentStep] = useState(0);
+  const projectStore = useProject();
+  useEffect(() => {
+    if (projectStore.project && typeof (projectStore.project as any).currentStep === 'number') {
+      setCurrentStep((projectStore.project as any).currentStep);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const depth = React.useContext(LayoutDepthContext);
   if (depth > 0) {
@@ -1804,7 +1805,7 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
   }
 
   const steps: Step[] = [
-    { name: "Obra Eurúdita", link: "/obraeurudita", timeframe: "Mês 1", description: "Definir conceito, moodboard, roteiro e tratamento" },
+    { name: "Maquete", link: "/obraeurudita", timeframe: "Mês 1", description: "Definir conceito, moodboard, roteiro e tratamento" },
     { name: "Gravação", link: "/gravacao", timeframe: "Mês 1", description: "Agendar estúdio e gravar todas as faixas" },
     { name: "Vestuário", link: "/vestuario", timeframe: "Mês 2", description: "Produzir e provar figurinos para vídeo e material de imprensa" },
     { name: "Orçamento e Aluguer", link: "/orcamento", timeframe: "Mês 2", description: "Distribuir verba entre estúdio, equipe, figurino e reserva" },
@@ -1817,26 +1818,25 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
     ];
 
   const stepComponents: Record<number, React.ComponentType<any>> = {
-    0: () => null,
+    0: MaqueteStep,
     1: GravacaoStep,
     2: VestuarioStep,
     3: OrcamentoStep,
     4: FilmagemStep,
     5: FotografiaStep,
-    6: MaqueteStep,
+    6: VideoEditChecklist,
     7: ContratualizacaoStep,
     8: DireitosAutoraisStep,
     9: LancamentoStep,
   };
 
-
-
-  const [currentStep, setCurrentStep] = useState(0);
+ 
 
   const ActiveStep = stepComponents[currentStep] ?? (() => null);
 
   const handleStepClick = (index: number) => {
     setCurrentStep(index);
+    projectStore.update({ currentStep: index } as any);
   };
 
   return (
@@ -1844,9 +1844,13 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
       <TooltipProvider>
       <div className="w-full overflow-hidden transition-all duration-300">
         <Navbar title={title} />
+        {/* Right reference sidebar with tabs */}
+        <aside className="hidden xl:flex flex-col fixed right-0 top-[89px] h-[calc(100vh-89px)] w-[420px] border-l bg-white dark:bg-zinc-900 z-30">
+          <ReferenceTabs />
+        </aside>
         
         <AdminPanelLayout>
-          <div className="w-full pt-8 pb-8 px-4 mx-auto max-w-[1800px]">
+          <div className="w-full pt-8 pb-8 px-4 mx-auto max-w-[1800px] xl:pr-[440px]">
             <div className="p-4 items-center w-full">
               <div className="w-full">
                 <Card className="w-full mb-4">
@@ -1868,10 +1872,6 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
                             <DialogTitle>Ciclo Trimestral de Execução</DialogTitle>
                           </DialogHeader>
                           <div className="space-y-4">
-                            <p>
-                              Cada trimestre funciona como um sprint de 3 meses, passando por pré-produção, produção e pós-produção/liberação.
-                            </p>
-                            
                             <div>
                               <h3 className="font-semibold mb-2">Mês 1 – Pré-Produção</h3>
                               <ol className="list-decimal pl-6 space-y-2">
@@ -1978,6 +1978,257 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
 }
 /* ---------------- End Merged ContentLayout ---------------- */
 
+/* ---------------- Maquete Step (Narratologia + Featuring) ---------------- */
+const POETIC_FORMS = [
+  "Verso livre",
+  "Poesia didática",
+  "Soneto (petrarquiano)",
+  "Soneto (shakespeariano)",
+  "Haicai / Haiku",
+  "Sestina - 6 palavras a repetirem em terês versos, repetindo em formas diferentes mas sempre as 6 palavras ",
+  "Terza rima",
+  "Villanela",
+  "Ode",
+  "Elegia",
+  "Égloga / Ídilio",
+  "Balada",
+  "Épico / Epopeia",
+  "Dramático (peça em versos)",
+  "Limerick",
+  "Pantum / Pantoum",
+  "Ghazal",
+  "Acróstico",
+  "Concreta / Visual",
+  "Prosa poética",
+  "Cântico / Hino",
+  "Ode pindárica",
+  "Ode horaciana",
+  "Redondilha (maior/menor)",
+  "Quadra popular",
+];
+
+// Recursos educativos rápidos por forma poética (links do YouTube fornecidos)
+const POETIC_FORM_VIDEOS: Record<string, { urls: string[]; note?: string }> = {
+  "Verso livre": {
+    urls: ["https://www.youtube.com/watch?v=G_UUhcLgsUU"],
+    note: "Conceito e exemplos de verso livre vs. forma fixa",
+  },
+  "Poesia didática": {
+    urls: ["https://www.youtube.com/watch?v=VGMnm-QBtXs"],
+    note: "Ensino de poesia e dimensão didática",
+  },
+  "Soneto (petrarquiano)": {
+    urls: ["https://www.youtube.com/watch?v=em03jf2CNbQ"],
+  },
+  "Soneto (shakespeariano)": {
+    urls: ["https://www.youtube.com/watch?v=uOng0fR_Zho"],
+  },
+  "Haicai / Haiku": {
+    urls: ["https://www.youtube.com/watch?v=1u1OtmAQX9Q"],
+  },
+  Sestina: {
+    urls: ["https://www.youtube.com/watch?v=sBQfQD5eTTI"],
+    note: "Vídeo geral sobre formas fixas (sestina é rara em PT)",
+  },
+  "Terza rima": {
+    urls: ["https://www.youtube.com/watch?v=5ibqf4JRy3s"],
+    note: "Rimas encadeadas e prática",
+  },
+  Villanela: {
+    urls: [],
+    note: "Forma rara em PT — procurar em EN com legendas",
+  },
+  Ode: {
+    urls: ["https://www.youtube.com/watch?v=73uE6FDHs24"],
+  },
+  Elegia: {
+    urls: ["https://www.youtube.com/watch?v=EfcVtR8n6sA"],
+  },
+  "Égloga / Ídilio": {
+    urls: [
+      "https://www.youtube.com/watch?v=RGkvuiO2MfU",
+      "https://www.youtube.com/watch?v=9g17mnwHoCg",
+    ],
+  },
+  Balada: {
+    urls: ["https://www.youtube.com/watch?v=ssq11l3lrAo"],
+  },
+  "Épico / Epopeia": {
+    urls: ["https://www.youtube.com/watch?v=JBD-hS3OgJc"],
+  },
+  "Dramático (peça em versos)": {
+    urls: ["https://www.youtube.com/watch?v=yIATxMuX6PU"],
+  },
+  Limerick: {
+    urls: ["https://www.youtube.com/watch?v=0u24G8E0q3Q"],
+  },
+  "Pantum / Pantoum": {
+    urls: [],
+    note: "Sem vídeo específico em PT — consulte textos de referência",
+  },
+  Ghazal: {
+    urls: [],
+    note: "Sem vídeo específico em PT — pesquise traduções e análises",
+  },
+  Acróstico: {
+    urls: ["https://www.youtube.com/watch?v=1XT9jdPMHKk"],
+  },
+  "Concreta / Visual": {
+    urls: ["https://www.youtube.com/watch?v=JF-tsbaE3BU"],
+  },
+  "Prosa poética": {
+    urls: ["https://www.youtube.com/watch?v=DlawHfwmyS4"],
+  },
+  "Cântico / Hino": {
+    urls: ["https://www.youtube.com/watch?v=EVukWdYCmBY"],
+  },
+  "Ode pindárica": {
+    urls: ["https://www.youtube.com/watch?v=yWIdo0sSmi0"],
+  },
+  "Ode horaciana": {
+    urls: ["https://www.youtube.com/watch?v=yWIdo0sSmi0"],
+    note: "Referência geral sobre odes",
+  },
+  "Redondilha (maior/menor)": {
+    urls: ["https://www.youtube.com/watch?v=_EeJ1Qlqszw"],
+  },
+  "Quadra popular": {
+    urls: ["https://www.youtube.com/watch?v=lrNGdrZfUVY"],
+  },
+};
+
+function MaqueteStep() {
+  const { project, update } = useProject();
+  const synopsisDraft = project?.songInfo?.synopsis ?? "";
+  const strophes = useMemo(() => project?.strophes ?? [], [project?.strophes]);
+
+  // Local buffer to avoid updating the global store at every keystroke
+  const [synopsisLocal, setSynopsisLocal] = useState<string>(synopsisDraft);
+
+  // Keep local state in sync when project changes (e.g., switching projetos)
+  useEffect(() => {
+    setSynopsisLocal(synopsisDraft);
+  }, [synopsisDraft]);
+
+  const onChangeSynopsis = useCallback((val: string) => {
+    setSynopsisLocal(val);
+  }, []);
+
+  const saveSynopsis = useCallback(() => {
+    update({ songInfo: { ...(project?.songInfo ?? { title: "", artist: "", producer: "", featuring: [] }), synopsis: synopsisLocal } });
+  }, [project?.songInfo, synopsisLocal, update]);
+
+  const setStropheForm = useCallback((stropheId: string, form: string) => {
+    const next = (strophes || []).map((s: any) => (s.id === stropheId ? { ...s, poeticForm: form } : s));
+    update({ strophes: next });
+  }, [strophes, update]);
+
+  const addStrophe = useCallback(() => {
+    const newStrophe = { id: `s-${Date.now()}`, verses: [], description: "", poeticForm: "" } as any;
+    const next = [...(strophes || []), newStrophe];
+    update({ strophes: next });
+  }, [strophes, update]);
+
+  return (
+    <ContentLayout title="Maquete">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle>Sinopse do Single</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="default" onClick={saveSynopsis} aria-label="Inserir ou atualizar sinopse">
+                Inserir/Atualizar
+              </Button>
+              <FeaturingManager />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Label htmlFor="synopsis">Escreve a ideia geral que queres explorar neste single</Label>
+          <Textarea
+            id="synopsis"
+            value={synopsisLocal}
+            onChange={(e: any) => onChangeSynopsis(e.target.value)}
+            rows={3}
+            placeholder="Uma sinopse curta que guia a escrita…"
+          />
+        </CardContent>
+      </Card>
+
+  <Card className="mt-6">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle>Forma poética por estrofe</CardTitle>
+            <Button size="sm" onClick={addStrophe}>Adicionar estrofe</Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {strophes.length === 0 && (
+            <div className="text-sm text-muted-foreground">Ainda não há estrofes neste projeto.</div>
+          )}
+          {strophes.map((s: any, idx: number) => {
+            const resources = s.poeticForm ? POETIC_FORM_VIDEOS[s.poeticForm] : undefined;
+            const firstUrl = resources?.urls?.[0];
+            return (
+              <div key={s.id} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                <div className="text-sm font-medium">Estrofe {idx + 1}</div>
+                <div className="md:col-span-2 flex items-center gap-2">
+                  <Select value={s.poeticForm || ""} onValueChange={(val: string) => setStropheForm(s.id, val)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Escolhe a forma poética" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {POETIC_FORMS.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {firstUrl ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <a
+                          href={firstUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Ver vídeo recomendado para ${s.poeticForm}`}
+                        >
+                          <Button variant="outline" size="icon" className="shrink-0">
+                            <Video className="h-4 w-4" />
+                          </Button>
+                        </a>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Ver vídeo recomendado ({s.poeticForm})</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : s.poeticForm ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button variant="outline" size="icon" className="shrink-0" disabled>
+                            <Video className="h-4 w-4" />
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Sem vídeo específico — pesquisar no YouTube</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+    </ContentLayout>
+    
+  );
+}
+/* ---------------- End Maquete Step ---------------- */
+
 /* ---------------- Admin-Panel helpers ---------------- */
 // Footer
 function Footer() {
@@ -2083,7 +2334,7 @@ function SheetMenu() {
 interface MenuProps { isOpen: boolean | undefined }
 function MenuComponent({ isOpen }: MenuProps) {
   // ... (for brevity we invoke original Menu logic by calling getMenuList etc.)
-  return <div>/* TODO copy full Menu implementation here */</div>;
+  return <div></div>;
 }
 
 // Sidebar component
@@ -2126,7 +2377,7 @@ function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const { getOpenState, settings } = sidebarStore;
   return (
     <>
-      <Sidebar />
+
       <main className={cn("min-h-[calc(100vh_-_56px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300", !settings.disabled && (!getOpenState() ? "lg:ml-[70px]" : "lg:ml-64"))}>{children}</main>
       <footer className={cn("transition-[margin-left] ease-in-out duration-300", !settings.disabled && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-72"))}>
         <Footer />
@@ -2172,6 +2423,32 @@ const Dashboard = () => {
     "Missão Alfa",
     "Código Vermelho",
   ]);
+
+  // --- Global Project Store wiring (persist across routes/refresh) ---
+  const project = useProject((s) => s.project);
+  const updateProject = useProject((s) => s.update);
+
+  // Hydrate local editor state from global store on mount (only if store has data)
+  useEffect(() => {
+    if (project?.strophes && project.strophes.length > 0) {
+      setStrophes(project.strophes as unknown as Strophe[]);
+    }
+    if (project?.songInfo && (
+      project.songInfo.title || project.songInfo.artist || project.songInfo.producer || (project.songInfo.featuring?.length ?? 0) > 0
+    )) {
+      setSongInfo(project.songInfo as unknown as SongInfo);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Mirror changes to the global store (debounced save happens in the store itself)
+  useEffect(() => {
+    updateProject({ strophes });
+  }, [strophes, updateProject]);
+
+  useEffect(() => {
+    updateProject({ songInfo });
+  }, [songInfo, updateProject]);
 
   const [producerNames, setProducerNames] = useState<string[]>([
     "Xando",
@@ -2347,11 +2624,15 @@ const Dashboard = () => {
 
     try {
       const result = await analyzeMeter(versesText);
+      if (!result) {
+        push({ msg: "Erro ao analisar a métrica", kind: "error" });
+        return;
+      }
       setAnalysisResult(result);
       setShowAnalysis(true);
     } catch (error) {
       console.error("Erro ao analisar a métrica:", error);
-      alert("Erro ao analisar a métrica");
+      push({ msg: "Erro ao analisar a métrica", kind: "error" });
     }
   };
 
@@ -2367,15 +2648,24 @@ const Dashboard = () => {
     artistNames,
   });
 
-  const debouncedLocalSave = debounce(async (state) => {
-    await saveProjectLocally(state);
-  }, 2000);
+  const debouncedLocalSave = useMemo(
+    () =>
+      debounce(async (s: any) => {
+        await saveProjectLocally(s);
+      }, 2000),
+    [],
+  );
 
-  const debouncedCloudSync = debounce(async (state) => {
-    const user = auth.currentUser;
-    if (user) await syncProjectToCloud(user.uid, state);
-  }, 30000);
+  const debouncedCloudSync = useMemo(
+    () =>
+      debounce(async (s: any) => {
+        const user = auth.currentUser;
+        if (user) await syncProjectToCloud(user.uid, s);
+      }, 30000),
+    [],
+  );
 
+  const { push } = useToastLite();
   useEffect(() => {
     debouncedLocalSave(state);
     debouncedCloudSync(state);
@@ -2384,28 +2674,23 @@ const Dashboard = () => {
       debouncedLocalSave.cancel();
       debouncedCloudSync.cancel();
     };
-  }, [state]);
+  }, [state, debouncedLocalSave, debouncedCloudSync]);
 
   const handleSaveProject = async () => {
     try {
-      const projectId = Date.now().toString(); // Ou use um ID específico
-      const projectData = {
-        strophes,
-        songInfo,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const success = await saveProjectToFirebase(projectId, projectData);
-
-      if (success) {
-        alert("Projeto salvo com sucesso!");
-      } else {
-        alert("Erro ao salvar projeto.");
+      const current = useProject.getState().project;
+      if (!current) {
+        push({ msg: "Nenhum projeto atual", kind: "error" });
+        return;
       }
+      const toSave = { ...current, strophes, songInfo, updatedAt: new Date().toISOString() };
+      const { saveProjectToIndexedDB } = await import("@/lib/db");
+      await saveProjectToIndexedDB(toSave);
+      
+  push({ msg: "Projeto salvo!", kind: "success" });
     } catch (error) {
       console.error("Erro ao salvar projeto:", error);
-      alert("Erro ao salvar projeto.");
+      push({ msg: "Erro ao salvar projeto.", kind: "error" });
     }
   };
 
@@ -2609,6 +2894,10 @@ const Dashboard = () => {
                   }
                   className="text-xl font-bold uppercase border border-gray-300"
                 />
+                <div className="flex items-center gap-2 mt-2">
+                  <TitleSuggestionsDialog />
+                  <HitFrameworkDialog />
+                </div>
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="ml-2">
@@ -2695,29 +2984,7 @@ const Dashboard = () => {
                     </div>
                   </DialogContent>
                 </Dialog>
-                <div className="flex flex-wrap gap-2">
-                  {featuringOptions.map((artist) => (
-                    <Button
-                      key={artist}
-                      variant={
-                        songInfo.featuring.includes(artist)
-                          ? "default"
-                          : "outline"
-                      }
-                      onClick={() =>
-                        setSongInfo((prev) => ({
-                          ...prev,
-                          featuring: prev.featuring.includes(artist)
-                            ? prev.featuring.filter((a) => a !== artist)
-                            : [...prev.featuring, artist],
-                        }))
-                      }
-                      size="sm"
-                    >
-                      {artist}
-                    </Button>
-                  ))}
-                </div>
+              
               </div>
 
               <div className="flex items-center justify-between">
@@ -2744,132 +3011,7 @@ const Dashboard = () => {
           </CardHeader>
         </Card>
 
-        {/* New Story Types Configuration Card */}
-        <Card className="w-[1732px] mb-6 shadow-md rounded-lg">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-4 gap-4">
-              {/* Introduction Section */}
-              <div className="flex flex-col">
-                <h3 className="text-xl font-semibold mb-2">Introdução</h3>
-                <div className="text-sm">
-                  <select
-                    className="w-full p-2 border rounded mb-2"
-                    value={storyConfig.introduction}
-                    onChange={(e) =>
-                      setStoryConfig({
-                        ...storyConfig,
-                        introduction: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Selecione o tipo de introdução</option>
-                    <option value="in_medias_res">In medias res</option>
-                    <option value="exposicao">Exposição gradual</option>
-                    <option value="dialogo">Diálogo inicial</option>
-                    <option value="descricao">Descrição do cenário</option>
-                  </select>
-                  {storyConfig.introduction && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded">
-                      <p className="text-gray-600">
-                        Selecionado: {storyConfig.introduction}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Elements Section */}
-              <div className="flex flex-col">
-                <h3 className="text-xl font-semibold mb-2">Elementos</h3>
-                <div className="text-sm">
-                  <select
-                    className="w-full p-2 border rounded mb-2"
-                    value={storyConfig.elements}
-                    onChange={(e) =>
-                      setStoryConfig({
-                        ...storyConfig,
-                        elements: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Selecione os elementos principais</option>
-                    <option value="personagens">Personagens complexos</option>
-                    <option value="ambiente">Ambiente detalhado</option>
-                    <option value="objetos">Objetos simbólicos</option>
-                    <option value="conflito">Conflito central</option>
-                  </select>
-                  {storyConfig.elements && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded">
-                      <p className="text-gray-600">
-                        Selecionado: {storyConfig.elements}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Focalization Section */}
-              <div className="flex flex-col">
-                <h3 className="text-xl font-semibold mb-2">Focalização</h3>
-                <div className="text-sm">
-                  <select
-                    className="w-full p-2 border rounded mb-2"
-                    value={storyConfig.focalization}
-                    onChange={(e) =>
-                      setStoryConfig({
-                        ...storyConfig,
-                        focalization: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Selecione a perspectiva</option>
-                    <option value="primeira_pessoa">Primeira pessoa</option>
-                    <option value="terceira_pessoa">Terceira pessoa</option>
-                    <option value="onisciente">Onisciente</option>
-                    <option value="limitada">Onisciência limitada</option>
-                  </select>
-                  {storyConfig.focalization && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded">
-                      <p className="text-gray-600">
-                        Selecionado: {storyConfig.focalization}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Structure Section */}
-              <div className="flex flex-col">
-                <h3 className="text-xl font-semibold mb-2">Estrutura</h3>
-                <div className="text-sm">
-                  <select
-                    className="w-full p-2 border rounded mb-2"
-                    value={storyConfig.structure}
-                    onChange={(e) =>
-                      setStoryConfig({
-                        ...storyConfig,
-                        structure: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Selecione a estrutura</option>
-                    <option value="linear">Linear</option>
-                    <option value="nao_linear">Não-linear</option>
-                    <option value="circular">Circular</option>
-                    <option value="fragmentada">Fragmentada</option>
-                  </select>
-                  {storyConfig.structure && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded">
-                      <p className="text-gray-600">
-                        Selecionado: {storyConfig.structure}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        
 
         {/* Existing Music Structure Card */}
         <Card className="w-full mb-6">
@@ -2964,7 +3106,7 @@ const Dashboard = () => {
                         {dramArqOptions.map((opt) => (
                           <option key={opt.value} value={opt.value}>
                             {opt.value}
-                            <Info
+                            <Input
                               size={14}
                               className="ml-2"
                               title={opt.description}
@@ -2972,6 +3114,7 @@ const Dashboard = () => {
                           </option>
                         ))}
                       </select>
+                            {/* Removed duplicate AdlibsDialog at strophe level to avoid confusion; adlibs are set per-verse now */}
 
                       {/* Three Act Structure Select */}
                       <select
@@ -3283,56 +3426,27 @@ const Dashboard = () => {
                       <option value="raw">RAW</option>
                     </select>
                   </div>
-                  <div>
-                    <Label>Formato de Gravação e Codecs</Label>
-                    <div className="flex gap-2">
-                      <select className="w-1/2 p-2 border rounded">
-                        <option value="prores">ProRes</option>
-                        <option value="redcode">REDCODE</option>
-                        <option value="braw">BRAW</option>
-                      </select>
-                      <Input placeholder="Bitrate" className="w-1/2" />
-                    </div>
-                  </div>
+                 
                   <div>
                     <Label>Frame Rate Base</Label>
                     <select className="w-full p-2 border rounded">
                       <option value="24">24 fps</option>
                       <option value="25">25 fps</option>
                       <option value="60">60 fps</option>
+                      <option value="120">120 fps</option>
                     </select>
                   </div>
+
                   <div>
-                    <Label>Gestão de Dados (DIT)</Label>
-                    <div className="flex gap-2">
-                      <Input placeholder="Workflow" className="w-1/2" />
-                      <Input placeholder="Backups" className="w-1/2" />
-                    </div>
+                    <Label>Qualidade e Resolução</Label>
+                    <select className="w-full p-2 border rounded">
+                      <option value="4k">4K (3840x2160)</option>
+                      <option value="2k">2K (2048x1080)</option>
+                      <option value="1080p">Full HD (1920x1080)</option>
+                      <option value="720p">HD (1280x720)</option>
+                    </select>
                   </div>
-                  <div>
-                    <Label>Monitorização e Calibração</Label>
-                    <div className="flex gap-2">
-                      <select className="w-1/2 p-2 border rounded">
-                        <option value="hdr">HDR</option>
-                        <option value="scopes">Scopes</option>
-                      </select>
-                      <Input placeholder="Visor de Câmara" className="w-1/2" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Segurança e Logística</Label>
-                    <div className="flex gap-2">
-                      <Input placeholder="Geradores" className="w-1/2" />
-                      <Input placeholder="Cablagem" className="w-1/2" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Continuidade e Referências Visuais</Label>
-                    <div className="flex gap-2">
-                      <Input placeholder="Script Photos" className="w-1/2" />
-                      <Input placeholder="Moodboards" className="w-1/2" />
-                    </div>
-                  </div>
+
                 </div>
               </CardContent>
             </Card>
@@ -3358,9 +3472,13 @@ const Dashboard = () => {
                                   />
                                 </video>
                               ) : (
-                                <img
+                                <Image
                                   src={URL.createObjectURL(verse.media)}
+                                  alt="Mídia de referência"
+                                  width={300}
+                                  height={176}
                                   className="max-h-44"
+                                  unoptimized
                                 />
                               )
                             ) : null
@@ -3972,7 +4090,7 @@ const Dashboard = () => {
 
               <Button
                 onClick={handleSaveProject}
-                variant="primary"
+                variant="default"
                 className="bg-green-500 hover:bg-green-600"
               >
                 <Save className="mr-2" />

@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { SymbolicPostComposer } from "@/components/library";
 
 type Step = {
   id: string;
@@ -442,7 +443,10 @@ export default function PromotionProcessPage() {
   );
 
   return (
-    <ContentLayout title="Workflow de Lançamento">
+    <ContentLayout title="Promoção e Lançamento">
+      <div className="mb-4">
+        <SymbolicPostComposer />
+      </div>
       <div className="space-y-8">
         <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-6 space-y-4">

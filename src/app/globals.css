@@ -73,4 +73,8 @@
     body {
       @apply bg-background text-foreground;
     }
+    /* Global 80% zoom for the entire app, as requested */
+    .app-zoom-80 {
+      zoom: 0.8;
+    }
   }
