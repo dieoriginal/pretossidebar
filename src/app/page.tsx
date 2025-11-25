@@ -102,17 +102,8 @@ export default function HomePage() {
 
           {/* Process Manager Integration */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-4">Todos os Processos</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Link href="/events" className="border rounded-lg p-4 hover:shadow-sm transition bg-card">
-                <div className="font-semibold mb-1">Concerto (Planeamento)</div>
-                <p className="text-sm opacity-70">Aceder ao modelo de mini concerto 70/30 e começar o planeamento.</p>
-              </Link>
-              <Link href="/merch" className="border rounded-lg p-4 hover:shadow-sm transition bg-card">
-                <div className="font-semibold mb-1">Merchandise (Em Planificação)</div>
-                <p className="text-sm opacity-70">Definir produtos, custos e logística de merchandise.</p>
-              </Link>
-            </div>
+            
+            
           </div>
           <div className="flex flex-wrap gap-3 items-center mb-6">
             <label className="text-sm">Ordenar por:</label>
@@ -189,7 +180,7 @@ export default function HomePage() {
     </div>
   );
 }
-
+ 
 function InlineTitle({ project, onSaved }: { project: ProjectState; onSaved: (p: ProjectState) => void }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(project.songInfo?.title || "");

@@ -84,15 +84,16 @@ export interface EventData {
   dayItinerary: {
     date: string;
     location: string;
-    travelDetails: string;
+    travelDetails: Array<{ id: string; type: string; time: string; details: string; notes: string }>;
     accommodation: string;
-    clothingStores: string;
-    meals: string;
+    clothingStores: Array<{ id: string; name: string; address: string; time: string; notes: string }>;
+    meals: Array<{ id: string; date: string; time: string; location: string; whatToEat: string; price: number }>;
     soundcheckTime: string;
     venueOpenTime: string;
-    studioVisits: string;
-    voicePractice: string;
-    hydrationReminders: string;
+    studioVisits: Array<{ id: string; studio: string; artist: string; time: string; purpose: string; notes: string }>;
+    voicePractice: Array<{ id: string; type: string; time: string; duration: string; notes: string }>;
+    hydrationReminders: Array<{ id: string; time: string; completed: boolean; tip?: string }>;
+    audienceReminders: Array<{ id: string; time: string; completed: boolean; tip: string }>;
     otherNotes: string;
   };
 }
@@ -199,20 +200,21 @@ export const createEmptyEvent = (id?: string): EventData => ({
       breathingIssues: [],
       generalNotes: "",
     },
-  dayItinerary: {
-    date: "",
-    location: "",
-    travelDetails: "",
-    accommodation: "",
-    clothingStores: "",
-    meals: "",
-    soundcheckTime: "",
-    venueOpenTime: "",
-    studioVisits: "",
-    voicePractice: "",
-    hydrationReminders: "",
-    otherNotes: "",
-  },
+    dayItinerary: {
+      date: "",
+      location: "",
+      travelDetails: [],
+      accommodation: "",
+      meals: [],
+      soundcheckTime: "",
+      venueOpenTime: "",
+      clothingStores: [],
+      studioVisits: [],
+      voicePractice: [],
+      hydrationReminders: [],
+      audienceReminders: [],
+      otherNotes: "",
+    },
 });
 
 export const useEvents = create(

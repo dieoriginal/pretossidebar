@@ -42,6 +42,9 @@ export const saveProjectToIndexedDB = async (project: any) => {
       project.id = `projeto-${Date.now()}`;
     }
 
+    // Adicionar userId se não existir (multi-tenancy)
+    // O userId será adicionado pelo componente que chama esta função
+
     const db = await initializeDB();
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);

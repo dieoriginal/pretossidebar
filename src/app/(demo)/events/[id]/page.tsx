@@ -71,6 +71,7 @@ interface Production {
 }
 
 interface EventData {
+  id?: string;
   overview: {
     eventName: string;
     eventType: string;
@@ -150,15 +151,16 @@ interface EventData {
   dayItinerary: {
     date: string;
     location: string;
-    travelDetails: string;
+    travelDetails: Array<{ id: string; type: string; time: string; details: string; notes: string }>;
     accommodation: string;
-    clothingStores: string;
-    meals: string;
+    clothingStores: Array<{ id: string; name: string; address: string; time: string; notes: string }>;
+    meals: Array<{ id: string; date: string; time: string; location: string; whatToEat: string; price: number }>;
     soundcheckTime: string;
     venueOpenTime: string;
-    studioVisits: string;
-    voicePractice: string;
-    hydrationReminders: string;
+    studioVisits: Array<{ id: string; studio: string; artist: string; time: string; purpose: string; notes: string }>;
+    voicePractice: Array<{ id: string; type: string; time: string; duration: string; notes: string }>;
+    hydrationReminders: Array<{ id: string; time: string; completed: boolean; tip?: string }>;
+    audienceReminders: Array<{ id: string; time: string; completed: boolean; tip: string }>;
     otherNotes: string;
   };
 }
@@ -1487,15 +1489,16 @@ export default function EventPage({ params }: { params: { id: string } }) {
     dayItinerary: {
       date: "",
       location: "",
-      travelDetails: "",
+      travelDetails: [],
       accommodation: "",
-      clothingStores: "",
-      meals: "",
+      meals: [],
       soundcheckTime: "",
       venueOpenTime: "",
-      studioVisits: "",
-      voicePractice: "",
-      hydrationReminders: "",
+      clothingStores: [],
+      studioVisits: [],
+      voicePractice: [],
+      hydrationReminders: [],
+      audienceReminders: [],
       otherNotes: "",
     },
   });
@@ -1546,6 +1549,79 @@ export default function EventPage({ params }: { params: { id: string } }) {
               }]
             : [],
         },
+        // Ensure dayItinerary arrays exist
+        dayItinerary: {
+          ...data.dayItinerary,
+          travelDetails: Array.isArray(data.dayItinerary?.travelDetails)
+            ? data.dayItinerary.travelDetails
+            : data.dayItinerary?.travelDetails
+            ? [{ 
+                id: `travel-${Date.now()}`,
+                type: "Transporte",
+                time: "",
+                details: data.dayItinerary.travelDetails,
+                notes: "",
+              }]
+            : [],
+          clothingStores: Array.isArray(data.dayItinerary?.clothingStores)
+            ? data.dayItinerary.clothingStores
+            : data.dayItinerary?.clothingStores
+            ? [{ 
+                id: `store-${Date.now()}`,
+                name: data.dayItinerary.clothingStores,
+                address: "",
+                time: "",
+                notes: "",
+              }]
+            : [],
+          studioVisits: Array.isArray(data.dayItinerary?.studioVisits)
+            ? data.dayItinerary.studioVisits
+            : data.dayItinerary?.studioVisits
+            ? [{ 
+                id: `studio-${Date.now()}`,
+                studio: "",
+                artist: "",
+                time: "",
+                purpose: "",
+                notes: data.dayItinerary.studioVisits,
+              }]
+            : [],
+          voicePractice: Array.isArray(data.dayItinerary?.voicePractice)
+            ? data.dayItinerary.voicePractice
+            : data.dayItinerary?.voicePractice
+            ? [{ 
+                id: `voice-${Date.now()}`,
+                type: "",
+                time: "",
+                duration: "",
+                notes: data.dayItinerary.voicePractice,
+              }]
+            : [],
+          hydrationReminders: Array.isArray(data.dayItinerary?.hydrationReminders)
+            ? data.dayItinerary.hydrationReminders
+            : data.dayItinerary?.hydrationReminders
+            ? [{ 
+                id: `hydration-${Date.now()}`,
+                time: "",
+                completed: false,
+              }]
+            : [],
+          audienceReminders: Array.isArray(data.dayItinerary?.audienceReminders)
+            ? data.dayItinerary.audienceReminders
+            : [],
+          meals: Array.isArray(data.dayItinerary?.meals)
+            ? data.dayItinerary.meals
+            : (typeof data.dayItinerary?.meals === 'string' && (data.dayItinerary.meals as string).trim() !== ''
+              ? [{
+                  id: `meal-${Date.now()}`,
+                  date: data.dayItinerary?.date || "",
+                  time: "",
+                  location: "",
+                  whatToEat: data.dayItinerary.meals as string,
+                  price: 0,
+                }]
+              : []),
+        },
       };
     };
 
@@ -1576,11 +1652,38 @@ export default function EventPage({ params }: { params: { id: string } }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
+  // Ensure meals is always an array
+  useEffect(() => {
+    if (eventData && !Array.isArray(eventData.dayItinerary?.meals)) {
+      setEventData(prev => {
+        const mealsValue = prev.dayItinerary?.meals;
+        const normalizedMeals = typeof mealsValue === 'string' && (mealsValue as string).trim() !== ''
+          ? [{
+              id: `meal-${Date.now()}`,
+              date: prev.dayItinerary?.date || "",
+              time: "",
+              location: "",
+              whatToEat: mealsValue,
+              price: 0,
+            }]
+          : (Array.isArray(mealsValue) ? mealsValue : []);
+        
+        return {
+          ...prev,
+          dayItinerary: {
+            ...prev.dayItinerary,
+            meals: normalizedMeals
+          }
+        };
+      });
+    }
+  }, [eventData?.dayItinerary?.meals]);
+
   // Auto-save when eventData changes (debounced)
   useEffect(() => {
     if (!isLoading && eventData) {
       const timer = setTimeout(() => {
-        const eventToSave = { ...eventData, id: eventData.id || params.id || `evento-${Date.now()}` };
+        const eventToSave: EventData & { id: string } = { ...eventData, id: eventData.id || params.id || `evento-${Date.now()}` };
         updateEvent(eventToSave);
         setLastSaved(new Date());
       }, 2000); // Save after 2 seconds of inactivity
@@ -1591,7 +1694,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
   }, [eventData, isLoading, params.id]);
 
   const handleManualSave = () => {
-    const eventToSave = { ...eventData, id: eventData.id || params.id || `evento-${Date.now()}` };
+    const eventToSave: EventData & { id: string } = { ...eventData, id: eventData.id || params.id || `evento-${Date.now()}` };
     setCurrentEvent(eventToSave);
     setLastSaved(new Date());
   };
@@ -1630,7 +1733,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
       icon: <Music className="w-4 h-4" />,
     },
     {
-      name: "Cenário/Notas de Ensaio",
+      name: "Notas de Ensaio",
       link: "/rehearsal-notes",
       timeframe: "Fase 2",
       description: "Decisões e anotações de ensaio",
@@ -1768,127 +1871,572 @@ ${organizerName} — ${organizerContact}`;
   const exportFullItineraryPDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 10;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const contentWidth = pageWidth - (margin * 2);
     let yPosition = margin;
 
-    const addSectionTitle = (title: string) => {
-      doc.setFontSize(16);
+    // Helper to check if new page is needed
+    const checkNewPage = (requiredSpace: number = 20) => {
+      if (yPosition + requiredSpace > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+        return true;
+      }
+      return false;
+    };
+
+    // Title page
+    yPosition = margin;
+    doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
-      doc.text(title, margin, yPosition);
-      yPosition += 10;
-      doc.setFontSize(12);
+    doc.setTextColor(75, 85, 99); // slate-600
+    doc.text("ITINERÁRIO COMPLETO", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 8;
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
+    doc.text(eventData.overview.eventName || "Evento", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 15;
+
+    // Helper function for section titles with background
+    const addSectionTitle = (title: string, color: number[] = [59, 130, 246]) => {
+      checkNewPage(25);
+      doc.setFillColor(color[0], color[1], color[2]);
+      doc.roundedRect(margin, yPosition - 5, contentWidth, 10, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(title, margin + 5, yPosition + 2);
+      yPosition += 12;
+      doc.setTextColor(0, 0, 0);
       doc.setFont("helvetica", "normal");
     };
 
-    const addText = (text: string, isBold = false) => {
-      if (isBold) doc.setFont("helvetica", "bold");
-      doc.text(text, margin, yPosition);
-      yPosition += 7;
-      if (isBold) doc.setFont("helvetica", "normal");
+    // Helper for key-value pairs with nice formatting
+    const addKeyValue = (key: string, value: string | number, indent: number = 0) => {
+      checkNewPage(8);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text(`${key}:`, margin + indent, yPosition);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      const valueStr = String(value);
+      const lines = doc.splitTextToSize(valueStr, contentWidth - indent - 40);
+      doc.text(lines, margin + indent + 35, yPosition);
+      yPosition += lines.length * 5 + 2;
     };
 
-    const addList = (label: string, items: any[]) => {
-      addText(label, true);
-      items.forEach(item => {
-        addText(`- ${JSON.stringify(item)}`);
+    // Helper for lists with bullets
+    const addList = (label: string, items: any[], formatter?: (item: any) => string) => {
+      if (!items || items.length === 0) return;
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text(`${label}:`, margin, yPosition);
+      yPosition += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      items.forEach((item, idx) => {
+        checkNewPage(6);
+        const text = formatter ? formatter(item) : (typeof item === 'object' ? JSON.stringify(item) : String(item));
+        const lines = doc.splitTextToSize(`  • ${text}`, contentWidth - 10);
+        doc.text(lines, margin + 5, yPosition);
+        yPosition += lines.length * 5 + 1;
       });
+      yPosition += 3;
     };
 
-    // Overview
-    addSectionTitle("Visão Geral");
-    addText(`Nome do Evento: ${eventData.overview.eventName}`);
-    addText(`Tipo: ${eventData.overview.eventType}`);
-    addText(`Data: ${new Date(eventData.overview.date).toLocaleDateString("pt-PT")}`);
-    addText(`Local: ${eventData.overview.venue} (${eventData.logistics.address})`);
-    addText(`Capacidade: ${eventData.overview.capacity}`);
-    addText(`Descrição: ${eventData.overview.description}`);
-    addText(`Organizador: ${eventData.overview.organizerName} - ${eventData.overview.organizerContact}`);
+    // Helper for divider line
+    const addDivider = () => {
+      checkNewPage(5);
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
     yPosition += 5;
+    };
 
-    // Financeiro
-    addSectionTitle("Financeiro");
-    addText(`Orçamento Total: €${eventData.finance.budget}`);
-    addText(`Preço do Bilhete: €${eventData.finance.ticketPrice}`);
-    addText(`Patrocínios: €${eventData.finance.sponsorship}`);
-    addText(`Divisão com Venue: ${eventData.finance.venueSplit}% venue / ${100 - eventData.finance.venueSplit}% organizador`);
-    if (eventData.overview.eventType === "third-party-event") {
-      addText(`Cachet Pago: €${eventData.finance.cachetPago || 0}`);
+    // Overview Section
+    addSectionTitle("VISAO GERAL", [59, 130, 246]); // blue
+    addKeyValue("Nome do Evento", eventData.overview.eventName || "N/A");
+    addKeyValue("Tipo", eventData.overview.eventType || "N/A");
+    if (eventData.overview.date) {
+      addKeyValue("Data", new Date(eventData.overview.date).toLocaleDateString("pt-PT"));
     }
-    addSectionTitle("Despesas");
-    eventData.finance.expenses.forEach(exp => addText(`${exp.name}: €${exp.amount}`));
-    yPosition += 5;
+    addKeyValue("Local", eventData.overview.venue || "N/A");
+    if (eventData.logistics.address) {
+      addKeyValue("Endereço", eventData.logistics.address);
+    }
+    addKeyValue("Capacidade", eventData.overview.capacity || 0);
+    if (eventData.overview.description) {
+      addKeyValue("Descrição", eventData.overview.description);
+    }
+    if (eventData.overview.organizerName) {
+      addKeyValue("Organizador", `${eventData.overview.organizerName}${eventData.overview.organizerContact ? ` - ${eventData.overview.organizerContact}` : ""}`);
+    }
+    addDivider();
 
-    // Line-up
-    addSectionTitle("Line-up");
-    addText(`Soundcheck: ${eventData.lineup.soundcheck}`);
-    addText(`Curfew: ${eventData.lineup.curfew}`);
-    addList("Artistas", eventData.lineup.artists);
+    // Financeiro Section
+    addSectionTitle("FINANCEIRO", [34, 197, 94]); // green
+    addKeyValue("Orcamento Total", `EUR ${(eventData.finance.budget || 0).toLocaleString('pt-PT')}`);
+    addKeyValue("Preco do Bilhete", `EUR ${(eventData.finance.ticketPrice || 0).toLocaleString('pt-PT')}`);
+    addKeyValue("Patrocinios", `EUR ${(eventData.finance.sponsorship || 0).toLocaleString('pt-PT')}`);
+    addKeyValue("Divisão com Venue", `${eventData.finance.venueSplit || 0}% venue / ${100 - (eventData.finance.venueSplit || 0)}% organizador`);
+    if (eventData.overview.eventType === "third-party-event" && eventData.finance.cachetPago) {
+      addKeyValue("Cachet Pago", `EUR ${(eventData.finance.cachetPago || 0).toLocaleString('pt-PT')}`);
+    }
+    if (eventData.finance.expenses && eventData.finance.expenses.length > 0) {
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Despesas:", margin, yPosition);
     yPosition += 5;
-
-    // Equipa (Production)
-    addSectionTitle("Equipa");
-    addText(`Som: ${eventData.production.sound}`);
-    addText(`Iluminação: ${eventData.production.lighting}`);
-    addText(`Palco: ${eventData.production.stage}`);
-    addList("Crew", eventData.production.crew);
-    yPosition += 5;
-
-    // Vestuário
-    addSectionTitle("Vestuário");
-    addList("Cabelo", eventData.wardrobe.selectedHairstyles);
-    addList("Óculos", eventData.wardrobe.selectedGlasses);
-    addList("Head Wear", eventData.wardrobe.selectedHeadWear);
-    addList("Parte Superior", eventData.wardrobe.selectedSuperior);
-    addList("Pants", eventData.wardrobe.selectedPants);
-    addList("Shoes", eventData.wardrobe.selectedShoes);
-    addList("Neck Accessories", eventData.wardrobe.selectedNeckAccessories);
-    addList("Bracelets", eventData.wardrobe.selectedBracelets);
-    addList("Watch", eventData.wardrobe.selectedWatch);
-    addList("Belt", eventData.wardrobe.selectedBelt);
-    addList("Custom Items", eventData.wardrobe.customItems);
-    addText(`Total Vestuário: €${eventData.wardrobe.totalPrice}`);
-    yPosition += 5;
-
-    // Logística
-    addSectionTitle("Logística");
-    addText(`Endereço Completo: ${eventData.logistics.address}`);
-    addText(`Estacionamento: ${eventData.logistics.parking}`);
-    addText(`Load-In: ${eventData.logistics.loadIn}`);
-    addText(`Load-Out: ${eventData.logistics.loadOut}`);
-    addText(`Catering: ${eventData.logistics.catering}`);
-    if (eventData.logistics.material && eventData.logistics.material.length > 0) {
-      addSectionTitle("Material a Levar");
-      eventData.logistics.material.forEach((item) => {
-        const status = item.checked ? "✓ Levado" : "○ Não levado";
-        const returned = item.returned ? " ✓ Devolvido" : "";
-        addText(`${item.category}: ${item.name} - ${status}${returned}`);
+      eventData.finance.expenses.forEach(exp => {
+        checkNewPage(6);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.text(`  - ${exp.name}: EUR ${exp.amount.toLocaleString('pt-PT')}`, margin + 5, yPosition);
+        yPosition += 5;
       });
+      yPosition += 3;
+    }
+    addDivider();
+
+    // Line-up Section
+    addSectionTitle("LINE-UP", [168, 85, 247]); // purple
+    if (eventData.lineup.soundcheck) {
+      addKeyValue("Soundcheck", eventData.lineup.soundcheck);
+    }
+    if (eventData.lineup.curfew) {
+      addKeyValue("Curfew", eventData.lineup.curfew);
+    }
+    if (eventData.lineup.artists && eventData.lineup.artists.length > 0) {
+      addList("Artistas", eventData.lineup.artists, (artist) => {
+        return `${artist.name}${artist.time ? ` (${artist.time})` : ""}${artist.fee ? ` - EUR ${artist.fee.toLocaleString('pt-PT')}` : ""}`;
+      });
+    }
+    addDivider();
+
+    // Setlist Section
+    if (eventData.setlist && eventData.setlist.songs && eventData.setlist.songs.length > 0) {
+      addSectionTitle("SETLIST", [236, 72, 153]); // pink
+      if (eventData.setlist.autotuneSetting) {
+        addKeyValue("Autotune Setting", eventData.setlist.autotuneSetting);
+      }
+      if (eventData.setlist.voiceType) {
+        addKeyValue("Tipo de Voz", eventData.setlist.voiceType);
+      }
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Músicas:", margin, yPosition);
+    yPosition += 5;
+      eventData.setlist.songs.sort((a, b) => a.order - b.order).forEach((song, idx) => {
+        checkNewPage(6);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        const songText = `${idx + 1}. ${song.name || "Música sem nome"}${song.time ? ` [${song.time}]` : ""}${song.autotuneNote ? ` (${song.autotuneNote})` : ""}`;
+        const lines = doc.splitTextToSize(`  ${songText}`, contentWidth - 10);
+        doc.text(lines, margin + 5, yPosition);
+        yPosition += lines.length * 5 + 1;
+      });
+      yPosition += 3;
+      addDivider();
+    }
+
+    // Equipa Section
+    addSectionTitle("EQUIPA", [251, 146, 60]); // orange
+    if (eventData.production.sound) {
+      addKeyValue("Som", eventData.production.sound);
+    }
+    if (eventData.production.lighting) {
+      addKeyValue("Iluminação", eventData.production.lighting);
+    }
+    if (eventData.production.stage) {
+      addKeyValue("Palco", eventData.production.stage);
+    }
+    if (eventData.production.crew && eventData.production.crew.length > 0) {
+      addList("Crew", eventData.production.crew, (member) => {
+        return `${member.role}: ${member.name}${member.contact ? ` (${member.contact})` : ""}`;
+      });
+    }
+    addDivider();
+
+    // Vestuário Section
+    addSectionTitle("VESTUARIO", [239, 68, 68]); // red
+    
+    // Mapeamento de IDs para nomes legíveis e preços
+    const wardrobeItemMap: Record<string, { label: string; price: number }> = {
+      // Óculos
+      "sem_oculos": { label: "Sem Óculos", price: 0 },
+      "com_oculos": { label: "Com Óculos Estilosos", price: 15 },
+      // Head Wear
+      "gorro_personalizado": { label: "Gorro Personalizado", price: 5 },
+      "gorro": { label: "Gorro", price: 3 },
+      "babushka": { label: "Babushka", price: 4 },
+      "russian_headwear": { label: "Russian Headwear", price: 6 },
+      "militar_camoflage": { label: "Militar Camoflage", price: 7 },
+      // Parte Superior
+      "dtf": { label: "Let's Copy DTF", price: 11 },
+      "brincos": { label: "Tshirt Vazia", price: 9 },
+      "balmacan": { label: "Balmacan Personalizada", price: 5 },
+      "colete": { label: "Colete", price: 15 },
+      "cravat": { label: "Cravat de Seda", price: 4 },
+      "chainspersonalizados": { label: "Chains Personalizado", price: 560 },
+      "gravata_ascot": { label: "Gravata Ascot", price: 10 },
+      // Pants
+      "custom_pants": { label: "Custom Pants", price: 20 },
+      "zara_pants": { label: "Zara Pants", price: 25 },
+      "pants_chain": { label: "Pants Chain", price: 10 },
+      // Shoes
+      "zara_boots": { label: "Zara Boots", price: 40 },
+      "bershka_boots": { label: "Bershka Boots", price: 35 },
+      // Neck Accessories
+      "nenhum": { label: "Nenhum", price: 0 },
+      "correntes": { label: "Correntes", price: 130 },
+      // Bracelets
+      "glitter_bracelet": { label: "Glitter Bracelet", price: 3.5 },
+      "personalized_bracelet": { label: "Personalized Bracelet", price: 15 },
+      // Watch
+      "watch": { label: "Watch", price: 20 },
+      // Belt
+      "triparte_belt": { label: "TRIPARTE BELT", price: 30 },
+    };
+    
+    const getWardrobeItemName = (id: string): string => {
+      return wardrobeItemMap[id]?.label || id;
+    };
+    
+    const getWardrobeItemPrice = (id: string): number => {
+      return wardrobeItemMap[id]?.price || 0;
+    };
+    
+    const wardrobeSections = [
+      { label: "Cabelo", items: eventData.wardrobe.selectedHairstyles },
+      { label: "Óculos", items: eventData.wardrobe.selectedGlasses },
+      { label: "Head Wear", items: eventData.wardrobe.selectedHeadWear },
+      { label: "Parte Superior", items: eventData.wardrobe.selectedSuperior },
+      { label: "Pants", items: eventData.wardrobe.selectedPants },
+      { label: "Shoes", items: eventData.wardrobe.selectedShoes },
+      { label: "Neck Accessories", items: eventData.wardrobe.selectedNeckAccessories },
+      { label: "Bracelets", items: eventData.wardrobe.selectedBracelets },
+      { label: "Watch", items: eventData.wardrobe.selectedWatch },
+      { label: "Belt", items: eventData.wardrobe.selectedBelt },
+    ];
+    
+    wardrobeSections.forEach(({ label, items }) => {
+      if (items && items.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text(`${label}:`, margin, yPosition);
+    yPosition += 5;
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        items.forEach((itemId) => {
+          checkNewPage(6);
+          const itemName = getWardrobeItemName(itemId);
+          const itemPrice = getWardrobeItemPrice(itemId);
+          const priceText = itemPrice > 0 ? ` - EUR ${itemPrice.toFixed(2)}` : "";
+          doc.text(`  - ${itemName}${priceText}`, margin + 5, yPosition);
+          yPosition += 5;
+        });
+        yPosition += 3;
+      }
+    });
+    
+    if (eventData.wardrobe.customItems && eventData.wardrobe.customItems.length > 0) {
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Itens Personalizados:", margin, yPosition);
+    yPosition += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      eventData.wardrobe.customItems.forEach((item) => {
+        checkNewPage(6);
+        doc.text(`  - ${item.name} (${item.category}) - EUR ${item.price.toFixed(2)}`, margin + 5, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 3;
+    }
+    if (eventData.wardrobe.totalPrice > 0) {
+      checkNewPage(8);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Total Vestuario: EUR ${eventData.wardrobe.totalPrice.toLocaleString('pt-PT')}`, margin, yPosition);
+      yPosition += 8;
+    }
+    addDivider();
+
+    // Logística Section
+    addSectionTitle("LOGISTICA", [14, 165, 233]); // cyan
+    if (eventData.logistics.address) {
+      addKeyValue("Endereço Completo", eventData.logistics.address);
+    }
+    if (eventData.logistics.parking) {
+      addKeyValue("Estacionamento", eventData.logistics.parking);
+    }
+    if (eventData.logistics.loadIn) {
+      addKeyValue("Load-In", eventData.logistics.loadIn);
+    }
+    if (eventData.logistics.loadOut) {
+      addKeyValue("Load-Out", eventData.logistics.loadOut);
+    }
+    if (eventData.logistics.catering) {
+      addKeyValue("Catering", eventData.logistics.catering);
+    }
+    if (eventData.logistics.material && eventData.logistics.material.length > 0) {
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Material a Levar:", margin, yPosition);
+    yPosition += 5;
+      eventData.logistics.material.forEach((item) => {
+        checkNewPage(6);
+        const status = item.checked ? "[LEVADO]" : "[NAO LEVADO]";
+        const returned = item.returned ? " [DEVOLVIDO]" : "";
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.text(`  ${status} ${item.category}: ${item.name}${returned}`, margin + 5, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 3;
     }
     if (eventData.logistics.travelOutfit && eventData.logistics.travelOutfit.length > 0) {
-      addSectionTitle("Roupa até Chegar no Local");
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Roupa até Chegar no Local:", margin, yPosition);
+      yPosition += 5;
       eventData.logistics.travelOutfit.forEach((item) => {
-        const status = item.checked ? "✓ Levado" : "○ Não levado";
-        const returned = item.returned ? " ✓ Devolvido" : "";
-        addText(`${item.category}: ${item.name} - ${status}${returned}`);
+        checkNewPage(6);
+        const status = item.checked ? "[LEVADO]" : "[NAO LEVADO]";
+        const returned = item.returned ? " [DEVOLVIDO]" : "";
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.text(`  ${status} ${item.category}: ${item.name}${returned}`, margin + 5, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 3;
+    }
+    addDivider();
+
+    // Bilheteira Section
+    addSectionTitle("BILHETEIRA", [245, 158, 11]); // yellow
+    addKeyValue("Total Bilhetes", eventData.tickets.totalTickets || 0);
+    addKeyValue("Vendidos", eventData.tickets.soldTickets || 0);
+    if (eventData.tickets.priceTiers && eventData.tickets.priceTiers.length > 0) {
+      addList("Preços por Categoria", eventData.tickets.priceTiers, (tier) => {
+        return `${tier.name}: EUR ${tier.price.toLocaleString('pt-PT')} (${tier.quantity} bilhetes)`;
       });
     }
-    yPosition += 5;
+    addDivider();
 
-    // Bilheteira
-    addSectionTitle("Bilheteira");
-    addText(`Total Bilhetes: ${eventData.tickets.totalTickets}`);
-    addText(`Vendidos: ${eventData.tickets.soldTickets}`);
-    addList("Preços por Categoria", eventData.tickets.priceTiers);
-    yPosition += 5;
+    // Marketing Section
+    addSectionTitle("MARKETING", [139, 92, 246]); // violet
+    if (eventData.marketing.pressRelease) {
+      addKeyValue("Press Release", eventData.marketing.pressRelease);
+    }
+    if (eventData.marketing.socialMedia && eventData.marketing.socialMedia.length > 0) {
+      addList("Redes Sociais", eventData.marketing.socialMedia, (sm) => {
+        return `${sm.platform}: ${sm.content}${sm.scheduled ? ` (${sm.scheduled})` : ""}`;
+      });
+    }
+    if (eventData.marketing.influencers && eventData.marketing.influencers.length > 0) {
+      addList("Influencers", eventData.marketing.influencers, (inf) => {
+        return `${inf.name} - Reach: ${inf.reach.toLocaleString('pt-PT')}${inf.fee ? ` (EUR ${inf.fee.toLocaleString('pt-PT')})` : ""}`;
+      });
+    }
+    addDivider();
 
-    // Marketing
-    addSectionTitle("Marketing");
-    addText(`Press Release: ${eventData.marketing.pressRelease}`);
-    addList("Redes Sociais", eventData.marketing.socialMedia);
-    addList("Influencers", eventData.marketing.influencers);
+    // Day Itinerary Section
+    if (eventData.dayItinerary && (eventData.dayItinerary.date || eventData.dayItinerary.location)) {
+      addSectionTitle("ITINERARIO DO DIA DO SHOW", [59, 130, 246]); // blue
+      if (eventData.dayItinerary.date) {
+        addKeyValue("Data", new Date(eventData.dayItinerary.date).toLocaleDateString("pt-PT"));
+      }
+      if (eventData.dayItinerary.location) {
+        addKeyValue("Localização", eventData.dayItinerary.location);
+      }
+      if (eventData.dayItinerary.accommodation) {
+        addKeyValue("Alojamento", eventData.dayItinerary.accommodation);
+      }
+      if (eventData.dayItinerary.meals && eventData.dayItinerary.meals.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Refeicoes:", margin, yPosition);
     yPosition += 5;
+        let totalMeals = 0;
+        eventData.dayItinerary.meals.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const dateStr = item.date ? new Date(item.date).toLocaleDateString("pt-PT") : "";
+          const timeStr = item.time || "";
+          const locationStr = item.location || "";
+          const whatStr = item.whatToEat || "";
+          const priceStr = item.price ? `EUR ${item.price.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "";
+          const text = `${dateStr} ${timeStr} - ${locationStr}${whatStr ? `: ${whatStr}` : ""}${priceStr ? ` (${priceStr})` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+          totalMeals += item.price || 0;
+        });
+        if (totalMeals > 0) {
+          checkNewPage(8);
+          doc.setFont("helvetica", "bold");
+          doc.text(`  Total Refeicoes: EUR ${totalMeals.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, margin + 5, yPosition);
+          yPosition += 8;
+        }
+        yPosition += 3;
+      }
+      if (eventData.dayItinerary.soundcheckTime) {
+        addKeyValue("Horário Soundcheck", eventData.dayItinerary.soundcheckTime);
+      }
+      if (eventData.dayItinerary.venueOpenTime) {
+        addKeyValue("Abertura do Venue", eventData.dayItinerary.venueOpenTime);
+      }
+      
+      // Travel Details
+      if (eventData.dayItinerary.travelDetails && eventData.dayItinerary.travelDetails.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Detalhes de Viagem:", margin, yPosition);
+    yPosition += 5;
+        eventData.dayItinerary.travelDetails.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const text = `${item.time || "Sem horário"} - ${item.type}: ${item.details}${item.notes ? ` (${item.notes})` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
 
-    doc.save(`${eventData.overview.eventName}_itinerario_completo.pdf`);
+      // Clothing Stores
+      if (eventData.dayItinerary.clothingStores && eventData.dayItinerary.clothingStores.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Lojas de Roupa:", margin, yPosition);
+    yPosition += 5;
+        eventData.dayItinerary.clothingStores.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const text = `${item.time || "Sem horário"} - ${item.name}${item.address ? ` (${item.address})` : ""}${item.notes ? ` - ${item.notes}` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
+
+      // Studio Visits
+      if (eventData.dayItinerary.studioVisits && eventData.dayItinerary.studioVisits.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Visitas a Estúdios:", margin, yPosition);
+    yPosition += 5;
+        eventData.dayItinerary.studioVisits.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const text = `${item.time || "Sem horário"} - ${item.studio}${item.artist ? ` com ${item.artist}` : ""}${item.purpose ? ` (${item.purpose})` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
+
+      // Voice Practice
+      if (eventData.dayItinerary.voicePractice && eventData.dayItinerary.voicePractice.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Práticas de Voz:", margin, yPosition);
+    yPosition += 5;
+        eventData.dayItinerary.voicePractice.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const text = `${item.time || "Sem horário"} - ${item.type || "Prática"}${item.duration ? ` (${item.duration})` : ""}${item.notes ? `: ${item.notes}` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
+
+      // Hydration Reminders
+      if (eventData.dayItinerary.hydrationReminders && eventData.dayItinerary.hydrationReminders.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(59, 130, 246); // blue
+        doc.text("LEMBRETES DE HIDRATACAO", margin, yPosition);
+        yPosition += 6;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        eventData.dayItinerary.hydrationReminders.forEach((item) => {
+          checkNewPage(6);
+          const status = item.completed ? "[FEITO]" : "[PENDENTE]";
+          doc.text(`  - ${item.time || "Sem horario"} - ${status}`, margin + 5, yPosition);
+          yPosition += 5;
+        });
+        yPosition += 3;
+      }
+
+      // Audience Reminders
+      if (eventData.dayItinerary.audienceReminders && eventData.dayItinerary.audienceReminders.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(139, 92, 246); // purple
+        doc.text("O QUE A AUDIENCIA REALMENTE QUER VER", margin, yPosition);
+        yPosition += 6;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        eventData.dayItinerary.audienceReminders.forEach((item) => {
+          checkNewPage(6);
+          const status = item.completed ? "[FEITO]" : "[PENDENTE]";
+          const text = `${item.time || "Sem horario"} - ${status} - ${item.tip || ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
+
+      if (eventData.dayItinerary.otherNotes) {
+        addKeyValue("Outras Notas", eventData.dayItinerary.otherNotes);
+      }
+    }
+
+    // Save PDF
+    doc.save(`${eventData.overview.eventName || "evento"}_itinerario_completo.pdf`);
   };
 
   const renderStepContent = () => {
@@ -3521,6 +4069,18 @@ ${organizerName} — ${organizerContact}`;
         );
 
       case 8: // Bilheteira
+        // Calculate revenue and profit
+        const totalRevenue = eventData.tickets.priceTiers.reduce((sum, tier) => {
+          return sum + (tier.price * tier.quantity);
+        }, 0);
+        const totalSoldFromTiers = eventData.tickets.priceTiers.reduce((sum, tier) => {
+          return sum + tier.quantity;
+        }, 0);
+        const occupancyRate = eventData.tickets.totalTickets > 0 
+          ? ((totalSoldFromTiers / eventData.tickets.totalTickets) * 100).toFixed(1)
+          : 0;
+        const remainingTickets = eventData.tickets.totalTickets - totalSoldFromTiers;
+        
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
@@ -3631,6 +4191,66 @@ ${organizerName} — ${organizerContact}`;
                 </Button>
               </div>
             </div>
+            
+            {/* Calculadora de Lucro */}
+            <Card className="border-2 border-slate-200 dark:border-slate-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Calculadora de Lucro Estimado
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm text-muted-foreground">Receita Total Estimada</Label>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      EUR {totalRevenue.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm text-muted-foreground">Taxa de Ocupação</Label>
+                    <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                      {occupancyRate}%
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm text-muted-foreground">Bilhetes Vendidos (Categorias)</Label>
+                    <div className="text-lg font-semibold">
+                      {totalSoldFromTiers} / {eventData.tickets.totalTickets || 0}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm text-muted-foreground">Bilhetes Restantes</Label>
+                    <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                      {remainingTickets}
+                    </div>
+                  </div>
+                </div>
+                {eventData.tickets.priceTiers.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <Label className="text-sm font-semibold">Detalhamento por Categoria</Label>
+                    <div className="space-y-1">
+                      {eventData.tickets.priceTiers.map((tier, index) => {
+                        const tierRevenue = tier.price * tier.quantity;
+                        return (
+                          <div key={index} className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">
+                              {tier.name || `Categoria ${index + 1}`}: {tier.quantity} × EUR {tier.price.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <span className="font-semibold">
+                              EUR {tierRevenue.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         );
 
@@ -4488,13 +5108,21 @@ ${organizerName} — ${organizerContact}`;
         const exportDayItineraryPDF = () => {
           const doc = new jsPDF();
           const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
           const margin = 10;
           let yPosition = margin;
+          
+          // Book formatting variables (accessible to all nested functions)
+          const bookMargin = 15; // Larger margins for book-like appearance
+          const bookPadding = 5; // Padding between paragraphs
+          const maxWidth = pageWidth - 2 * bookMargin;
+          const lineHeight = 5.5;
+          const paragraphSpacing = 8;
 
           // Title
           doc.setFontSize(20);
           doc.setFont("helvetica", "bold");
-          doc.text("ITINERÁRIO DO DIA DO SHOW", pageWidth / 2, yPosition, { align: "center" });
+          doc.text("ITINERARIO DO DIA DO SHOW", pageWidth / 2, yPosition, { align: "center" });
           yPosition += 10;
 
           // Event Info
@@ -4527,33 +5155,1372 @@ ${organizerName} — ${organizerContact}`;
             }
             doc.setFontSize(12);
             doc.setFont("helvetica", "bold");
-            doc.text(`${title}:`, margin, yPosition);
-            yPosition += 7;
-            doc.setFontSize(10);
+            doc.text(title, margin, yPosition);
+            yPosition += 6;
             doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
             const lines = doc.splitTextToSize(content, pageWidth - 2 * margin);
-            lines.forEach((line: string) => {
-              if (yPosition > 280) {
-                doc.addPage();
-                yPosition = margin;
-              }
-              doc.text(line, margin + 5, yPosition);
-              yPosition += 6;
+            doc.text(lines, margin, yPosition);
+            yPosition += lines.length * 5 + 3;
+          };
+
+          // Helper function to add array sections
+          const addArraySection = (title: string, items: any[], formatter: (item: any) => string) => {
+            if (!items || items.length === 0) return;
+            if (yPosition > 280) {
+              doc.addPage();
+              yPosition = margin; // Reset to top margin on new page
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text(title, margin, yPosition);
+            yPosition += 6;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            items.forEach((item) => {
+              const text = formatter(item);
+              const lines = doc.splitTextToSize(text, pageWidth - 2 * margin);
+              doc.text(lines, margin + 5, yPosition);
+              yPosition += lines.length * 5 + 2;
             });
             yPosition += 3;
           };
 
-          // All sections
-          addSection("Detalhes de Viagem", eventData.dayItinerary.travelDetails || "");
+          // Travel Details
+          addArraySection("Detalhes de Viagem", eventData.dayItinerary.travelDetails, (item) => {
+            return `${item.time || "Sem horario"} - ${item.type}: ${item.details}${item.notes ? ` (${item.notes})` : ""}`;
+          });
+
+          // Clothing Stores
+          addArraySection("Lojas de Roupa", eventData.dayItinerary.clothingStores, (item) => {
+            return `${item.time || "Sem horario"} - ${item.name}${item.address ? ` (${item.address})` : ""}${item.notes ? ` - ${item.notes}` : ""}`;
+          });
+
+          // Studio Visits
+          addArraySection("Visitas a Estudios / Colaboracoes", eventData.dayItinerary.studioVisits, (item) => {
+            return `${item.time || "Sem horario"} - ${item.studio}${item.artist ? ` com ${item.artist}` : ""}${item.purpose ? ` (${item.purpose})` : ""}${item.notes ? ` - ${item.notes}` : ""}`;
+          });
+
+          // Voice Practice
+          addArraySection("Praticas de Voz / Aquecimento", eventData.dayItinerary.voicePractice, (item) => {
+            return `${item.time || "Sem horario"} - ${item.type || "Pratica"}${item.duration ? ` (${item.duration})` : ""}${item.notes ? `: ${item.notes}` : ""}`;
+          });
+
+          // Hydration Reminders
+          if (eventData.dayItinerary.hydrationReminders && eventData.dayItinerary.hydrationReminders.length > 0) {
+            if (yPosition > 280) {
+              doc.addPage();
+              yPosition = margin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 100, 200); // Blue color
+            doc.text("LEMBRETES DE HIDRATACAO", margin, yPosition);
+            yPosition += 6;
+            doc.setTextColor(0, 0, 0); // Reset to black
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            eventData.dayItinerary.hydrationReminders.forEach((item) => {
+              const status = item.completed ? "[FEITO]" : "[PENDENTE]";
+              doc.text(`${item.time || "Sem horario"} - ${status}`, margin + 5, yPosition);
+              yPosition += 5;
+            });
+            yPosition += 3;
+          }
+
+          // Audience Reminders
+          if (eventData.dayItinerary.audienceReminders && eventData.dayItinerary.audienceReminders.length > 0) {
+            if (yPosition > 280) {
+              doc.addPage();
+              yPosition = margin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(139, 92, 246); // Purple color
+            doc.text("O QUE A AUDIENCIA REALMENTE QUER VER", margin, yPosition);
+            yPosition += 6;
+            doc.setTextColor(0, 0, 0); // Reset to black
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            eventData.dayItinerary.audienceReminders.forEach((item) => {
+              const status = item.completed ? "[FEITO]" : "[PENDENTE]";
+              const text = `${item.time || "Sem horario"} - ${status} - ${item.tip || ""}`;
+              const lines = doc.splitTextToSize(text, pageWidth - 2 * margin);
+              doc.text(lines, margin + 5, yPosition);
+              yPosition += lines.length * 5 + 2;
+            });
+            yPosition += 3;
+          }
+
+          // Other sections (string-based)
           addSection("Alojamento", eventData.dayItinerary.accommodation || "");
-          addSection("Lojas de Roupa", eventData.dayItinerary.clothingStores || "");
-          addSection("Refeições", eventData.dayItinerary.meals || "");
+          
+          // Meals section
+          if (eventData.dayItinerary.meals && eventData.dayItinerary.meals.length > 0) {
+            if (yPosition > 280) {
+              doc.addPage();
+              yPosition = margin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Refeicoes", margin, yPosition);
+            yPosition += 6;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            let totalMeals = 0;
+            eventData.dayItinerary.meals.forEach((item) => {
+              const dateStr = item.date ? new Date(item.date).toLocaleDateString("pt-PT") : "";
+              const timeStr = item.time || "";
+              const locationStr = item.location || "";
+              const whatStr = item.whatToEat || "";
+              const priceStr = item.price ? `EUR ${item.price.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "";
+              const text = `${dateStr} ${timeStr} - ${locationStr}${whatStr ? `: ${whatStr}` : ""}${priceStr ? ` (${priceStr})` : ""}`;
+              const lines = doc.splitTextToSize(text, pageWidth - 2 * margin);
+              doc.text(lines, margin + 5, yPosition);
+              yPosition += lines.length * 5 + 2;
+              totalMeals += item.price || 0;
+            });
+            if (totalMeals > 0) {
+              doc.setFont("helvetica", "bold");
+              doc.text(`Total: EUR ${totalMeals.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, margin + 5, yPosition);
+              yPosition += 8;
+            }
+            yPosition += 3;
+          }
           addSection("Horário de Soundcheck", eventData.dayItinerary.soundcheckTime || eventData.lineup.soundcheck || "");
           addSection("Horário de Abertura do Venue", eventData.dayItinerary.venueOpenTime || "");
-          addSection("Visitas a Estúdios", eventData.dayItinerary.studioVisits || "");
-          addSection("Práticas de Voz / Aquecimento", eventData.dayItinerary.voicePractice || "");
-          addSection("Lembretes de Hidratação", eventData.dayItinerary.hydrationReminders || "");
           addSection("Outras Notas", eventData.dayItinerary.otherNotes || "");
+
+          // Add "The Soloist" book content as additional pages
+          const addBookContent = () => {
+            // Add new page for book content
+            doc.addPage();
+            yPosition = margin + 15; // Extra top margin for book pages
+
+            // Book Title Page
+            doc.setFontSize(18);
+            doc.setFont("helvetica", "bold");
+            doc.text("O SOLISTA", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 10;
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "italic");
+            doc.text("Um Guia para a Prática de Performance", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 15;
+
+            // Quote
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "italic");
+            const quote = "A impressão física do pianista é enormemente importante, mais importante do que alguma vez supus como principiante. . . . Não percebi quão importante [isso] era até a primeira vez que me vi na televisão. Antes disso, se alguém comentava a minha aparência, pensava: 'Aqui estou eu a tentar performar música grandiosa, e eles estão a falar de banalidades.' Fiz todo o tipo de maus movimentos; atirei os braços descontroladamente. Quando finalmente vi como parecia, no entanto, percebi que estava a distrair a audiência da música.";
+            const quoteLines = doc.splitTextToSize(quote, maxWidth);
+            doc.text(quoteLines, bookMargin, yPosition);
+            yPosition += quoteLines.length * lineHeight + 5;
+            doc.setFont("helvetica", "normal");
+            doc.text("— Alfred Brendel (n. 1931), pianista", bookMargin, yPosition);
+            yPosition += paragraphSpacing;
+
+            // Introduction paragraph
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            const introText = "Aprender a música e expressá-la da tua própria forma única é, claro, a tua tarefa principal como performer. É bom perceber, no entanto, que os aspetos visuais da tua apresentação ajudam ou impedem a capacidade da audiência de ser atraída para a tua música. Estás confiante e entusiástico sobre performar? Tiveste tempo para pareceres o teu melhor? Organizaste a gestão do teu palco para que decorra suavemente e não ocupe tempo desnecessário? Fizeste tudo o possível para eliminar movimentos corporais ou faciais repetitivos e possivelmente irritantes? Os performers que prestam atenção a estas coisas parecem confortáveis no palco e, por sua vez, colocam a audiência à vontade e pronta para ouvir. Deves a ti mesmo, após todas as tuas longas horas de prática, apresentar a tua música no melhor contexto.";
+            const introLines = doc.splitTextToSize(introText, maxWidth);
+            doc.text(introLines, bookMargin, yPosition);
+            yPosition += introLines.length * lineHeight + paragraphSpacing;
+
+            // Chapter 2: HOW TO DRESS FOR THE CONCERT STAGE
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("COMO VESTIR PARA O PALCO DE CONCERTO", bookMargin, yPosition);
+            yPosition += 10;
+
+            // Dressing for Style section
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Vestir para Estilo", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const styleText1 = "Todos temos os nossos estilos individuais de vestuário no dia a dia, e alguns de nós somos mais conscientes da moda do que outros. É importante perceber, no entanto, que uma performance musical não é um desfile de moda, e que deve ser tomado cuidado para escolher vestuário apropriado para um concerto.";
+            const styleLines1 = doc.splitTextToSize(styleText1, maxWidth);
+            doc.text(styleLines1, bookMargin, yPosition);
+            yPosition += styleLines1.length * lineHeight + bookPadding;
+
+            const styleText2 = "O nível de formalidade do teu vestuário, por exemplo, pode variar dependendo da hora do dia da performance (geralmente, menos formal para as tardes do que para as noites), da época do ano (menos formal no verão do que durante outras estações), ou do local (menos formal numa sala do que numa sala de concertos), mas cada performance, seja perante uma audiência ou juízes, merece uma aparência vestida. Se usas roupas do dia a dia, arriscas que a tua performance pareça um ensaio ou uma sessão de prática. Vestir-se também indica que te levas a sério, e sugere que a audiência também o deve fazer.";
+            const styleLines2 = doc.splitTextToSize(styleText2, maxWidth);
+            doc.text(styleLines2, bookMargin, yPosition);
+            yPosition += styleLines2.length * lineHeight + bookPadding;
+
+            const styleText3 = "Além do nível de formalidade no vestuário, os músicos precisam de ser sensíveis a quão chamativo ou revelador o seu vestuário pode ser. Aqueles que se vestem com roupas provocantes no seu dia a dia devem reconhecer que tais estilos podem ser inadequados ao performar simplesmente porque competem com a música pela atenção da audiência. Alguns jovens performers profissionais são encorajados pelos seus agentes a adotar modos de vestuário incomuns ou provocantes para que as audiências se lembrem deles (o jovem com os grandes músculos ou as meias vermelhas; a jovem com o decote impressionante ou a saia curta); e alguns alcançam notoriedade ao descartar completamente as convenções tradicionais do vestuário de concerto. Roupas reveladoras e não convencionais, no entanto, distraem uma audiência.";
+            const styleLines3 = doc.splitTextToSize(styleText3, maxWidth);
+            doc.text(styleLines3, bookMargin, yPosition);
+            yPosition += styleLines3.length * lineHeight + bookPadding;
+
+            const styleText4 = "A cor é também algo em que pensar. Cada um de nós parece melhor em certas cores. Algumas cores, como pastéis, podem fazer-te parecer desbotado sob as luzes do palco, enquanto cores brilhantes podem parecer demasiado chamativas. O preto é sempre uma escolha segura porque parece digno e forte, e não compete pela atenção. Só porque um conjunto é preto, no entanto, não significa que seja suficientemente vestido ou formal para a ocasião. Roupas casuais que são pretas ainda parecem roupas casuais.";
+            const styleLines4 = doc.splitTextToSize(styleText4, maxWidth);
+            doc.text(styleLines4, bookMargin, yPosition);
+            yPosition += styleLines4.length * lineHeight + bookPadding;
+
+            const styleText5 = "Como músico, podes não te sentir qualificado para escolher o melhor vestuário para ti; a tua sensibilidade estética pode ser principalmente auditiva e não visual. Podes não ter certeza sobre escolher estilos, tecidos e cores. Não hesites em pedir ajuda ao decidir sobre o teu guarda-roupa de concerto. Se não conheces alguém que tenha um talento especial para vestir bem, considera contratar um consultor profissional. Trabalha para obter a confiança que resulta de saberes que pareces bem no palco.";
+            const styleLines5 = doc.splitTextToSize(styleText5, maxWidth);
+            doc.text(styleLines5, bookMargin, yPosition);
+            yPosition += styleLines5.length * lineHeight + paragraphSpacing;
+
+            // Dressing for Utility and Comfort
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Vestir para Utilidade e Conforto", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "italic");
+            doc.text('"Um par de sapatos bons e confortáveis."', bookMargin, yPosition);
+            yPosition += 5;
+            doc.setFont("helvetica", "normal");
+            doc.text("— Birgit Nilsson (n. 1918), soprano wagneriana", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const utilityText1 = "Os performers precisam de considerar mais do que apenas estilo. É essencial que não haja nada irritante ou desconfortável nas tuas roupas. Primeiro, não devem ser demasiado apertadas. Além de restringir o movimento natural do teu corpo, roupas apertadas podem parecer ainda mais apertadas sob a iluminação do palco, o que criará sombras em torno de quaisquer contornos corporais subjacentes ou roupa interior. Também precisas de ser capaz de te moveres livremente sem te preocupares que a tua roupa se desloque para posições indesejáveis. Fendas altas em saias, por exemplo, são problemáticas desta forma, assim como alças de ombro (embora braços descobertos não sejam recomendados) e cintos mal ajustados.";
+            const utilityLines1 = doc.splitTextToSize(utilityText1, maxWidth);
+            doc.text(utilityLines1, bookMargin, yPosition);
+            yPosition += utilityLines1.length * lineHeight + bookPadding;
+
+            const utilityText2 = "As roupas de concerto devem caber confortavelmente. Deve haver espaço suficiente nos braços e nas costas do teu conjunto para te moveres tanto quanto precisas. Encontra um alfaiate em que possas confiar para manter as tuas roupas de palco a caber e a parecer perfeitas. Se ganhas ou perdes alguns quilos, compra roupas novas.";
+            const utilityLines2 = doc.splitTextToSize(utilityText2, maxWidth);
+            doc.text(utilityLines2, bookMargin, yPosition);
+            yPosition += utilityLines2.length * lineHeight + bookPadding;
+
+            const utilityText3 = "Nada no teu vestuário deve precisar de atenção recorrente, porque ajustar a tua roupa no palco parece desajeitado e autoconsciente. Enquanto performas, queres ser capaz de esquecer completamente o teu conjunto e trazer toda a tua concentração para a música. Portanto, nunca performas com roupas que não tenhas usado enquanto tocavas o teu instrumento, cantavas ou dirigias. Há uma boa razão para um ensaio de 'vestuário' mesmo que estejas a performar sozinho.";
+            const utilityLines3 = doc.splitTextToSize(utilityText3, maxWidth);
+            doc.text(utilityLines3, bookMargin, yPosition);
+            yPosition += utilityLines3.length * lineHeight + paragraphSpacing;
+
+            // Hem Lengths, Footwear, and Hosiery
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Comprimentos de Bainha, Calçado e Meias", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const hemText1 = "Ao tocar num palco que está montado mais alto do que a audiência, não deixes de considerar como pareces dos joelhos para baixo. Uma saia que pode parecer modesta quando as pessoas estão de pé ao teu nível, pode parecer escandalosa das primeiras filas da orquestra. Saias curtas são geralmente demasiado reveladoras de um palco elevado. Meio da barriga da perna é aproximadamente o mais curto que uma saia pode ser sem se tornar uma distração.";
+            const hemLines1 = doc.splitTextToSize(hemText1, maxWidth);
+            doc.text(hemLines1, bookMargin, yPosition);
+            yPosition += hemLines1.length * lineHeight + bookPadding;
+
+            const hemText2 = "Escolhe os teus sapatos cuidadosamente. É melhor ter sapatos que uses apenas para performar. Usa um estilo e cor que coordenem apropriadamente com o resto do teu conjunto. Não deixes os sapatos ficarem gastos ou sujos, e mantém-nos impecavelmente polidos. Garante que podes caminhar nos teus sapatos com uma passada natural e sem fazer demasiado barulho no palco. É útil não apenas incluir sapatos no teu ensaio de vestuário, mas também caminhar e praticar neles até se tornarem realmente parte de ti.";
+            const hemLines2 = doc.splitTextToSize(hemText2, maxWidth);
+            doc.text(hemLines2, bookMargin, yPosition);
+            yPosition += hemLines2.length * lineHeight + bookPadding;
+
+            const hemText3 = "Se performas de pé, sapatos com suporte adequado impedir-te-ão de estar com dor ou fatigado no final do concerto. Assim como queres ser capaz de esquecer as tuas roupas, queres ser capaz de esquecer o teu calçado. Saltos muito altos ou sapatos empilhados podem exigir que o usuário adote uma postura não natural ao caminhar, estar de pé e até sentar. O aspeto atlético da musicalidade requer que o corpo esteja no melhor alinhamento para o seu desempenho mais eficiente.";
+            const hemLines3 = doc.splitTextToSize(hemText3, maxWidth);
+            doc.text(hemLines3, bookMargin, yPosition);
+            yPosition += hemLines3.length * lineHeight + paragraphSpacing;
+
+            // Necklines, Hair, Makeup, and Accessories
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Decotes, Cabelo, Maquilhagem e Acessórios", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const neckText1 = "Assim como alguns membros da audiência estão sentados abaixo de ti no nível da orquestra, outros estarão sentados acima de ti quando tocas numa sala com varanda. Decotes baixos que parecem modestos em circunstâncias normais podem tornar-se reveladores quando vistos dos níveis superiores da sala. Considera também a aparência de um decote baixo ao fazer reverência, o momento em que toda a audiência efetivamente te vê de cima. Escolhe cuidadosamente o teu decote para que não constitua uma distração.";
+            const neckLines1 = doc.splitTextToSize(neckText1, maxWidth);
+            doc.text(neckLines1, bookMargin, yPosition);
+            yPosition += neckLines1.length * lineHeight + bookPadding;
+
+            const neckText2 = "Performas com o teu cabelo sob controlo, para que a audiência possa ter uma vista clara e completa do teu rosto. O teu cabelo deve ser suficientemente curto ou firmemente preso para que não obstrua esta vista. Assim como com o vestuário, tocar constantemente no teu cabelo e movê-lo pode parecer desleixado, inseguro e autoconsciente. Cabelo a cair no teu rosto durante a cadência pode interferir com a tua concentração e fazer a audiência questionar como vais lidar com isso.";
+            const neckLines2 = doc.splitTextToSize(neckText2, maxWidth);
+            doc.text(neckLines2, bookMargin, yPosition);
+            yPosition += neckLines2.length * lineHeight + bookPadding;
+
+            const neckText3 = "Usa maquilhagem discreta. É um erro pensar que a maquilhagem deve ser exagerada no palco. Assim como na vida diária, demasiada maquilhagem atrai atenção. Usa apenas verniz de unhas transparente e mantém as unhas muito curtas para tocar um instrumento.";
+            const neckLines3 = doc.splitTextToSize(neckText3, maxWidth);
+            doc.text(neckLines3, bookMargin, yPosition);
+            yPosition += neckLines3.length * lineHeight + bookPadding;
+
+            const neckText4 = "Quando se trata de acessórios, quanto menos melhor. É melhor não usar nada nos pulsos ou dedos se estiveres a tocar um instrumento. Isso inclui um relógio, já que a única razão para o fazer é verificar a hora, e não quererias que a audiência te visse a fazer isso. Tem cuidado ao usar ornamentos de cabelo que possam soltar-se. Um broche ou colar pode estar bem se o teu instrumento nunca o tocar.";
+            const neckLines4 = doc.splitTextToSize(neckText4, maxWidth);
+            doc.text(neckLines4, bookMargin, yPosition);
+            yPosition += neckLines4.length * lineHeight + paragraphSpacing;
+
+            // RAISE EXPECTATIONS WITH YOUR ENTRANCE
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("ELEVAR EXPECTATIVAS COM A TUA ENTRADA", bookMargin, yPosition);
+            yPosition += 10;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const entranceText = "No momento em que entras no palco, fazes uma forte impressão na audiência baseada na tua atitude e grau de confiança, refletidos na tua caminhada, expressão facial, reverência e capacidade de criar um silêncio significativo antes da primeira nota ser tocada. Com estes vários elementos da tua entrada, forneces efetivamente à audiência uma expectativa da performance que está para vir, positiva ou negativa. É do interesse de cada performer maximizar a alta expectativa da audiência antes da primeira nota ser tocada.";
+            const entranceLines = doc.splitTextToSize(entranceText, maxWidth);
+            doc.text(entranceLines, bookMargin, yPosition);
+            yPosition += entranceLines.length * lineHeight + paragraphSpacing;
+
+            // Walking Onstage
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Caminhar no Palco", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const walkText1 = "Planeia a rota que vais tomar dos bastidores até ao lugar onde vais parar e fazer reverência. Entra sempre do lado direito do palco (lado esquerdo da audiência), a menos que haja algo na configuração do edifício que te impeça de o fazer. Pratica caminhar para o palco de cada novo local para teres uma sensação da distância e saberes sobre quaisquer desvios ou obstáculos com antecedência.";
+            const walkLines1 = doc.splitTextToSize(walkText1, maxWidth);
+            doc.text(walkLines1, bookMargin, yPosition);
+            yPosition += walkLines1.length * lineHeight + bookPadding;
+
+            const walkText2 = "Para um ator, estabelecer uma caminhada distintiva é um elemento importante no desenvolvimento de qualquer personagem; os atores aprendem que a forma como as pessoas caminham diz muito sobre elas. Quando caminhas para um palco de concerto, a própria caminhada dá à audiência uma mensagem forte sobre quem és, como te sentes por estar lá, a tua atitude em relação à audiência, o teu nível de entusiasmo pela performance, e até se és ou não um bom performer.";
+            const walkLines2 = doc.splitTextToSize(walkText2, maxWidth);
+            doc.text(walkLines2, bookMargin, yPosition);
+            yPosition += walkLines2.length * lineHeight + bookPadding;
+
+            const walkText3 = "Queres que a tua caminhada projete antecipação entusiástica para o evento que está prestes a acontecer, como se estivesses a ir para algum lugar onde queres ir. O ritmo deve, portanto, ser propositado sem ser apressado. Caminhar demasiado depressa pode parecer nervoso e autoconsciente. Caminhar demasiado devagar pode transmitir relutância, falta de entusiasmo, ou simplesmente uma má atitude.";
+            const walkLines3 = doc.splitTextToSize(walkText3, maxWidth);
+            doc.text(walkLines3, bookMargin, yPosition);
+            yPosition += walkLines3.length * lineHeight + paragraphSpacing;
+
+            // Bowing
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Reverência", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const bowText1 = "Fazer reverência à audiência é como apertar a mão de um indivíduo—uma saudação e introdução formal adequada. Estabelecer contacto visual tanto antes como depois da reverência transmite sinceridade. Vem para o palco e move-te propositadamente para o local onde vais performar. Depois:";
+            const bowLines1 = doc.splitTextToSize(bowText1, maxWidth);
+            doc.text(bowLines1, bookMargin, yPosition);
+            yPosition += bowLines1.length * lineHeight + 5;
+            doc.text("1. Para e olha para a audiência, estabelecendo contacto visual.", bookMargin + 5, yPosition);
+            yPosition += 6;
+            doc.text("2. Faz reverência.", bookMargin + 5, yPosition);
+            yPosition += 6;
+            doc.text("3. Levanta-te e fica nesse local até reestabeleceres contacto visual com a audiência.", bookMargin + 5, yPosition);
+            yPosition += 8;
+
+            const bowText2 = "Faz reverência com os pés juntos, porque manter os pés afastados pode parecer desorganizado e desajeitado. Mantém os ombros para baixo e as mãos relaxadas aos teus lados, a menos que estejas a segurar o teu instrumento. Baixa os olhos para o chão enquanto te inclinas da cintura—suavemente, sem movimentos bruscos—até cerca de um ângulo de 45 graus. Baixar os olhos indica humildade e respeito.";
+            const bowLines2 = doc.splitTextToSize(bowText2, maxWidth);
+            doc.text(bowLines2, bookMargin, yPosition);
+            yPosition += bowLines2.length * lineHeight + paragraphSpacing;
+
+            // DURING THE PERFORMANCE
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("DURANTE A PERFORMANCE", bookMargin, yPosition);
+            yPosition += 10;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const duringText = "Enquanto tocas, mantém a audiência focada na música o máximo possível, não lhes dando outras coisas para notarem e pensarem. A linguagem corporal deve demonstrar concentração intensa, mas calma. Precisas de estar ciente de problemas potenciais nesta área para que possas tocar com compostura e, após tocar, aceitar graciosamente os aplausos da audiência.";
+            const duringLines = doc.splitTextToSize(duringText, maxWidth);
+            doc.text(duringLines, bookMargin, yPosition);
+            yPosition += duringLines.length * lineHeight + paragraphSpacing;
+
+            // Annoying Physical Habits
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Hábitos Físicos Irritantes", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const habitsText = "À medida que praticam, a maioria dos músicos adquire hábitos físicos que podem ser distrativos na performance. Esforço e concentração intensos, por exemplo, podem criar uma expressão facial desagradável, até grotesca. Um forte sentido de ritmo ou de melodia pode produzir movimento corporal que é exagerado e intrusivo.";
+            const habitsLines = doc.splitTextToSize(habitsText, maxWidth);
+            doc.text(habitsLines, bookMargin, yPosition);
+            yPosition += habitsLines.length * lineHeight + 5;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Hábitos Pessoais a Evitar:", bookMargin, yPosition);
+            yPosition += 6;
+            doc.setFont("helvetica", "normal");
+            const personalHabits = [
+              "Enxugar a testa",
+              "Torcer ou flexionar as mãos ou dedos",
+              "Limpar a boca",
+              "Lamber os lábios",
+              "Bater os dedos dos pés",
+              "Ajustar o cabelo",
+              "Tocar nos óculos",
+              "Respirar audivelmente",
+              "Cantarolar enquanto tocas"
+            ];
+            personalHabits.forEach(habit => {
+              doc.text(`• ${habit}`, bookMargin + 5, yPosition);
+              yPosition += 5;
+            });
+            yPosition += 3;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Manusear o Teu Instrumento:", bookMargin, yPosition);
+            yPosition += 6;
+            doc.setFont("helvetica", "normal");
+            const instrumentHabits = [
+              "Sacudir a humidade",
+              "Aplicar breu no arco",
+              "Puxar cabelos soltos do arco",
+              "Limpar o teclado",
+              "Chocalhar as válvulas",
+              "Soprar audivelmente num bocal ou trompa",
+              "Lamber a palheta"
+            ];
+            instrumentHabits.forEach(habit => {
+              doc.text(`• ${habit}`, bookMargin + 5, yPosition);
+              yPosition += 5;
+            });
+            yPosition += 3;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Gestos Dramáticos a Evitar:", bookMargin, yPosition);
+            yPosition += 6;
+            doc.setFont("helvetica", "normal");
+            const dramaticGestures = [
+              "Assumir uma expressão facial tensa ou exagerada",
+              "Atirar a cabeça",
+              "Balançar os braços",
+              "Balançar o corpo",
+              "Balançar a cabeça",
+              "'Dançar' com a música"
+            ];
+            dramaticGestures.forEach(gesture => {
+              doc.text(`• ${gesture}`, bookMargin + 5, yPosition);
+              yPosition += 5;
+            });
+            yPosition += paragraphSpacing;
+
+            // Reacting to Mistakes
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Reagir a Erros", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const mistakesText = "Assume sempre que cada performance terá erros. Muito mais importante do que eliminar todos os erros (o que é virtualmente impossível) é como reages a eles. Não permitas que a audiência se preocupe com os teus erros. É imperativo que elimines até a mais pequena reação, seja no teu rosto ou corpo. Reagir visivelmente a erros faz com que pareçam muito piores do que são. Podemos seguir o exemplo dos patinadores no gelo: performers que aprenderam a levantar-se de uma queda no gelo com um grande sorriso, quase como se tivessem realmente pretendido cair.";
+            const mistakesLines = doc.splitTextToSize(mistakesText, maxWidth);
+            doc.text(mistakesLines, bookMargin, yPosition);
+            yPosition += mistakesLines.length * lineHeight + paragraphSpacing;
+
+            // ACKNOWLEDGING APPLAUSE
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("RECONHECER OS APLAUSOS", bookMargin, yPosition);
+            yPosition += 10;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const applauseText = "Ensaia cuidadosamente a tua linguagem corporal e a tua concentração para controlar o timing dos aplausos da audiência no final da tua peça. Mesmo a audiência mais pouco sofisticada pode ser dissuadida de bater palmas entre movimentos ou demasiado cedo no silêncio significativo no final de uma peça pela forma como o performer mantém a concentração e segura o corpo. Convida os aplausos a começarem exatamente quando queres, libertando a tua concentração, tanto mental como fisicamente.";
+            const applauseLines = doc.splitTextToSize(applauseText, maxWidth);
+            doc.text(applauseLines, bookMargin, yPosition);
+            yPosition += applauseLines.length * lineHeight + bookPadding;
+
+            const applauseText2 = "À medida que os aplausos começam, levanta-te para fazer reverência como fizeste no início, com a mesma expressão facial relaxada e contacto visual com a tua audiência. Se te sentes esgotado e exausto, não o mostres. Faz reverência com gratidão sincera para com os ouvintes. Aceita o elogio dos aplausos abertamente e graciosamente, evitando qualquer sugestão de uma modéstia falsa, 'ai, não foi nada'.";
+            const applauseLines2 = doc.splitTextToSize(applauseText2, maxWidth);
+            doc.text(applauseLines2, bookMargin, yPosition);
+            yPosition += applauseLines2.length * lineHeight + paragraphSpacing;
+
+            // ENCORES
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("BIS", bookMargin, yPosition);
+            yPosition += 10;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const encoreText = "Embora os bis possam parecer uma resposta espontânea ao entusiasmo da audiência, o performer tem, claro, planeado cuidadosamente um ou mais deles com antecedência. Precisas de saber exatamente o que vais tocar como se fosse parte do teu programa impresso. Assim como nunca queres fazer demasiadas reverências, nunca queres tocar demasiados bis. Deixa a audiência sempre a querer um pouco mais, em vez de correres o risco de tocar demasiado tempo.";
+            const encoreLines = doc.splitTextToSize(encoreText, maxWidth);
+            doc.text(encoreLines, bookMargin, yPosition);
+            yPosition += encoreLines.length * lineHeight + paragraphSpacing;
+
+            // Final Summary
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("ATENDE A TODOS OS ASPETOS DA TUA PRESENÇA DE PALCO", bookMargin, yPosition);
+            yPosition += 10;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const finalText = "O teu trabalho não termina quando a música está pronta para ser executada. Fizeste tudo o possível para maximizar a tua aparência e comportamento quando performas? Tempo e esforço devem ser gastos em muitos aspetos da presença de palco para que a tua música possa ser ouvida no melhor contexto possível. Escolhe as roupas mais apropriadas para o evento e para a tarefa em mãos. Estuda e pratica a tua entrada e reverência para que a audiência antecipe uma boa performance antes mesmo de começares. Avalia o teu comportamento no palco para qualquer coisa que a tua audiência possa achar distrativa. Pratica não reagir a erros. Ou performa de memória, ou garante que o teu uso da partitura é o mais discreto possível. Aceita os aplausos graciosamente, e deixa sempre a audiência a querer mais.";
+            const finalLines = doc.splitTextToSize(finalText, maxWidth);
+            doc.text(finalLines, bookMargin, yPosition);
+            yPosition += finalLines.length * lineHeight + paragraphSpacing;
+
+            const finalText2 = "O teu trabalho árduo merece ser exibido na melhor luz. Avalia constantemente a tua presença de palco como está hoje, e trabalha para melhorá-la no futuro. A tua audiência notará e apreciará a tua atenção a este aspeto importante, mas negligenciado da performance.";
+            const finalLines2 = doc.splitTextToSize(finalText2, maxWidth);
+            doc.text(finalLines2, bookMargin, yPosition);
+          };
+
+          // Add audience types content
+          const addAudienceTypesContent = () => {
+            // Add new page for audience types
+            doc.addPage();
+            yPosition = bookMargin + 15;
+
+            // Title
+            doc.setFontSize(18);
+            doc.setFont("helvetica", "bold");
+            doc.text("TIPOS DE MEMBROS DA AUDIÊNCIA", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 10;
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "italic");
+            doc.text("Um Guia para Artistas", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 15;
+
+            // Introduction
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const introText = "A audiência é um microcosmo da humanidade. Como performer, aprender a ler esta multidão em constante mudança—energizando os entusiastas, conquistando os céticos, e ignorando os disruptivos—é tanto parte da arte quanto tocar os acordes certos. Aqui estão os tipos de membros da audiência que podes encontrar nos teus concertos.";
+            const introLines = doc.splitTextToSize(introText, maxWidth);
+            doc.text(introLines, bookMargin, yPosition);
+            yPosition += introLines.length * lineHeight + paragraphSpacing;
+
+            // I. The Engaged & Enthusiastic
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("I. OS ENGAJADOS E ENTUSIASTAS", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("O Superfã", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const superfanText = "Conhece cada B-side, letra e pedal de guitarra que usas. São os primeiros a chegar, os últimos a sair, e muitas vezes viajam para vários concertos. Vê-los a cantar cada palavra de olhos fechados, completamente perdidos na música.";
+            const superfanLines = doc.splitTextToSize(superfanText, maxWidth);
+            doc.text(superfanLines, bookMargin, yPosition);
+            yPosition += superfanLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("O Dançarino Entusiasta", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const dancerText = "Alegria pura e inconsciente em movimento. Não importa se têm ritmo; são uma manifestação física da energia da música. Inclui o 'Hippy Twirler', o 'Punk Pogoer', e o 'Headbanger'.";
+            const dancerLines = doc.splitTextToSize(dancerText, maxWidth);
+            doc.text(dancerLines, bookMargin, yPosition);
+            yPosition += dancerLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("O 'Light Me the Fuck Up!' Guy", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const hypeText = "O hype man que não sabias que precisavas. Fornecem um fluxo constante de encorajamento energético, por vezes embriagado, entre as músicas.";
+            const hypeLines = doc.splitTextToSize(hypeText, maxWidth);
+            doc.text(hypeLines, bookMargin, yPosition);
+            yPosition += hypeLines.length * lineHeight + paragraphSpacing;
+
+            // II. The Analytical & Observant
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("II. OS ANALÍTICOS E OBSERVADORES", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("O Músico dos Músicos", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const musicianText = "A 'estátua' que está na verdade a desconstruir o teu setlist, analisando a tua técnica, e catalogando mentalmente o teu equipamento. A sua cara de póquer é uma máscara para foco profundo.";
+            const musicianLines = doc.splitTextToSize(musicianText, maxWidth);
+            doc.text(musicianLines, bookMargin, yPosition);
+            yPosition += musicianLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("O 'Human Shazam'", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const shazamText = "Podes vê-los a sussurrar ao amigo após os primeiros acordes de uma música profunda: 'Isto é do EP de 2017, o B-side de Neon Reverie...'";
+            const shazamLines = doc.splitTextToSize(shazamText, maxWidth);
+            doc.text(shazamLines, bookMargin, yPosition);
+            yPosition += shazamLines.length * lineHeight + paragraphSpacing;
+
+            // III. The Social & Interactive
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("III. OS SOCIAIS E INTERATIVOS", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("O Bêbado Excessivamente Amigável", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const drunkText = "A fonte de high-fives não solicitados, abraços desajeitados, e histórias longas e confusas entre sets. Geralmente inofensivo e bem-intencionado.";
+            const drunkLines = doc.splitTextToSize(drunkText, maxWidth);
+            doc.text(drunkLines, bookMargin, yPosition);
+            yPosition += drunkLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("A Máquina de Pedidos", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const requestText = "Acredita que a banda é uma jukebox humana. Gritará 'Free Bird!' sem ironia ou pedirá uma música pop num concerto de metal. Muitas vezes aborda o membro da banda mais acessível (geralmente o baixista).";
+            const requestLines = doc.splitTextToSize(requestText, maxWidth);
+            doc.text(requestLines, bookMargin, yPosition);
+            yPosition += requestLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("O 'Eu Poderia Gerir-te Melhor' Guy", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const managerText = "Encontra-te após o set para explicar como estás a fazer tudo errado e oferece conselhos de carreira não solicitados, muitas vezes terríveis. Nunca geriu ninguém.";
+            const managerLines = doc.splitTextToSize(managerText, maxWidth);
+            doc.text(managerLines, bookMargin, yPosition);
+            yPosition += managerLines.length * lineHeight + paragraphSpacing;
+
+            // IV. The Unruly & Unaware
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("IV. OS DESORDENADOS E DESATENTOS", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("O Tanque Humano", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const tankText = "Bêbado e alheio, atravessam a multidão, derramando bebidas e pisando pés sem um pingo de consciência.";
+            const tankLines = doc.splitTextToSize(tankText, maxWidth);
+            doc.text(tankLines, bookMargin, yPosition);
+            yPosition += tankLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("O 'Main Character' Mosh-Pitter", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const moshText = "Inicia um mosh pit num concerto acústico de folk. Não tem consideração pela adequação do género ou segurança dos que estão à volta.";
+            const moshLines = doc.splitTextToSize(moshText, maxWidth);
+            doc.text(moshLines, bookMargin, yPosition);
+            yPosition += moshLines.length * lineHeight + paragraphSpacing;
+
+            // V. The Modern & Tech-Obsessed
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("V. OS MODERNOS E OBSESSIVOS COM TECNOLOGIA", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("O Livestreamer", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const streamText = "Segura o telefone durante todo o concerto, vendo a performance através de um ecrã de 6 polegadas enquanto bloqueia a vista de todos atrás deles.";
+            const streamLines = doc.splitTextToSize(streamText, maxWidth);
+            doc.text(streamLines, bookMargin, yPosition);
+            yPosition += streamLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("O Selfie Taker", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const selfieText = "Mais preocupado em obter a foto perfeita de si mesmo com o palco ao fundo do que realmente assistir à performance.";
+            const selfieLines = doc.splitTextToSize(selfieText, maxWidth);
+            doc.text(selfieLines, bookMargin, yPosition);
+            yPosition += selfieLines.length * lineHeight + paragraphSpacing;
+
+            // VI. The Niche & Situational
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("VI. OS DE NICHO E SITUACIONAIS", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("O 'Estou Aqui Só pela Música do TikTok'", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const tiktokText = "Aparece tarde, fala durante o set, e só presta atenção quando a banda toca a única música que conhecem do TikTok ou da rádio.";
+            const tiktokLines = doc.splitTextToSize(tiktokText, maxWidth);
+            doc.text(tiktokLines, bookMargin, yPosition);
+            yPosition += tiktokLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("O 'Plus-One Relutante'", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const plusoneText = "O namorado, namorada ou amigo que foi arrastado. O corpo está presente, mas o espírito está noutro lugar. Muitas vezes encontrado encostado à parede de trás, a verificar o telefone.";
+            const plusoneLines = doc.splitTextToSize(plusoneText, maxWidth);
+            doc.text(plusoneLines, bookMargin, yPosition);
+            yPosition += plusoneLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("O 'Buscador Espiritual'", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const spiritualText = "Comum em festivais de jam band ou música psicadélica. Estão lá para uma experiência transcendente, quase religiosa, muitas vezes auxiliada por química. Encontrá-los-ás de olhos fechados, braços estendidos, a comunicar com o cosmos.";
+            const spiritualLines = doc.splitTextToSize(spiritualText, maxWidth);
+            doc.text(spiritualLines, bookMargin, yPosition);
+            yPosition += spiritualLines.length * lineHeight + paragraphSpacing;
+          };
+
+          // Add festival behaviors content
+          const addFestivalBehaviorsContent = () => {
+            // Add new page for festival behaviors
+            doc.addPage();
+            yPosition = bookMargin + 15;
+
+            // Title
+            doc.setFontSize(18);
+            doc.setFont("helvetica", "bold");
+            doc.text("COMPORTAMENTOS COMUNS EM FESTIVAIS", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 10;
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "italic");
+            doc.text("Dinâmicas de Multidão e Comportamento", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 15;
+
+            // Introduction
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const introText = "As multidões de festivais de música exibem uma ampla gama de comportamentos influenciados por fatores como tamanho do local, lineup, uso de substâncias e dinâmicas sociais. Estes podem variar de vibes positivas e comunitárias a ações disruptivas ou inseguras.";
+            const introLines = doc.splitTextToSize(introText, maxWidth);
+            doc.text(introLines, bookMargin, yPosition);
+            yPosition += introLines.length * lineHeight + paragraphSpacing;
+
+            // Positive Behaviors
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("COMPORTAMENTOS POSITIVOS E COMUNITÁRIOS", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Dança Expressiva e Participação", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const danceText = "Os participantes envolvem-se em dança interpretativa, saltos ou formam conga lines, especialmente em sets de alta energia. Por exemplo, em multidões expressivas como concertos de rock ou festivais EDM, as pessoas amplificam a excitação partilhada sem violência.";
+            const danceLines = doc.splitTextToSize(danceText, maxWidth);
+            doc.text(danceLines, bookMargin, yPosition);
+            yPosition += danceLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Ajudar os Outros", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const helpText = "Apanhar crowd-surfers caídos, assistir aqueles em dificuldade, ou partilhar espaço com atenção. Posts enfatizam lembrar as pessoas de ajudar a segurança e garantir mosh ou surf seguros.";
+            const helpLines = doc.splitTextToSize(helpText, maxWidth);
+            doc.text(helpLines, bookMargin, yPosition);
+            yPosition += helpLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Visualização Respeitosa", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const respectText = "Sentar ou ficar de pé sem bloquear vistas, como visto em alguns festivais internacionais onde multidões se agacham junto às barricadas para deixar outros ver. Isto alinha-se com a teoria de normas emergentes, onde membros influentes estabelecem padrões cooperativos.";
+            const respectLines = doc.splitTextToSize(respectText, maxWidth);
+            doc.text(respectLines, bookMargin, yPosition);
+            yPosition += respectLines.length * lineHeight + paragraphSpacing;
+
+            // Disruptive Behaviors
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("COMPORTAMENTOS DISRUPTIVOS OU IRRITANTES", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Empurrar e Atropelar", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const pushText = "Comum em áreas densas; 'trens' de grupos atravessam multidões sem desculpas, especialmente participantes mais jovens dividindo sets. Multidões inexperientes (ex: participantes infrequentes) tratam-no como um evento desportivo, ignorando etiqueta de espaço.";
+            const pushLines = doc.splitTextToSize(pushText, maxWidth);
+            doc.text(pushLines, bookMargin, yPosition);
+            yPosition += pushLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Falar e Distrações", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const talkText = "Conversar alto sobre a música, bater palmas fora do ritmo, ou usar flashes de telefone. A Geração Z ('zoomers') é notada por se afastar dos palcos para gritar ou derramar bebidas.";
+            const talkLines = doc.splitTextToSize(talkText, maxWidth);
+            doc.text(talkLines, bookMargin, yPosition);
+            yPosition += talkLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Bloquear Vistas", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const blockText = "Segurar cartazes alto, sentar em pits enquanto estão no telefone (ex: Instagram ou Snapchat), ou ficar de pé egoisticamente em áreas sentadas.";
+            const blockLines = doc.splitTextToSize(blockText, maxWidth);
+            doc.text(blockLines, bookMargin, yPosition);
+            yPosition += blockLines.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Ações Inapropriadas", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const inappropriateText = "Agarramentos, lutas ou indecência pública (ex: casais comportando-se intimamente em multidões). Alguns festivais veem bêbados barulhentos ou anéis de roubo.";
+            const inappropriateLines = doc.splitTextToSize(inappropriateText, maxWidth);
+            doc.text(inappropriateLines, bookMargin, yPosition);
+            yPosition += inappropriateLines.length * lineHeight + paragraphSpacing;
+
+            // Final note
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "italic");
+            const noteText = "Compreender estes comportamentos ajuda-te a preparar-te melhor para diferentes tipos de audiências e a adaptar a tua performance de acordo. Lembra-te: cada membro da audiência é único, mas reconhecer padrões pode melhorar a tua capacidade de conectar e envolver.";
+            const noteLines = doc.splitTextToSize(noteText, maxWidth);
+            doc.text(noteLines, bookMargin, yPosition);
+          };
+
+          // Add Stage Presence from Head to Toe book content
+          const addStagePresenceBookContent = () => {
+            // Add new page for the book
+            doc.addPage();
+            yPosition = bookMargin + 15;
+
+            // Title Page
+            doc.setFontSize(20);
+            doc.setFont("helvetica", "bold");
+            doc.text("PRESENÇA DE PALCO", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 8;
+            doc.setFontSize(18);
+            doc.text("DA CABEÇA AOS PÉS", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 10;
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "normal");
+            doc.text("Um Manual para Músicos", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 12;
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "italic");
+            doc.text("Karen A. Hagberg, Ph.D.", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 20;
+
+            // Introduction
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Introdução", bookMargin, yPosition);
+            yPosition += 8;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const introText1 = "Este livro foca-se na performance de música clássica, mas os princípios básicos são os mesmos para todos os tipos de música. Os músicos precisam de tornar as suas audiências recetivas e dar-lhes uma impressão duradoura e positiva. Assim como o treino clássico estabelece uma base para a performance de outros tipos de música, o básico da presença de palco aqui delineado pode ser adaptado a todos os tipos de performances, por todos os tipos de músicos.";
+            const introLines1 = doc.splitTextToSize(introText1, maxWidth);
+            doc.text(introLines1, bookMargin, yPosition);
+            yPosition += introLines1.length * lineHeight + paragraphSpacing;
+
+            const introText2 = "A presença de palco é um aspeto da educação musical que se estende a muitas outras áreas da vida. Uma boa presença de palco é inestimável para entrevistas de emprego, apresentações verbais e situações sociais de todos os tipos. Para o músico, uma boa presença de palco ajuda a construir e manter audiências. Isto é tão importante, pois sem a audiência, não pode haver performances.";
+            const introLines2 = doc.splitTextToSize(introText2, maxWidth);
+            doc.text(introLines2, bookMargin, yPosition);
+            yPosition += introLines2.length * lineHeight + paragraphSpacing;
+
+            // Chapter 1: Stage Presence
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 1: Presença de Palco", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Presença de Palco Definida", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const defText = "A presença de palco é o aspeto visual de uma performance musical ao vivo: tudo desde a caminhada, reverência, expressão facial e vestuário de um performer, até à representação de um ensemble como uma entidade única e unificada; desde a condição de cadeiras, estantes de música e piano, até à mecânica de uma gestão de palco suave. Os performers podem melhorar grandemente a sua imagem e a experiência total da sua audiência, prestando atenção aos detalhes da presença de palco.";
+            const defLines = doc.splitTextToSize(defText, maxWidth);
+            doc.text(defLines, bookMargin, yPosition);
+            yPosition += defLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("A Base Filosófica: Respeito", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const respectText = "Uma boa presença de palco, como a própria música, é uma arte, uma expressão clara do respeito do músico disciplinado pela música, pela audiência, por outros músicos e por si mesmo. Respeitar a música significa fazer tudo o que puderes para proporcionar à audiência acesso direto à música, com o mínimo de distrações possível. Respeitar a audiência significa apreciar as pessoas que tiveram o tempo e o trabalho de vir e ouvir. Respeitar outros músicos significa nunca fazer nada para chamar atenção para ti ou desviar atenção do grupo. Respeitar-te a ti mesmo significa levar o teu trabalho a sério e querer que a tua audiência também te leve a sério.";
+            const respectLines = doc.splitTextToSize(respectText, maxWidth);
+            doc.text(respectLines, bookMargin, yPosition);
+            yPosition += respectLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Presença de Palco e Pavor do Palco", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const frightText = "Uma boa presença de palco pode realmente ajudar a aliviar grande parte da ansiedade associada ao pavor do palco. Em qualquer situação, o stress é reduzido quando sabes o que é esperado de ti e como fazer as coisas corretamente. Conhecer as regras básicas e depois segui-las dá ao músico um sentido de autoconfiança e autocontrolo. Assim como a maioria das pessoas precisa de praticar apertar as mãos de estranhos enquanto olham nos seus olhos e sorriem ao apresentarem-se, os músicos também devem praticar a caminhada no palco, a reverência e depois preparar-se adequadamente para tocar.";
+            const frightLines = doc.splitTextToSize(frightText, maxWidth);
+            doc.text(frightLines, bookMargin, yPosition);
+            yPosition += frightLines.length * lineHeight + paragraphSpacing;
+
+            // Chapter 2: The Soloist - Key Points
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 2: O Solista - Diretrizes Essenciais", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Como Vestir para o Palco de Concerto", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const dressText = "Cada performance merece uma aparência vestida. O nível de formalidade pode variar dependendo da hora do dia, estação ou local, mas cada performance perante uma audiência ou juízes merece vestuário apropriado. Roupas reveladoras e não convencionais distraem uma audiência. O preto é sempre uma escolha segura porque parece digno e forte, e não compete pela atenção. As roupas de concerto devem caber confortavelmente com espaço suficiente para te moveres livremente. Nada no teu vestuário deve precisar de atenção recorrente, porque ajustar a tua roupa no palco parece desajeitado e autoconsciente.";
+            const dressLines = doc.splitTextToSize(dressText, maxWidth);
+            doc.text(dressLines, bookMargin, yPosition);
+            yPosition += dressLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Elevar Expectativas com a Tua Entrada", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const entranceText = "No momento em que entras no palco, fazes uma forte impressão na audiência baseada na tua atitude e grau de confiança, refletidos na tua caminhada, expressão facial, reverência e capacidade de criar um silêncio significativo antes da primeira nota ser tocada. Planeia a rota que vais tomar desde os bastidores. Entra sempre do lado direito do palco (lado esquerdo da audiência). A tua caminhada deve projetar antecipação entusiástica para o evento que está prestes a acontecer. O ritmo deve ser propositado sem ser apressado.";
+            const entranceLines = doc.splitTextToSize(entranceText, maxWidth);
+            doc.text(entranceLines, bookMargin, yPosition);
+            yPosition += entranceLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Reverência", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const bowText = "Fazer reverência à audiência é como apertar a mão de um indivíduo—uma saudação e introdução formal adequada. Estabelecer contacto visual tanto antes como depois da reverência transmite sinceridade. Faz reverência com os pés juntos, porque manter os pés afastados pode parecer desorganizado e desajeitado. Baixa os olhos para o chão enquanto te inclinas da cintura—suavemente, sem movimentos bruscos—até cerca de um ângulo de 45 graus. Nada sobre a reverência deve parecer apressado.";
+            const bowLines = doc.splitTextToSize(bowText, maxWidth);
+            doc.text(bowLines, bookMargin, yPosition);
+            yPosition += bowLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Durante a Performance", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const duringText = "Enquanto tocas, mantém a audiência focada na música o máximo possível, não lhes dando outras coisas para notarem e pensarem. A linguagem corporal deve demonstrar concentração intensa, mas calma. Elimina hábitos físicos repetitivos e desnecessários. Os instrumentistas não devem olhar diretamente para a audiência enquanto performam. Assume sempre que cada performance terá erros. Muito mais importante do que eliminar todos os erros é como reages a eles. Não permitas que a audiência se preocupe com os teus erros. É imperativo que elimines até a mais pequena reação, seja no teu rosto ou corpo.";
+            const duringLines = doc.splitTextToSize(duringText, maxWidth);
+            doc.text(duringLines, bookMargin, yPosition);
+            yPosition += duringLines.length * lineHeight + paragraphSpacing;
+
+            // Chapter 3-12: Summary of Other Chapters
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Resumo de Capítulos Adicionais", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 3: O Passador de Páginas", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const pageTurnerText = "A pessoa que passa páginas no palco é um elemento importante na apresentação geral. As diretrizes gerais de vestuário que se aplicam aos performers também se aplicam aos passadores de páginas. Ao entrar no palco, caminha atrás dos performers e vai diretamente para o piano ou estante de música, sem olhar para a audiência. Permanece sentado entre as passagens de páginas e levanta-te para passar páginas. Permanece absolutamente imóvel, concentrando-te na música. Mantém os olhos sempre na partitura, nunca olhando para os músicos, a audiência ou à volta da sala.";
+            const pageTurnerLines = doc.splitTextToSize(pageTurnerText, maxWidth);
+            doc.text(pageTurnerLines, bookMargin, yPosition);
+            yPosition += pageTurnerLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 4: O Pequeno Ensemble (Sem Maestro)", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const ensembleText = "Ao colaborar com outros músicos sem um maestro, a tua aparência no palco pode ser grandemente melhorada ao planear conscientemente os vários aspetos da tua apresentação. Queres parecer como se tivesses pensado em todos os aspetos da tua aparência, incluindo vestuário, equipamento, a tua forma de te moveres juntos no palco e fora dele, e a tua forma de reconhecer os aplausos. Sem ensaios frequentes das tuas entradas, reverências, saídas e a forma como desejas começar peças e reconhecer aplausos juntos, a tua forma espontânea de fazer estas coisas parecerá desorganizada.";
+            const ensembleLines = doc.splitTextToSize(ensembleText, maxWidth);
+            doc.text(ensembleLines, bookMargin, yPosition);
+            yPosition += ensembleLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 5: O Grande Ensemble Vocal", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const chorusText = "Um coro pode parecer unificado mais facilmente do que um ensemble instrumental porque os seus membros estão todos a fazer a mesma coisa enquanto estão de pé juntos da mesma forma. O objetivo de qualquer coro é criar, de muitos membros, uma única entidade, ou 'voz'. Isto é conseguido ao promulgar e manter políticas concebidas para maximizar o aspeto de profissionalismo e compostura no ensemble, e ao eliminar qualquer coisa por parte dos indivíduos que possa chamar atenção para si mesmos ou desviar do grupo. Todos os cantores devem estar de pé num ângulo uniforme. Os cantores nunca devem fazer nada com os olhos além de olhar para o maestro, nem nada com as mãos além de segurar a partitura.";
+            const chorusLines = doc.splitTextToSize(chorusText, maxWidth);
+            doc.text(chorusLines, bookMargin, yPosition);
+            yPosition += chorusLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 6: A Orquestra", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const orchestraText = "É emocionante ver uma orquestra disciplinada na qual todos os músicos estão obviamente a concentrar-se juntos como um só sob a batuta do maestro. Para alcançar este alto nível de disciplina e uma aparência uniforme, cada orquestra precisa de um código de vestuário claro e diretrizes abrangentes no palco, bem como procedimentos padrão e pessoal responsável pela sua aplicação. Os membros da orquestra podem praticar assumir várias posturas juntos para que, a qualquer momento, possam estar no mesmo estágio de prontidão juntos como grupo. Existem quatro posturas padrão: posição de pé, posição de descanso, posição de semi-descanso e posição de prontidão.";
+            const orchestraLines = doc.splitTextToSize(orchestraText, maxWidth);
+            doc.text(orchestraLines, bookMargin, yPosition);
+            yPosition += orchestraLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 7: O Maestro como Líder", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const conductorText = "Os maestros fornecem muito do material lendário da história da música. Um bom maestro usará o seu carisma para focar a concentração dos músicos e da audiência em cada nota da obra que está a ser executada. Uma boa presença de palco, um elemento indispensável na apresentação geral do maestro, ajuda a conseguir isto. Pareces mais poderoso e eficaz quando os teus sinais para o ensemble são subtis. Uma boa postura é uma característica da maioria dos líderes bem-sucedidos. Ao dirigir, precisas de ser capaz de usar uma gama completa de movimento nos teus braços. O que quer que uses não deve impedir este movimento.";
+            const conductorLines = doc.splitTextToSize(conductorText, maxWidth);
+            doc.text(conductorLines, bookMargin, yPosition);
+            yPosition += conductorLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 8: No Dia do Concerto", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const concertDayText = "Um aspeto importante e por vezes esquecido da presença de palco é o bem-estar geral do(s) performer(s). Precisas de te sentir bem para pareceres o teu melhor, e não podes estar a sentir-te apressado e frenético se vais cuidar de todos os detalhes importantes do teu concerto além de tocar bem. Determina o teu horário ideal no dia de um concerto. Faz as tuas necessidades conhecidas pelas pessoas à tua volta. Especifica os teus pedidos de refeições, incluindo menus preferidos e horários. Pede que nenhum bem-intencionado visite o teu camarim antes do concerto ou durante o intervalo.";
+            const concertDayLines = doc.splitTextToSize(concertDayText, maxWidth);
+            doc.text(concertDayLines, bookMargin, yPosition);
+            yPosition += concertDayLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 9: O Palco e os Seus Mobiliários", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const stageText = "O palco no qual performas, bem como os móveis e o piano que usas são aspetos importantes da tua apresentação que não devem ser esquecidos. Considera o palco um lugar especial, o contexto visual para o teu concerto. Garante que o palco não está cheio de objetos não essenciais. As tuas cadeiras e estantes parecem melhores quando são uniformes em estilo e cor, limpas e em boas condições. Em geral, os performers devem estar centrados no palco. Antes do concerto, decide sobre as configurações tanto para a iluminação do palco como para a iluminação na sala.";
+            const stageLines = doc.splitTextToSize(stageText, maxWidth);
+            doc.text(stageLines, bookMargin, yPosition);
+            yPosition += stageLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 10: Pessoal Não Performante", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const personnelText = "Cada local de performance tem uma equipa de uma ou mais pessoas cujo trabalho é fornecer assistência aos performers e garantir que os concertos decorrem sem problemas. Os membros da equipa podem fazer isto melhor quando os performers comunicam as suas necessidades de forma clara e organizada. Tu, o performer, és responsável por fazer todas as tuas solicitações conhecidas pela equipa com bastante antecedência. Posições típicas incluem: Gestor de Concerto, Gestor de Palco, Engenheiro de Iluminação, Engenheiro de Áudio/Visual e Acompanhantes. Dá-te ao trabalho de lembrar os nomes dos teus ajudantes e conhecer as suas várias responsabilidades.";
+            const personnelLines = doc.splitTextToSize(personnelText, maxWidth);
+            doc.text(personnelLines, bookMargin, yPosition);
+            yPosition += personnelLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 11: Audições e Competições", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const auditionText = "Uma audição não é diferente de qualquer outra performance, exceto que geralmente há um objetivo específico. Uma única audição pode ter um efeito profundo na tua vida, e não há aspeto da presença de palco que não seja importante neste contexto. Escolhe o teu vestuário tão cuidadosamente como farias para um concerto. Nunca uses roupas casuais para qualquer audição. Elimina quaisquer e todos os maneirismos autoconscientes. Nunca reajas a erros, pois isso só chamará mais atenção para eles. Lembra-te que os melhores músicos fazem a performance parecer fácil. Pratica terminar o teu programa com um olhar de sucesso no rosto enquanto fazes a tua reverência final.";
+            const auditionLines = doc.splitTextToSize(auditionText, maxWidth);
+            doc.text(auditionLines, bookMargin, yPosition);
+            yPosition += auditionLines.length * lineHeight + paragraphSpacing;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Capítulo 12: Como Ensinar Presença de Palco", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const teachingText = "A presença de palco pode ser ensinada e pode sempre ser melhorada. Não é algo que a maioria dos músicos faça naturalmente, mesmo após anos de performance em público. Os professores podem fornecer aos alunos experiência contínua e, com o tempo, dar-lhes a capacidade de parecer bem e sentir-se confiantes no palco. A presença de palco pode ser agrupada em quatro componentes: 1) postura, 2) a reverência, 3) vestuário, e 4) comportamento. Ao longo da educação de um aluno, desde a primeira lição até à última, a perícia nestas quatro áreas pode ser ensinada e melhorada. Todas as quatro áreas requerem muito tempo para dominar.";
+            const teachingLines = doc.splitTextToSize(teachingText, maxWidth);
+            doc.text(teachingLines, bookMargin, yPosition);
+            yPosition += teachingLines.length * lineHeight + paragraphSpacing;
+
+            // Final Note
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "italic");
+            const finalNote = "Este manual fornece orientação abrangente sobre presença de palco para músicos. Os princípios aqui delineados aplicam-se a todos os tipos de performances musicais e podem ser adaptados a vários contextos. Lembra-te: uma boa presença de palco complementa e melhora uma performance musical, enquanto uma má presença de palco não só diminui uma performance mas também pode arruiná-la completamente. O teu trabalho árduo merece ser exibido na melhor luz.";
+            const finalNoteLines = doc.splitTextToSize(finalNote, maxWidth);
+            doc.text(finalNoteLines, bookMargin, yPosition);
+          };
+
+          // Add Expressionism and Performance Techniques content
+          const addExpressionismAndPerformanceContent = () => {
+            // Add new page
+            doc.addPage();
+            yPosition = bookMargin + 15;
+
+            // Title
+            doc.setFontSize(18);
+            doc.setFont("helvetica", "bold");
+            doc.text("GUIA DE MOVIMENTOS EXPRESSIONISTAS", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 10;
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "italic");
+            doc.text("Técnicas para Performance no Palco", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 15;
+
+            // Core Principles
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Princípios Fundamentais", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("1. Priorizar Emoção sobre Realismo", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const principle1 = "Abandone movimentos naturalistas do dia a dia. Cada gesto e passo deve ser impulsionado pelos sentimentos internos, ansiedades ou turbulências da personagem.";
+            const lines1 = doc.splitTextToSize(principle1, maxWidth);
+            doc.text(lines1, bookMargin, yPosition);
+            yPosition += lines1.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("2. Exagero e Distorção", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const principle2 = "Movimentos devem ser intensificados, expansivos e frequentemente distorcidos. Ações normais são esticadas, fragmentadas ou tornadas grotescas para refletir o mundo interno da personagem.";
+            const lines2 = doc.splitTextToSize(principle2, maxWidth);
+            doc.text(lines2, bookMargin, yPosition);
+            yPosition += lines2.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("3. Angularidade e Linhas Quebradas", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const principle3 = "Incorpore ângulos agudos, linhas retas e formas geométricas na sua postura e movimentos, evitando as curvas naturais do corpo. Isso cria uma sensação de tensão.";
+            const lines3 = doc.splitTextToSize(principle3, maxWidth);
+            doc.text(lines3, bookMargin, yPosition);
+            yPosition += lines3.length * lineHeight + paragraphSpacing;
+
+            // Specific Techniques
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Técnicas Específicas de Movimento", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Ações Grotescas e Tipo Marionete", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const tech1 = "Adote movimentos mecânicos e amplos, quase como uma marionete. Isso pode ajudar a desumanizar a personagem e criar uma qualidade onírica ou pesadelo.";
+            const techLines1 = doc.splitTextToSize(tech1, maxWidth);
+            doc.text(techLines1, bookMargin, yPosition);
+            yPosition += techLines1.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Gestos Extremos", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const tech2 = "Use dedos e mãos para agarrar, pegar ou arranhar o ar ou outras superfícies, representando desespero ou dor interna. Transicione rapidamente da calma para paixão física intensa.";
+            const techLines2 = doc.splitTextToSize(tech2, maxWidth);
+            doc.text(techLines2, bookMargin, yPosition);
+            yPosition += techLines2.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Andares e Posturas Estilizados", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const tech3 = "Em vez de uma caminhada natural, use uma caminhada pesada e arrastada para mostrar fadiga ou desespero, ou uma caminhada leve e saltitante para mostrar excitação não natural.";
+            const techLines3 = doc.splitTextToSize(tech3, maxWidth);
+            doc.text(techLines3, bookMargin, yPosition);
+            yPosition += techLines3.length * lineHeight + paragraphSpacing;
+
+            // Stage Fright Techniques
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(18);
+            doc.setFont("helvetica", "bold");
+            doc.text("TÉCNICAS PARA SUPERAR STAGE FRIGHT", pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 15;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Reconhecer a Insegurança", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const fright1 = "O stage fright geralmente vem de três medos: medo de ser visto, medo de cometer erros, ou medo de não ser suficiente. Reconhecer isso é o primeiro passo para superar.";
+            const frightLines1 = doc.splitTextToSize(fright1, maxWidth);
+            doc.text(frightLines1, bookMargin, yPosition);
+            yPosition += frightLines1.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Criar Distância dos Protetores Internos", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const fright2 = "A voz crítica interna é uma parte jovem de ti tentando evitar dor ou embaraço. Cria distância entre ti e essas partes, tratando-as com compaixão em vez de frustração.";
+            const frightLines2 = doc.splitTextToSize(fright2, maxWidth);
+            doc.text(frightLines2, bookMargin, yPosition);
+            yPosition += frightLines2.length * lineHeight + bookPadding;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Construir Capacidade para Vulnerabilidade", bookMargin, yPosition);
+            yPosition += 7;
+            doc.setFont("helvetica", "normal");
+            const fright3 = "Aumenta a tua capacidade de experienciar sensações no corpo sem entrar em pânico. Permite que a audiência testemunhe as tuas emoções genuínas, não apenas uma máscara de emoção.";
+            const frightLines3 = doc.splitTextToSize(fright3, maxWidth);
+            doc.text(frightLines3, bookMargin, yPosition);
+            yPosition += frightLines3.length * lineHeight + paragraphSpacing;
+
+            // Where to Look
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Onde Olhar Durante a Performance", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const look1 = "Olhar para a audiência cria conexão, mas não foques numa pessoa por muito tempo (a menos que o convidem). Alterna entre olhar para a audiência e olhar por cima das suas cabeças para criar um efeito etéreo.";
+            const lookLines1 = doc.splitTextToSize(look1, maxWidth);
+            doc.text(lookLines1, bookMargin, yPosition);
+            yPosition += lookLines1.length * lineHeight + bookPadding;
+
+            const look2 = "NUNCA olhes para baixo! Olhar para cima e para fora é convidativo e grita confiança. Mesmo quando experiencias stage fright, olhar para cima é a melhor camuflagem.";
+            const lookLines2 = doc.splitTextToSize(look2, maxWidth);
+            doc.text(lookLines2, bookMargin, yPosition);
+            yPosition += lookLines2.length * lineHeight + paragraphSpacing;
+
+            // Nine Ways to Calm Nerves
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Nove Maneiras de Acalmar os Nervos", bookMargin, yPosition);
+            yPosition += 10;
+
+            const tips = [
+              "1. Pausa e faz contacto visual: Pausa quando esperarias uma resposta e estabelece contacto visual. Isso é muito reconfortante.",
+              "2. Sai de trás do PowerPoint: Tu és a apresentação, não os slides. Usa slides para apoiar, não para esconder.",
+              "3. Envolve a audiência: Faz perguntas, pede um show de mãos, ou permite perguntas durante a apresentação.",
+              "4. Torna-te conversacional: Soa o mais natural possível. Não leias ou memorizes palavra por palavra.",
+              "5. Conta histórias: Histórias são uma ferramenta poderosa para conexão com a audiência.",
+              "6. Sê pessoal: Histórias pessoais são ainda melhores. A audiência adora ouvir sobre a tua experiência.",
+              "7. Sê vulnerável: Conexão humana genuína não é possível sem vulnerabilidade. Partilha falhas e aprendizagens.",
+              "8. Usa humor: O humor é uma das formas mais rápidas de conectar com uma audiência.",
+              "9. Vai fora do script: Ocasionalmente, ir fora do script faz-te parecer espontâneo e a audiência adora isso."
+            ];
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            tips.forEach((tip) => {
+              if (yPosition > pageHeight - 50) {
+                doc.addPage();
+                yPosition = bookMargin;
+              }
+              const tipLines = doc.splitTextToSize(tip, maxWidth);
+              doc.text(tipLines, bookMargin, yPosition);
+              yPosition += tipLines.length * lineHeight + bookPadding;
+            });
+
+            // Tips for Looking Less Awkward
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Como Parecer Menos Awkward no Palco", bookMargin, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const awkward1 = "Foca na música, não na multidão. Trata performances ao vivo como ensaios de banda a 100% de esforço. Se a música está certa, ninguém se importa se pareces estranho.";
+            const awkwardLines1 = doc.splitTextToSize(awkward1, maxWidth);
+            doc.text(awkwardLines1, bookMargin, yPosition);
+            yPosition += awkwardLines1.length * lineHeight + bookPadding;
+
+            const awkward2 = "Grava-te a tocar e pratica movendo-te como se estivesses a performar. Quando estiveres no palco, os movimentos serão parte da tua rotina para tocar a música.";
+            const awkwardLines2 = doc.splitTextToSize(awkward2, maxWidth);
+            doc.text(awkwardLines2, bookMargin, yPosition);
+            yPosition += awkwardLines2.length * lineHeight + bookPadding;
+
+            const awkward3 = "Sê tu mesmo. Se és excêntrico, sê excêntrico. Se és calmo, sê calmo. Tocar como se estivesses sozinho a fazer jam com uma backing track ajuda a relaxar.";
+            const awkwardLines3 = doc.splitTextToSize(awkward3, maxWidth);
+            doc.text(awkwardLines3, bookMargin, yPosition);
+            yPosition += awkwardLines3.length * lineHeight + bookPadding;
+
+            const awkward4 = "Usa um 'power stance': Pés ligeiramente fora dos ombros. Isso parece confiante, poderoso e é fácil de fazer. Mantém o queixo para cima quando possível.";
+            const awkwardLines4 = doc.splitTextToSize(awkward4, maxWidth);
+            doc.text(awkwardLines4, bookMargin, yPosition);
+            yPosition += awkwardLines4.length * lineHeight + paragraphSpacing;
+
+            // Final Note
+            if (yPosition > pageHeight - 50) {
+              doc.addPage();
+              yPosition = bookMargin;
+            }
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "italic");
+            const finalNote = "Lembra-te: A tua 'estranheza' natural pode ser uma mais-valia no expressionismo. Abraça essa excentricidade, usa a técnica como estrutura e confia que estás a fazer o que é suposto fazer no contexto da performance. O constrangimento diminui com a repetição e a prática.";
+            const finalNoteLines = doc.splitTextToSize(finalNote, maxWidth);
+            doc.text(finalNoteLines, bookMargin, yPosition);
+          };
+
+          // Call the functions to add all content
+          addBookContent();
+          addAudienceTypesContent();
+          addFestivalBehaviorsContent();
+          addStagePresenceBookContent();
+          addExpressionismAndPerformanceContent();
 
           // Save PDF
           doc.save(`itinerario_dia_show_${eventData.overview.eventName || "evento"}.pdf`);
@@ -4600,19 +6567,133 @@ ${organizerName} — ${organizerContact}`;
               </div>
             </div>
 
+            {/* Detalhes de Viagem - CRUD */}
             <div>
-              <Label htmlFor="travelDetails">Detalhes de Viagem</Label>
-              <Textarea
-                id="travelDetails"
-                value={eventData.dayItinerary.travelDetails}
-                onChange={(e) => setEventData(prev => ({
-                  ...prev,
-                  dayItinerary: { ...prev.dayItinerary, travelDetails: e.target.value }
-                }))}
-                placeholder="Ex: Comprar bilhetes, ir ao local, transporte..."
-                className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
-                rows={3}
-              />
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-lg font-semibold">Detalhes de Viagem</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newItem = {
+                      id: `travel-${Date.now()}-${Math.random()}`,
+                      type: "Transporte",
+                      time: "",
+                      details: "",
+                      notes: "",
+                    };
+                    setEventData(prev => ({
+                      ...prev,
+                      dayItinerary: {
+                        ...prev.dayItinerary,
+                        travelDetails: [...prev.dayItinerary.travelDetails, newItem]
+                      }
+                    }));
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar
+                </Button>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-4">
+                {eventData.dayItinerary.travelDetails.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum detalhe adicionado.
+                  </p>
+                ) : (
+                  eventData.dayItinerary.travelDetails.map((item, index) => (
+                    <Card key={item.id} className="p-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-3">
+                          <Select
+                            value={item.type}
+                            onValueChange={(value) => {
+                              const newItems = [...eventData.dayItinerary.travelDetails];
+                              newItems[index].type = value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, travelDetails: newItems }
+                              }));
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Transporte">Transporte</SelectItem>
+                              <SelectItem value="Bilhetes">Bilhetes</SelectItem>
+                              <SelectItem value="Check-in">Check-in</SelectItem>
+                              <SelectItem value="Outro">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="time"
+                            value={item.time}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.travelDetails];
+                              newItems[index].time = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, travelDetails: newItems }
+                              }));
+                            }}
+                            className="h-8 text-xs"
+                            placeholder="Hora"
+                          />
+                        </div>
+                        <div className="col-span-5">
+                          <Input
+                            value={item.details}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.travelDetails];
+                              newItems[index].details = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, travelDetails: newItems }
+                              }));
+                            }}
+                            placeholder="Detalhes..."
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newItems = eventData.dayItinerary.travelDetails.filter((_, i) => i !== index);
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, travelDetails: newItems }
+                              }));
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <Input
+                          value={item.notes}
+                          onChange={(e) => {
+                            const newItems = [...eventData.dayItinerary.travelDetails];
+                            newItems[index].notes = e.target.value;
+                            setEventData(prev => ({
+                              ...prev,
+                              dayItinerary: { ...prev.dayItinerary, travelDetails: newItems }
+                            }));
+                          }}
+                          placeholder="Notas adicionais..."
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
             </div>
 
             <div>
@@ -4629,34 +6710,281 @@ ${organizerName} — ${organizerContact}`;
               />
             </div>
 
+            {/* Lojas de Roupa - CRUD */}
             <div>
-              <Label htmlFor="clothingStores">Lojas de Roupa</Label>
-              <Textarea
-                id="clothingStores"
-                value={eventData.dayItinerary.clothingStores}
-                onChange={(e) => setEventData(prev => ({
-                  ...prev,
-                  dayItinerary: { ...prev.dayItinerary, clothingStores: e.target.value }
-                }))}
-                placeholder="Ex: Loja ABC na Rua XYZ, horários..."
-                className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
-                rows={2}
-              />
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-lg font-semibold">Lojas de Roupa</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newItem = {
+                      id: `store-${Date.now()}-${Math.random()}`,
+                      name: "",
+                      address: "",
+                      time: "",
+                      notes: "",
+                    };
+                    setEventData(prev => ({
+                      ...prev,
+                      dayItinerary: {
+                        ...prev.dayItinerary,
+                        clothingStores: [...prev.dayItinerary.clothingStores, newItem]
+                      }
+                    }));
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Loja
+                </Button>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-4">
+                {eventData.dayItinerary.clothingStores.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhuma loja adicionada.
+                  </p>
+                ) : (
+                  eventData.dayItinerary.clothingStores.map((item, index) => (
+                    <Card key={item.id} className="p-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-4">
+                          <Input
+                            value={item.name}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.clothingStores];
+                              newItems[index].name = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, clothingStores: newItems }
+                              }));
+                            }}
+                            placeholder="Nome da loja"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <Input
+                            value={item.address}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.clothingStores];
+                              newItems[index].address = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, clothingStores: newItems }
+                              }));
+                            }}
+                            placeholder="Endereço"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="time"
+                            value={item.time}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.clothingStores];
+                              newItems[index].time = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, clothingStores: newItems }
+                              }));
+                            }}
+                            className="h-8 text-xs"
+                            placeholder="Hora"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            value={item.notes}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.clothingStores];
+                              newItems[index].notes = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, clothingStores: newItems }
+                              }));
+                            }}
+                            placeholder="Notas"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newItems = eventData.dayItinerary.clothingStores.filter((_, i) => i !== index);
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, clothingStores: newItems }
+                              }));
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
             </div>
 
+            {/* Refeições - CRUD */}
             <div>
-              <Label htmlFor="meals">Refeições</Label>
-              <Textarea
-                id="meals"
-                value={eventData.dayItinerary.meals}
-                onChange={(e) => setEventData(prev => ({
-                  ...prev,
-                  dayItinerary: { ...prev.dayItinerary, meals: e.target.value }
-                }))}
-                placeholder="Ex: Almoço no restaurante X, jantar no local Y..."
-                className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
-                rows={2}
-              />
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-lg font-semibold">Refeições</Label>
+                <div className="flex items-center gap-2">
+                  {Array.isArray(eventData.dayItinerary.meals) && eventData.dayItinerary.meals.length > 0 && (
+                    <div className="text-sm font-semibold text-green-600 dark:text-green-400">
+                      Total: EUR {eventData.dayItinerary.meals.reduce((sum, meal) => sum + (meal.price || 0), 0).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newItem = {
+                        id: `meal-${Date.now()}-${Math.random()}`,
+                        date: eventData.dayItinerary.date || "",
+                        time: "",
+                        location: "",
+                        whatToEat: "",
+                        price: 0,
+                      };
+                      setEventData(prev => ({
+                        ...prev,
+                        dayItinerary: {
+                          ...prev.dayItinerary,
+                          meals: Array.isArray(prev.dayItinerary.meals) 
+                            ? [...prev.dayItinerary.meals, newItem]
+                            : [newItem]
+                        }
+                      }));
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Refeição
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-4">
+                {!Array.isArray(eventData.dayItinerary.meals) || eventData.dayItinerary.meals.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhuma refeição adicionada.
+                  </p>
+                ) : (
+                  eventData.dayItinerary.meals.map((item, index) => (
+                    <Card key={item.id} className="p-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-2">
+                          <Input
+                            type="date"
+                            value={item.date}
+                            onChange={(e) => {
+                              const currentMeals = Array.isArray(eventData.dayItinerary.meals) ? eventData.dayItinerary.meals : [];
+                              const newItems = [...currentMeals];
+                              newItems[index].date = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, meals: newItems }
+                              }));
+                            }}
+                            className="h-8 text-xs"
+                            placeholder="Data"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="time"
+                            value={item.time}
+                            onChange={(e) => {
+                              const currentMeals = Array.isArray(eventData.dayItinerary.meals) ? eventData.dayItinerary.meals : [];
+                              const newItems = [...currentMeals];
+                              newItems[index].time = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, meals: newItems }
+                              }));
+                            }}
+                            className="h-8 text-xs"
+                            placeholder="Hora"
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <Input
+                            value={item.location}
+                            onChange={(e) => {
+                              const currentMeals = Array.isArray(eventData.dayItinerary.meals) ? eventData.dayItinerary.meals : [];
+                              const newItems = [...currentMeals];
+                              newItems[index].location = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, meals: newItems }
+                              }));
+                            }}
+                            placeholder="Onde (restaurante/local)"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <Input
+                            value={item.whatToEat}
+                            onChange={(e) => {
+                              const currentMeals = Array.isArray(eventData.dayItinerary.meals) ? eventData.dayItinerary.meals : [];
+                              const newItems = [...currentMeals];
+                              newItems[index].whatToEat = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, meals: newItems }
+                              }));
+                            }}
+                            placeholder="O que vou comer"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.price || 0}
+                            onChange={(e) => {
+                              const currentMeals = Array.isArray(eventData.dayItinerary.meals) ? eventData.dayItinerary.meals : [];
+                              const newItems = [...currentMeals];
+                              newItems[index].price = parseFloat(e.target.value) || 0;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, meals: newItems }
+                              }));
+                            }}
+                            placeholder="Preço"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const currentMeals = Array.isArray(eventData.dayItinerary.meals) ? eventData.dayItinerary.meals : [];
+                              const newItems = currentMeals.filter((_, i) => i !== index);
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, meals: newItems }
+                              }));
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -4688,49 +7016,576 @@ ${organizerName} — ${organizerContact}`;
               </div>
             </div>
 
+            {/* Visitas a Estúdios / Colaborações - CRUD */}
             <div>
-              <Label htmlFor="studioVisits">Visitas a Estúdios / Colaborações</Label>
-              <Textarea
-                id="studioVisits"
-                value={eventData.dayItinerary.studioVisits}
-                onChange={(e) => setEventData(prev => ({
-                  ...prev,
-                  dayItinerary: { ...prev.dayItinerary, studioVisits: e.target.value }
-                }))}
-                placeholder="Ex: Estúdio com artista da zona para fazer tempo..."
-                className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
-                rows={2}
-              />
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-lg font-semibold">Visitas a Estúdios / Colaborações</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newItem = {
+                      id: `studio-${Date.now()}-${Math.random()}`,
+                      studio: "",
+                      artist: "",
+                      time: "",
+                      purpose: "",
+                      notes: "",
+                    };
+                    setEventData(prev => ({
+                      ...prev,
+                      dayItinerary: {
+                        ...prev.dayItinerary,
+                        studioVisits: [...prev.dayItinerary.studioVisits, newItem]
+                      }
+                    }));
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Visita
+                </Button>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-4">
+                {eventData.dayItinerary.studioVisits.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhuma visita adicionada.
+                  </p>
+                ) : (
+                  eventData.dayItinerary.studioVisits.map((item, index) => (
+                    <Card key={item.id} className="p-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-3">
+                          <Input
+                            value={item.studio}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.studioVisits];
+                              newItems[index].studio = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, studioVisits: newItems }
+                              }));
+                            }}
+                            placeholder="Estúdio"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <Input
+                            value={item.artist}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.studioVisits];
+                              newItems[index].artist = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, studioVisits: newItems }
+                              }));
+                            }}
+                            placeholder="Artista"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="time"
+                            value={item.time}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.studioVisits];
+                              newItems[index].time = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, studioVisits: newItems }
+                              }));
+                            }}
+                            className="h-8 text-xs"
+                            placeholder="Hora"
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <Input
+                            value={item.purpose}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.studioVisits];
+                              newItems[index].purpose = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, studioVisits: newItems }
+                              }));
+                            }}
+                            placeholder="Propósito"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newItems = eventData.dayItinerary.studioVisits.filter((_, i) => i !== index);
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, studioVisits: newItems }
+                              }));
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <Input
+                          value={item.notes}
+                          onChange={(e) => {
+                            const newItems = [...eventData.dayItinerary.studioVisits];
+                            newItems[index].notes = e.target.value;
+                            setEventData(prev => ({
+                              ...prev,
+                              dayItinerary: { ...prev.dayItinerary, studioVisits: newItems }
+                            }));
+                          }}
+                          placeholder="Notas adicionais..."
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
             </div>
 
+            {/* Práticas de Voz / Aquecimento - CRUD */}
             <div>
-              <Label htmlFor="voicePractice">Práticas de Voz / Aquecimento</Label>
-              <Textarea
-                id="voicePractice"
-                value={eventData.dayItinerary.voicePractice}
-                onChange={(e) => setEventData(prev => ({
-                  ...prev,
-                  dayItinerary: { ...prev.dayItinerary, voicePractice: e.target.value }
-                }))}
-                placeholder="Ex: Práticas para não fatigar a voz, rotinas de aquecimento..."
-                className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
-                rows={2}
-              />
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-lg font-semibold">Práticas de Voz / Aquecimento</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newItem = {
+                      id: `voice-${Date.now()}-${Math.random()}`,
+                      type: "",
+                      time: "",
+                      duration: "",
+                      notes: "",
+                    };
+                    setEventData(prev => ({
+                      ...prev,
+                      dayItinerary: {
+                        ...prev.dayItinerary,
+                        voicePractice: [...prev.dayItinerary.voicePractice, newItem]
+                      }
+                    }));
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Prática
+                </Button>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-4">
+                {eventData.dayItinerary.voicePractice.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhuma prática adicionada.
+                  </p>
+                ) : (
+                  eventData.dayItinerary.voicePractice.map((item, index) => (
+                    <Card key={item.id} className="p-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-3">
+                          <Input
+                            value={item.type}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.voicePractice];
+                              newItems[index].type = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, voicePractice: newItems }
+                              }));
+                            }}
+                            placeholder="Tipo (ex: Aquecimento)"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="time"
+                            value={item.time}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.voicePractice];
+                              newItems[index].time = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, voicePractice: newItems }
+                              }));
+                            }}
+                            className="h-8 text-xs"
+                            placeholder="Hora"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            value={item.duration}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.voicePractice];
+                              newItems[index].duration = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, voicePractice: newItems }
+                              }));
+                            }}
+                            placeholder="Duração"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          <Input
+                            value={item.notes}
+                            onChange={(e) => {
+                              const newItems = [...eventData.dayItinerary.voicePractice];
+                              newItems[index].notes = e.target.value;
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, voicePractice: newItems }
+                              }));
+                            }}
+                            placeholder="Notas / Rotina"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newItems = eventData.dayItinerary.voicePractice.filter((_, i) => i !== index);
+                              setEventData(prev => ({
+                                ...prev,
+                                dayItinerary: { ...prev.dayItinerary, voicePractice: newItems }
+                              }));
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="hydrationReminders">Lembretes de Hidratação</Label>
-              <Textarea
-                id="hydrationReminders"
-                value={eventData.dayItinerary.hydrationReminders}
-                onChange={(e) => setEventData(prev => ({
-                  ...prev,
-                  dayItinerary: { ...prev.dayItinerary, hydrationReminders: e.target.value }
-                }))}
-                placeholder="Ex: Manter-se hidratado, beber água regularmente..."
-                className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
-                rows={2}
-              />
+            {/* Lembretes de Hidratação - Highlighted */}
+            <div className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-lg font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                  💧 Lembretes de Hidratação
+                </Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Adicionar lembretes pré-configurados para a semana do concerto
+                      const presetReminders = [
+                        { time: "08:00", tip: "Manhã - Início do dia" },
+                        { time: "10:00", tip: "Antes do almoço" },
+                        { time: "14:00", tip: "Tarde - Continuar hidratação" },
+                        { time: "16:00", tip: "2-3h antes do show" },
+                        { time: "18:00", tip: "1h antes do show" },
+                        { time: "20:00", tip: "Durante/pós-show" },
+                      ];
+                      
+                      const newReminders = presetReminders.map((preset, idx) => ({
+                        id: `hydration-preset-${Date.now()}-${idx}`,
+                        time: preset.time,
+                        completed: false,
+                        tip: preset.tip,
+                      }));
+                      
+                      setEventData(prev => ({
+                        ...prev,
+                        dayItinerary: {
+                          ...prev.dayItinerary,
+                          hydrationReminders: [...prev.dayItinerary.hydrationReminders, ...newReminders]
+                        }
+                      }));
+                    }}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100 text-xs"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Lembretes Pré-configurados
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newItem = {
+                        id: `hydration-${Date.now()}-${Math.random()}`,
+                        time: "",
+                        completed: false,
+                      };
+                      setEventData(prev => ({
+                        ...prev,
+                        dayItinerary: {
+                          ...prev.dayItinerary,
+                          hydrationReminders: [...prev.dayItinerary.hydrationReminders, newItem]
+                        }
+                      }));
+                    }}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Lembrete
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Dicas Rápidas de Hidratação */}
+              <div className="mb-4 p-3 bg-white dark:bg-slate-800 rounded border border-blue-200">
+                <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">💡 Dicas Rápidas:</div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-blue-600 dark:text-blue-400">
+                  <div>• Água temperatura ambiente (não gelada)</div>
+                  <div>• Pequenos goles ao longo do dia</div>
+                  <div>• Evite álcool/cafeína 48h antes</div>
+                  <div>• Nebulização salina se disponível</div>
+                  <div>• Urina clara = bem hidratado</div>
+                  <div>• Hidratação leva 30min-1h para efeito</div>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {eventData.dayItinerary.hydrationReminders.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum lembrete adicionado. Adiciona lembretes para beber água ao longo do dia!
+                  </p>
+                ) : (
+                  eventData.dayItinerary.hydrationReminders.map((item, index) => (
+                    <div key={item.id} className="flex items-center gap-3 p-2 bg-white dark:bg-slate-800 rounded border border-blue-200">
+                      <Checkbox
+                        checked={item.completed}
+                        onCheckedChange={(checked) => {
+                          const newItems = [...eventData.dayItinerary.hydrationReminders];
+                          newItems[index].completed = checked as boolean;
+                          setEventData(prev => ({
+                            ...prev,
+                            dayItinerary: { ...prev.dayItinerary, hydrationReminders: newItems }
+                          }));
+                        }}
+                        className="border-blue-400"
+                      />
+                      <Input
+                        type="time"
+                        value={item.time}
+                        onChange={(e) => {
+                          const newItems = [...eventData.dayItinerary.hydrationReminders];
+                          newItems[index].time = e.target.value;
+                          setEventData(prev => ({
+                            ...prev,
+                            dayItinerary: { ...prev.dayItinerary, hydrationReminders: newItems }
+                          }));
+                        }}
+                        className="flex-1 h-8 border-blue-300"
+                        placeholder="Hora do lembrete"
+                      />
+                      {(item as any).tip && (
+                        <span className="text-xs text-blue-600 dark:text-blue-400 italic">
+                          {(item as any).tip}
+                        </span>
+                      )}
+                      <Badge variant={item.completed ? "default" : "outline"} className={item.completed ? "bg-green-500" : "bg-blue-100 text-blue-700"}>
+                        {item.completed ? "✓ Feito" : "Pendente"}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newItems = eventData.dayItinerary.hydrationReminders.filter((_, i) => i !== index);
+                          setEventData(prev => ({
+                            ...prev,
+                            dayItinerary: { ...prev.dayItinerary, hydrationReminders: newItems }
+                          }));
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+              {eventData.dayItinerary.hydrationReminders.length > 0 && (
+                <div className="mt-3 p-2 bg-blue-100 dark:bg-blue-900/30 rounded text-xs text-blue-700 dark:text-blue-300">
+                  <div className="font-semibold mb-1">📋 Checklist de Hidratação:</div>
+                  <div className="space-y-1">
+                    <div>✓ Água temperatura ambiente (não gelada) - evita contração das cordas vocais</div>
+                    <div>✓ 2-3 litros/dia distribuídos (pequenos goles, não grandes quantidades)</div>
+                    <div>✓ Começar hidratação 2-3 dias antes do concerto</div>
+                    <div>✓ Evitar álcool/cafeína 48h antes</div>
+                    <div>✓ Nebulização salina (se disponível) para hidratação direta</div>
+                    <div>✓ Urina clara = bem hidratado</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Lembretes do que a Audiência Quer Ver - Highlighted */}
+            <div className="border-2 border-purple-500 rounded-lg p-4 bg-purple-50 dark:bg-purple-900/20">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-lg font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                  🎭 O que a Audiência Realmente Quer Ver
+                </Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Adicionar lembretes pré-configurados baseados no que a audiência quer
+                      const presetReminders = [
+                        { time: "19:00", tip: "Mistakes são ok - performance honesta, não perfeita" },
+                        { time: "19:15", tip: "Take chances - não seja 'safe', é rock and roll" },
+                        { time: "19:30", tip: "Engage the audience - contato visual, conversa" },
+                        { time: "19:45", tip: "Enjoyment - se não estás a divertir-te, a audiência nota" },
+                        { time: "20:00", tip: "Pace the performance - ritmo adequado ao show" },
+                        { time: "20:15", tip: "Be grateful - agradece quem pagou para te ver" },
+                        { time: "20:30", tip: "Authenticity - conexão real, não falso" },
+                        { time: "20:45", tip: "Confidence - confiança genuína, não arrogância" },
+                        { time: "21:00", tip: "Listen to bandmates - interação no palco" },
+                        { time: "21:15", tip: "Don't judge yourself on stage - foca no momento" },
+                        { time: "21:30", tip: "Know your material - conhece tudo de cor" },
+                        { time: "21:45", tip: "Know your setlist - sem pausas para decidir próxima música" },
+                      ];
+                      
+                      const newReminders = presetReminders.map((preset, idx) => ({
+                        id: `audience-preset-${Date.now()}-${idx}`,
+                        time: preset.time,
+                        completed: false,
+                        tip: preset.tip,
+                      }));
+                      
+                      setEventData(prev => ({
+                        ...prev,
+                        dayItinerary: {
+                          ...prev.dayItinerary,
+                          audienceReminders: [...prev.dayItinerary.audienceReminders, ...newReminders]
+                        }
+                      }));
+                    }}
+                    className="border-purple-300 text-purple-700 hover:bg-purple-100 text-xs"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Lembretes Pré-configurados
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newItem = {
+                        id: `audience-${Date.now()}-${Math.random()}`,
+                        time: "",
+                        completed: false,
+                        tip: "",
+                      };
+                      setEventData(prev => ({
+                        ...prev,
+                        dayItinerary: {
+                          ...prev.dayItinerary,
+                          audienceReminders: [...prev.dayItinerary.audienceReminders, newItem]
+                        }
+                      }));
+                    }}
+                    className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Lembrete
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Dicas Rápidas sobre Performance */}
+              <div className="mb-4 p-3 bg-white dark:bg-slate-800 rounded border border-purple-200">
+                <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-2">💡 O que a Audiência Quer:</div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-purple-600 dark:text-purple-400">
+                  <div>• Mistakes são ok - performance honesta</div>
+                  <div>• Take chances - não seja 'safe'</div>
+                  <div>• Engage the audience - contato visual</div>
+                  <div>• Enjoyment - diverte-te no palco</div>
+                  <div>• Pace the performance - ritmo adequado</div>
+                  <div>• Be grateful - agradece quem pagou</div>
+                  <div>• Authenticity - conexão real</div>
+                  <div>• Confidence - confiança genuína</div>
+                  <div>• Listen to bandmates - interação</div>
+                  <div>• Don't judge yourself - foca no momento</div>
+                  <div>• Know your material - conhece tudo</div>
+                  <div>• Know your setlist - sem pausas</div>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {eventData.dayItinerary.audienceReminders.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum lembrete adicionado. Adiciona lembretes sobre o que a audiência quer ver!
+                  </p>
+                ) : (
+                  eventData.dayItinerary.audienceReminders.map((item, index) => (
+                    <div key={item.id} className="flex items-center gap-3 p-2 bg-white dark:bg-slate-800 rounded border border-purple-200">
+                      <Checkbox
+                        checked={item.completed}
+                        onCheckedChange={(checked) => {
+                          const newItems = [...eventData.dayItinerary.audienceReminders];
+                          newItems[index].completed = checked as boolean;
+                          setEventData(prev => ({
+                            ...prev,
+                            dayItinerary: { ...prev.dayItinerary, audienceReminders: newItems }
+                          }));
+                        }}
+                        className="border-purple-400"
+                      />
+                      <Input
+                        type="time"
+                        value={item.time}
+                        onChange={(e) => {
+                          const newItems = [...eventData.dayItinerary.audienceReminders];
+                          newItems[index].time = e.target.value;
+                          setEventData(prev => ({
+                            ...prev,
+                            dayItinerary: { ...prev.dayItinerary, audienceReminders: newItems }
+                          }));
+                        }}
+                        className="flex-1 h-8 border-purple-300"
+                        placeholder="Hora do lembrete"
+                      />
+                      <Input
+                        value={item.tip}
+                        onChange={(e) => {
+                          const newItems = [...eventData.dayItinerary.audienceReminders];
+                          newItems[index].tip = e.target.value;
+                          setEventData(prev => ({
+                            ...prev,
+                            dayItinerary: { ...prev.dayItinerary, audienceReminders: newItems }
+                          }));
+                        }}
+                        className="flex-1 h-8 border-purple-300 text-xs"
+                        placeholder="Lembrete (ex: Mistakes são ok)"
+                      />
+                      <Badge variant={item.completed ? "default" : "outline"} className={item.completed ? "bg-green-500" : "bg-purple-100 text-purple-700"}>
+                        {item.completed ? "✓ Feito" : "Pendente"}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newItems = eventData.dayItinerary.audienceReminders.filter((_, i) => i !== index);
+                          setEventData(prev => ({
+                            ...prev,
+                            dayItinerary: { ...prev.dayItinerary, audienceReminders: newItems }
+                          }));
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
             <div>
