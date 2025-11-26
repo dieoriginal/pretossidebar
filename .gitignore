@@ -34,3 +34,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# electron
+/electron/*.js
+/dist/
+/release/
+/build/icon.icns
+/build/entitlements.mac.plist
+/build/dmg-background.png

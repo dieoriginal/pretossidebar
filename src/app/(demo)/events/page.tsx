@@ -94,6 +94,22 @@ const MOCK_EVENTS = [
       targetAudience: "Comunidade urbana",
       capacity: { min: 200, max: 1200 }
     }
+  },
+  // DIEPRETTY SONGWARS - Added
+  {
+    id: "songwars-005",
+    name: "DIEPRETTY SONGWARS",
+    type: "song_battle",
+    date: "2025-08-20",
+    venue: "Casa da Música",
+    capacity: 500,
+    sold: 320,
+    concept: {
+      description: "Competição criativa de composições originais entre artistas e produtores.",
+      revenueStreams: ["inscrições", "bilhetes", "sponsorships", "streaming", "merchandising"],
+      targetAudience: "Compositores, produtores e público jovem",
+      capacity: { min: 40, max: 500 }
+    }
   }
 ];
 

@@ -4,7 +4,9 @@
 
 "use client";
 
-import { useEffect } from "react";
+export const dynamic = 'force-dynamic';
+
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +15,7 @@ import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useSubscription } from "@/hooks/use-subscription";
 
-export default function SubscriptionSuccessPage() {
+function SubscriptionSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -53,6 +55,24 @@ export default function SubscriptionSuccessPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function SubscriptionSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="container py-12">
+        <div className="mx-auto max-w-md">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p>Carregando...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <SubscriptionSuccessContent />
+    </Suspense>
   );
 }
 

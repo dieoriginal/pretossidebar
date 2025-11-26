@@ -1,7 +1,13 @@
 {
   "name": "shadcn-sidebar",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
+  "main": "electron/main.js",
+  "author": {
+    "name": "Pretos Music Software"
+  },
+  "description": "Pretos Music Software: suite criativa para música, vídeo e narrativa",
+  "homepage": "./",
   "scripts": {
     "dev": "concurrently -k -n web,py -c green,cyan \"npm:dev:web\" \"npm:dev:py\"",
     "dev:web": "next dev",
@@ -9,7 +15,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "registry:build": "tsx ./scripts/build-registry.ts"
+    "registry:build": "tsx ./scripts/build-registry.ts",
+    "electron:dev": "concurrently -k -n next,electron -c green,cyan \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "next build",
+    "electron:compile": "tsc -p electron/tsconfig.json",
+    "electron:pack": "npm run electron:compile && electron-builder --dir",
+    "electron:dist": "npm run build && npm run electron:compile && electron-builder",
+    "electron:dist:mac": "npm run build && npm run electron:compile && electron-builder --mac",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.7.5",
@@ -70,7 +83,8 @@
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2",
-    "zustand": "^4.5.2"
+    "zustand": "^4.5.2",
+    "electron-updater": "^6.2.1"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.20",
@@ -84,6 +98,76 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "@types/electron": "^1.6.10",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.pretosmusic.fazteumambo",
+    "productName": "Faz Teu Mambo",
+    "copyright": "Copyright © 2025 Pretos Music Software",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/main.js",
+      "electron/preload.js",
+      "electron/updater.js",
+      ".next/standalone/**/*",
+      ".next/static/**/*",
+      "public/**/*",
+      "package.json",
+      "node_modules/electron-updater/**/*",
+      "node_modules/electron-log/**/*"
+    ],
+    "asarUnpack": [
+      ".next/standalone"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.music",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "title": "${productName} ${version}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "dieoriginal",
+        "repo": "pretossidebar"
+      }
+    ]
   }
 }

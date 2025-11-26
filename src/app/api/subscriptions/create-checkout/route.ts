@@ -3,14 +3,36 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import type Stripe from 'stripe';
 import { auth } from '@clerk/nextjs/server';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-12-18.acacia',
-});
+// Lazy initialization to avoid build-time errors
+function getStripe(): Stripe | null {
+  // Skip during build
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return null;
+  }
+  
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey || secretKey === '') {
+    return null;
+  }
+  try {
+    const StripeLib = require('stripe');
+    return new StripeLib(secretKey, {
+      apiVersion: '2024-12-18.acacia',
+    });
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: NextRequest) {
+  const stripe = getStripe();
+  if (!stripe) {
+    return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+  }
+
   try {
     const { userId } = await auth();
     if (!userId) {

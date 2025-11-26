@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth, Auth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "SUA_API_KEY",
@@ -12,8 +12,14 @@ const firebaseConfig = {
   measurementId: "SEU_MEASUREMENT_ID"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if not already initialized
+let app: FirebaseApp;
+const apps = getApps();
+if (apps.length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = apps[0];
+}
 
 // Initialize services
 export const db = getFirestore(app);
