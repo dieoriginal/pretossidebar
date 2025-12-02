@@ -1,4 +1,4 @@
-#!/Users/denilson/PretosFTM2025.0.1/pretossidebar/src/app/python/.venv/bin/python3.12
+#!/Users/Yasz/pretossidebar/pretossidebar/src/app/python/.venv/bin/python3
 import sys
 from numpy.f2py.f2py2e import main
 if __name__ == '__main__':

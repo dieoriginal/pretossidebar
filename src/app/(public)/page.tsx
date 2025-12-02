@@ -11,7 +11,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Music, CalendarClock, ShoppingBag, Users, Zap, Shield, Cloud } from "lucide-react";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
 
 export default function LandingPage() {
   const features = [
@@ -67,12 +66,12 @@ export default function LandingPage() {
             <span className="text-xl font-bold">PRETOS MUSIC</span>
           </div>
           <div className="flex items-center gap-4">
-            <SignInButton mode="modal">
+            <Link href="/dashboard">
               <Button variant="ghost">Entrar</Button>
-            </SignInButton>
-            <SignUpButton mode="modal">
+            </Link>
+            <Link href="/dashboard">
               <Button>Começar Grátis</Button>
-            </SignUpButton>
+            </Link>
           </div>
         </div>
       </header>
@@ -89,11 +88,11 @@ export default function LandingPage() {
             Tudo o que precisas para levar a tua carreira ao próximo nível.
           </p>
           <div className="mt-10 flex items-center justify-center gap-4">
-            <SignUpButton mode="modal">
+            <Link href="/dashboard">
               <Button size="lg" className="text-lg px-8">
                 Começar Agora - 5€/ano
               </Button>
-            </SignUpButton>
+            </Link>
             <Button size="lg" variant="outline" className="text-lg px-8">
               Ver Demo
             </Button>
@@ -148,11 +147,11 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <SignUpButton mode="modal">
+              <Link href="/dashboard">
                 <Button className="mt-6 w-full" size="lg">
                   Começar Agora
                 </Button>
-              </SignUpButton>
+              </Link>
               <p className="mt-4 text-center text-sm text-muted-foreground">
                 Teste grátis por 14 dias
               </p>
@@ -171,11 +170,11 @@ export default function LandingPage() {
             <p className="mb-8 text-lg opacity-90">
               Junta-te a centenas de artistas que já estão a usar PRETOS MUSIC
             </p>
-            <SignUpButton mode="modal">
+            <Link href="/dashboard">
               <Button size="lg" variant="secondary" className="text-lg px-8">
                 Criar Conta Grátis
               </Button>
-            </SignUpButton>
+            </Link>
           </CardContent>
         </Card>
       </section>
@@ -226,4 +225,3 @@ export default function LandingPage() {
     </div>
   );
 }
-

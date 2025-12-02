@@ -26,7 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 // addVenue is used for inline venue creation in the Venues step
-import { addVenue } from "@/lib/venuesDb";
+import { addVenue, getAllVenues, Venue } from "@/lib/venuesDb";
 import {
   FileText,
   Download,
@@ -52,6 +52,8 @@ import {
 } from "lucide-react";
 import jsPDF from "jspdf";
 import Image from "next/image";
+import { ProfitDashboard } from "@/components/events/ProfitDashboard";
+import { MultiVenueSelector } from "@/components/events/MultiVenueSelector";
 
 interface Step {
   name: string;
@@ -77,10 +79,25 @@ interface EventData {
     eventType: string;
     date: string;
     venue: string;
+    city?: string;
     capacity: number;
     description: string;
     organizerName: string;
     organizerContact: string;
+  };
+  venues?: {
+    primary: Venue | null;
+    backups: Venue[];
+    requiredCapacity: number;
+  };
+  venueContact?: {
+    name: string;
+    email: string;
+    phone: string;
+    emailSent?: boolean;
+    emailSentDate?: string | null;
+    confirmed?: boolean;
+    confirmedDate?: string | null;
   };
   finance: {
     budget: number;
@@ -89,17 +106,25 @@ interface EventData {
     expenses: Array<{ name: string; amount: number }>;
     venueSplit: number; // 70-30 split
     cachetPago?: number; // Para third party events
+    expectedAttendance?: number;
+    merchPerPerson?: number;
+    estimatedProfit?: number;
   };
   lineup: {
     artists: Array<{ name: string; time: string; fee: number; contact: string; instagram: string; spotify: string }>;
     soundcheck: string;
     curfew: string;
+    schedule?: Array<any>;
   };
   production: {
     sound: string;
     lighting: string;
     stage: string;
     crew: Array<{ role: string; name: string; contact: string; gear?: string; deal?: string }>;
+    technicalRider?: string;
+    technicalRiderConfirmed?: boolean;
+    team?: Array<any>;
+    estimatedCost?: number;
   };
   logistics: {
     address: string;
@@ -109,17 +134,29 @@ interface EventData {
     catering: string;
     material: Array<{ id: string; name: string; category: string; checked: boolean; returned: boolean }>; // Material que vai levar
     travelOutfit: Array<{ id: string; name: string; category: string; checked: boolean; returned: boolean }>; // Roupa que vai vestir até chegar no local
+    estimatedCost?: number;
+    transport?: string;
+    accommodation?: string;
   };
   tickets: {
     totalTickets: number;
     soldTickets: number;
     priceTiers: Array<{ name: string; price: number; quantity: number }>;
+    policy?: string;
+    prices?: Record<string, any>;
   };
   marketing: {
     socialMedia: Array<{ platform: string; content: string; scheduled: string }>;
     pressRelease: string;
     influencers: Array<{ name: string; reach: number; fee: number }>;
+    strategy?: string;
+    assets?: string;
+    budget?: number;
   };
+  month?: number;
+  year?: number;
+  week?: number;
+  template?: boolean;
   templates: {
     artistConfirmation: string;
     venueProposal: string;
@@ -1509,6 +1546,82 @@ export default function EventPage({ params }: { params: { id: string } }) {
     const normalizeEventData = (data: any): EventData => {
       return {
         ...data,
+        // Ensure finance exists with all required fields
+        finance: {
+          budget: data.finance?.budget || 0,
+          ticketPrice: data.finance?.ticketPrice || 0,
+          sponsorship: data.finance?.sponsorship || 0,
+          expenses: data.finance?.expenses || [],
+          venueSplit: data.finance?.venueSplit || 70,
+          cachetPago: data.finance?.cachetPago || 0,
+          expectedAttendance: data.finance?.expectedAttendance || 70,
+          merchPerPerson: data.finance?.merchPerPerson || 5,
+          estimatedProfit: data.finance?.estimatedProfit || 0,
+        },
+        // Ensure venues exists
+        venues: data.venues || {
+          primary: null,
+          backups: [],
+          requiredCapacity: data.overview?.capacity || 0,
+        },
+        // Ensure overview has city
+        overview: {
+          ...data.overview,
+          city: data.overview?.city || "",
+        },
+        // Ensure lineup has schedule
+        lineup: {
+          ...data.lineup,
+          artists: data.lineup?.artists || [],
+          soundcheck: data.lineup?.soundcheck || "",
+          curfew: data.lineup?.curfew || "",
+          schedule: data.lineup?.schedule || [],
+        },
+        // Ensure production has required fields
+        production: {
+          ...data.production,
+          sound: data.production?.sound || "",
+          lighting: data.production?.lighting || "",
+          stage: data.production?.stage || "",
+          crew: data.production?.crew || [],
+          technicalRider: data.production?.technicalRider || "",
+          technicalRiderConfirmed: data.production?.technicalRiderConfirmed || false,
+          team: data.production?.team || [],
+          estimatedCost: data.production?.estimatedCost || 0,
+        },
+        // Ensure tickets has required fields
+        tickets: {
+          ...data.tickets,
+          totalTickets: data.tickets?.totalTickets || 0,
+          soldTickets: data.tickets?.soldTickets || 0,
+          priceTiers: data.tickets?.priceTiers || [],
+          policy: data.tickets?.policy || "",
+          prices: data.tickets?.prices || {},
+        },
+        // Ensure logistics has required fields
+        logistics: {
+          ...data.logistics,
+          address: data.logistics?.address || "",
+          parking: data.logistics?.parking || "",
+          loadIn: data.logistics?.loadIn || "",
+          loadOut: data.logistics?.loadOut || "",
+          catering: data.logistics?.catering || "",
+          material: data.logistics?.material || [],
+          travelOutfit: data.logistics?.travelOutfit || [],
+          estimatedCost: data.logistics?.estimatedCost || 0,
+          transport: data.logistics?.transport || "",
+          accommodation: data.logistics?.accommodation || "",
+        },
+        // Ensure marketing has required fields
+        marketing: {
+          ...data.marketing,
+          socialMedia: data.marketing?.socialMedia || [],
+          pressRelease: data.marketing?.pressRelease || "",
+          influencers: data.marketing?.influencers || [],
+          strategy: data.marketing?.strategy || "",
+          assets: data.marketing?.assets || "",
+          budget: data.marketing?.budget || 0,
+        },
         // Ensure rehearsalNotes exists
         rehearsalNotes: data.rehearsalNotes || {
           decisions: [],
@@ -2501,125 +2614,69 @@ ${organizerName} — ${organizerContact}`;
                   className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
                 />
               </div>
-              <div>
-                <Label htmlFor="venue">Local</Label>
-                <div className="relative">
-                  <Input
-                    id="venue"
-                    value={eventData.overview.venue}
-                    onChange={(e) => {
-                      setEventData(prev => ({
-                        ...prev,
-                        overview: { ...prev.overview, venue: e.target.value }
-                      }));
-                      setShowVenueDropdown(true);
-                    }}
-                    onFocus={() => setShowVenueDropdown(true)}
-                    onBlur={() => {
-                      // Delay hiding dropdown to allow for clicks
-                      setTimeout(() => setShowVenueDropdown(false), 200);
-                    }}
-                    placeholder="Ex: Armazém X"
-                    className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
-                  />
-                  {showVenueDropdown && (
-                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {VENUES_DATABASE
-                        .filter(venue => {
-                          const searchTerm = eventData.overview.venue.toLowerCase();
-                          return (
-                            venue.name.toLowerCase().includes(searchTerm) ||
-                            venue.city.toLowerCase().includes(searchTerm) ||
-                            venue.address.toLowerCase().includes(searchTerm) ||
-                            venue.equipment.toLowerCase().includes(searchTerm)
-                          );
-                        })
-                        .length === 0 ? (
-                          <div className="p-3 text-slate-500 dark:text-slate-400 text-sm">
-                            Nenhum local encontrado
-                          </div>
-                        ) : (
-                          VENUES_DATABASE
-                            .filter(venue => {
-                              const searchTerm = eventData.overview.venue.toLowerCase();
-                              return (
-                                venue.name.toLowerCase().includes(searchTerm) ||
-                                venue.city.toLowerCase().includes(searchTerm) ||
-                                venue.address.toLowerCase().includes(searchTerm) ||
-                                venue.equipment.toLowerCase().includes(searchTerm)
-                              );
-                            })
-                            .map((venue) => (
-                          <div
-                            key={venue.id}
-                            className="p-3 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-100 dark:border-slate-600 last:border-b-0"
-                            onClick={() => {
-                              setEventData(prev => ({
-                                ...prev,
-                                overview: {
-                                  ...prev.overview,
-                                  venue: venue.name,
-                                  capacity: parseInt(venue.capacity.split('-')[1]?.replace(/[^\d]/g, '')) || parseInt(venue.capacity.replace(/[^\d]/g, '')) || 0
-                                },
-                                logistics: {
-                                  ...prev.logistics,
-                                  address: venue.address
-                                }
-                              }));
-                              setShowVenueDropdown(false);
-                            }}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="font-medium text-slate-900 dark:text-slate-100">
-                                  {venue.name}
-                                </div>
-                                <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className="h-3 w-3" />
-                                    {venue.address}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <Users className="h-3 w-3" />
-                                    Capacidade: {venue.capacity}
-                                  </div>
-                                  {venue.phone && (
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <Phone className="h-3 w-3" />
-                                      {venue.phone}
-                                    </div>
-                                  )}
-                                  {venue.email && (
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <Mail className="h-3 w-3" />
-                                      {venue.email}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400 ml-2">
-                                {venue.city}
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                        )}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="capacity">Capacidade</Label>
-                <Input
-                  id="capacity"
-                  type="number"
-                  value={eventData.overview.capacity}
-                  onChange={(e) => setEventData(prev => ({
-                    ...prev,
-                    overview: { ...prev.overview, capacity: parseInt(e.target.value) || 0 }
-                  }))}
-                  placeholder="350"
-                  className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+              <div className="col-span-2">
+                <Label>Seleção de Venues (Principal + Backups)</Label>
+                <MultiVenueSelector
+                  requiredCapacity={eventData?.venues?.requiredCapacity || eventData?.overview?.capacity || 0}
+                  city={eventData?.overview?.city}
+                  primaryVenue={eventData?.venues?.primary || null}
+                  backupVenues={eventData?.venues?.backups || []}
+                  onPrimaryChange={(venue) => {
+                    setEventData(prev => ({
+                      ...prev,
+                      venues: {
+                        ...prev.venues,
+                        primary: venue,
+                        backups: prev.venues?.backups || [],
+                        requiredCapacity: prev.venues?.requiredCapacity || 0,
+                      },
+                      overview: {
+                        ...prev.overview,
+                        venue: venue?.name || prev.overview?.venue || "",
+                        capacity: venue?.capacity || prev.overview?.capacity || 0,
+                        city: venue?.city || prev.overview?.city || "",
+                      },
+                      logistics: {
+                        ...prev.logistics,
+                        address: venue?.address || prev.logistics?.address || "",
+                      },
+                    }));
+                  }}
+                  onBackupsChange={(venues) => {
+                    setEventData(prev => ({
+                      ...prev,
+                      venues: {
+                        ...prev.venues,
+                        primary: prev.venues?.primary || null,
+                        backups: venues,
+                        requiredCapacity: prev.venues?.requiredCapacity || 0,
+                      },
+                    }));
+                  }}
+                  onCapacityChange={(capacity) => {
+                    setEventData(prev => ({
+                      ...prev,
+                      venues: {
+                        ...prev.venues,
+                        primary: prev.venues?.primary || null,
+                        backups: prev.venues?.backups || [],
+                        requiredCapacity: capacity,
+                      },
+                      overview: {
+                        ...prev.overview,
+                        capacity: capacity,
+                      },
+                    }));
+                  }}
+                  onCityChange={(city) => {
+                    setEventData(prev => ({
+                      ...prev,
+                      overview: {
+                        ...prev.overview,
+                        city: city,
+                      },
+                    }));
+                  }}
                 />
               </div>
               <div>
@@ -2671,16 +2728,39 @@ ${organizerName} — ${organizerContact}`;
       case 1: // Financeiro
         return (
           <div className="space-y-6">
+            {/* Profit Dashboard */}
+            <ProfitDashboard 
+              eventData={eventData}
+              onUpdate={(updates) => {
+                setEventData(prev => ({
+                  ...prev,
+                  finance: {
+                    ...prev.finance,
+                    ...updates,
+                  },
+                  venues: {
+                    ...prev.venues,
+                    requiredCapacity: updates.capacity || prev.venues?.requiredCapacity || 0,
+                  },
+                }));
+              }}
+            />
+            
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="budget">Orçamento Total (€)</Label>
                 <Input
                   id="budget"
                   type="number"
-                  value={eventData.finance.budget}
+                  value={eventData?.finance?.budget || 0}
                   onChange={(e) => setEventData(prev => ({
                     ...prev,
-                    finance: { ...prev.finance, budget: parseInt(e.target.value) || 0 }
+                    finance: { 
+                      ...prev.finance, 
+                      budget: parseInt(e.target.value) || 0,
+                      expenses: prev.finance?.expenses || [],
+                      venueSplit: prev.finance?.venueSplit || 70,
+                    }
                   }))}
                   placeholder="50000"
                   className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
@@ -2691,10 +2771,15 @@ ${organizerName} — ${organizerContact}`;
                 <Input
                   id="ticketPrice"
                   type="number"
-                  value={eventData.finance.ticketPrice}
+                  value={eventData?.finance?.ticketPrice || 0}
                   onChange={(e) => setEventData(prev => ({
                     ...prev,
-                    finance: { ...prev.finance, ticketPrice: parseInt(e.target.value) || 0 }
+                    finance: { 
+                      ...prev.finance, 
+                      ticketPrice: parseInt(e.target.value) || 0,
+                      expenses: prev.finance?.expenses || [],
+                      venueSplit: prev.finance?.venueSplit || 70,
+                    }
                   }))}
                   placeholder="25"
                   className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
@@ -2705,10 +2790,15 @@ ${organizerName} — ${organizerContact}`;
                 <Input
                   id="sponsorship"
                   type="number"
-                  value={eventData.finance.sponsorship}
+                  value={eventData?.finance?.sponsorship || 0}
                   onChange={(e) => setEventData(prev => ({
                     ...prev,
-                    finance: { ...prev.finance, sponsorship: parseInt(e.target.value) || 0 }
+                    finance: { 
+                      ...prev.finance, 
+                      sponsorship: parseInt(e.target.value) || 0,
+                      expenses: prev.finance?.expenses || [],
+                      venueSplit: prev.finance?.venueSplit || 70,
+                    }
                   }))}
                   placeholder="10000"
                   className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"

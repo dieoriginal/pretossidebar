@@ -6,9 +6,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
-import { useUserSubscription } from "@/hooks/use-subscription";
 import { SubscriptionStatus } from "@/components/subscription/SubscriptionStatus";
 
 export default function AuthenticatedLayout({
@@ -16,28 +14,20 @@ export default function AuthenticatedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoaded } = useUser();
-  const { subscription, loadSubscription } = useUserSubscription();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const userId = "demo-user"; // Fallback user ID without Clerk
 
   useEffect(() => {
-    if (isLoaded && user?.id) {
-      // Verificar se já viu onboarding
-      const seen = localStorage.getItem(`onboarding_seen_${user.id}`);
-      if (!seen) {
-        setShowOnboarding(true);
-      }
-
-      // Carregar subscrição
-      loadSubscription(user.id);
+    // Verificar se já viu onboarding
+    const seen = localStorage.getItem(`onboarding_seen_${userId}`);
+    if (!seen) {
+      setShowOnboarding(true);
     }
-  }, [isLoaded, user?.id, loadSubscription]);
+  }, [userId]);
 
   const handleOnboardingComplete = () => {
-    if (user?.id) {
-      localStorage.setItem(`onboarding_seen_${user.id}`, 'true');
-    }
+    localStorage.setItem(`onboarding_seen_${userId}`, 'true');
     setShowOnboarding(false);
     setHasSeenOnboarding(true);
   };
@@ -45,10 +35,6 @@ export default function AuthenticatedLayout({
   const handleOnboardingSkip = () => {
     handleOnboardingComplete();
   };
-
-  if (!isLoaded) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <>

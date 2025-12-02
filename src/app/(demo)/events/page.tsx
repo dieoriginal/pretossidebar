@@ -3,9 +3,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getAllEventsFromIndexedDB, deleteEventFromIndexedDB } from "@/lib/events-db";
+import { getAllEventsFromIndexedDB, deleteEventFromIndexedDB, saveEventToIndexedDB } from "@/lib/events-db";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar, MapPin, Users } from "lucide-react";
+import { Trash2, Calendar, MapPin, Users, CalendarDays, Plus, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EventCompletionCard } from "@/components/events/EventCompletionCard";
+import { calculateEventCompletion } from "@/lib/event-completion-tracker";
+import { generateTemplatesForYears, getDefaultEventData } from "@/lib/event-templates";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface EventProject {
   id: string;
@@ -26,98 +32,13 @@ interface EventProject {
   data: any;
 }
 
-const MOCK_EVENTS = [
-  {
-    id: "diepretty-mercedes-001",
-    name: "Uma Noite com Diepretty Mercédes",
-    type: "concerto_ao_vivo",
-    date: "2025-11-12",
-    venue: "Armazém X",
-    capacity: 350,
-    sold: 280,
-    concept: {
-      description: "Festas de hip-hop para a Gen Zs com atuação musical do Artista",
-      revenueStreams: ["bilhetes", "patrocínios", "merch", "F&B", "vendas de stands"],
-      targetAudience: "Gen Z",
-      capacity: { min: 30, max: 200 }
-    },
-    caes: [
-      { code: "90010", description: "Atividades das artes do espetáculo", applicable: true },
-      { code: "90020", description: "Serviços de apoio as artes do espetáculo", applicable: true }
-    ]
-  },
-  {
-    id: "metaverse-hybrid-002",
-    name: "Evento Híbrido - Metaverse",
-    type: "evento_hibrido_metaverse",
-    date: "2025-12-05",
-    venue: "Online + Presencial",
-    capacity: 200,
-    sold: 150,
-    isHybrid: true,
-    streamingEnabled: true,
-    ppvPrice: { value: 15, currency: "EUR" },
-    concept: {
-      description: "Show ao vivo com transmissão pay-per-view para público remoto",
-      revenueStreams: ["bilhetes presenciais", "PPV/streaming", "patrocínios digitais", "VOD"],
-      targetAudience: "Público remoto + presencial",
-      capacity: { min: 30, max: 200 }
-    }
-  },
-  {
-    id: "beat-battle-003",
-    name: "DIEPRETTY BEAT BATTLES",
-    type: "beat_battle",
-    date: "2025-10-25",
-    venue: "Clube C",
-    capacity: 200,
-    sold: 150,
-    techWorkshop: true,
-    concept: {
-      description: "Competição de beats + workshops técnicos",
-      revenueStreams: ["inscrições/pagamento de participantes", "patrocínios de marcas de equipamento", "venda de conteúdos gravados"],
-      targetAudience: "Produtores e beatmakers",
-      capacity: { min: 50, max: 200 }
-    }
-  },
-  {
-    id: "feira-cultura-004",
-    name: "Feira de Cultura Urbana",
-    type: "feira_cultura_urbana",
-    date: "2025-09-15",
-    venue: "Parque das Nações",
-    capacity: 1200,
-    sold: 890,
-    concept: {
-      description: "Evento que junta música, graffiti, breakdance, skate e lifestyle",
-      revenueStreams: ["bilhetes", "stands", "patrocínios lifestyle", "workshops pagos"],
-      targetAudience: "Comunidade urbana",
-      capacity: { min: 200, max: 1200 }
-    }
-  },
-  // DIEPRETTY SONGWARS - Added
-  {
-    id: "songwars-005",
-    name: "DIEPRETTY SONGWARS",
-    type: "song_battle",
-    date: "2025-08-20",
-    venue: "Casa da Música",
-    capacity: 500,
-    sold: 320,
-    concept: {
-      description: "Competição criativa de composições originais entre artistas e produtores.",
-      revenueStreams: ["inscrições", "bilhetes", "sponsorships", "streaming", "merchandising"],
-      targetAudience: "Compositores, produtores e público jovem",
-      capacity: { min: 40, max: 500 }
-    }
-  }
-];
-
 export default function EventsIndexPage() {
   const [savedEvents, setSavedEvents] = useState<EventProject[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [templatesCreated, setTemplatesCreated] = useState(false);
 
   const loadSavedEvents = async () => {
     try {
@@ -133,8 +54,48 @@ export default function EventsIndexPage() {
 
   useEffect(() => {
     loadSavedEvents();
+    checkAndCreateTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const checkAndCreateTemplates = async () => {
+    try {
+      const events = await getAllEventsFromIndexedDB();
+      const existingTemplates = events.filter((e: any) => e.data?.template === true);
+      
+      // Check if we have the correct number of templates (24 per year × 4 years = 96)
+      const expectedCount = 24 * 4; // 96 templates for 2026-2029
+      
+      if (existingTemplates.length !== expectedCount && !templatesCreated) {
+        // Delete old templates first
+        for (const oldTemplate of existingTemplates) {
+          await deleteEventFromIndexedDB(oldTemplate.id);
+        }
+        
+        // Create new bi-weekly templates for 2026-2029
+        const templates = generateTemplatesForYears(2026, 2029);
+        
+        console.log(`Creating ${templates.length} bi-weekly templates...`);
+        
+        for (const template of templates) {
+          const eventData = getDefaultEventData(template.month, template.year, template.week, template.city);
+          await saveEventToIndexedDB({
+            id: template.id,
+            ...eventData,
+            template: true,
+          });
+        }
+        
+        console.log(`✅ Created ${templates.length} templates (${templates.length / 4} per year)`);
+        setTemplatesCreated(true);
+        await loadSavedEvents();
+      } else if (existingTemplates.length === expectedCount) {
+        console.log(`✅ Templates already exist: ${existingTemplates.length} templates`);
+      }
+    } catch (error) {
+      console.error('Error creating templates:', error);
+    }
+  };
 
   const handleDelete = async (eventId: string) => {
     try {
@@ -152,146 +113,165 @@ export default function EventsIndexPage() {
     setDeleteDialogOpen(true);
   };
 
+  const handleEmailVenue = async (event: EventProject) => {
+    // Open email composer or send email
+    const venueEmail = event.data?.venueContact?.email;
+    if (venueEmail) {
+      window.location.href = `mailto:${venueEmail}?subject=Confirmação de Evento - ${event.eventName}&body=Olá,%0D%0A%0D%0AEscrevo para confirmar os detalhes do evento...`;
+    } else {
+      // Open event edit page to add email
+      window.location.href = `/events/${event.id}`;
+    }
+  };
+
+  const filteredEvents = savedEvents.filter((event) => {
+    if (!event.date) return false;
+    const eventYear = new Date(event.date).getFullYear();
+    return eventYear === selectedYear;
+  });
+
+  const eventsByStatus = filteredEvents.reduce((acc, event) => {
+    const completion = calculateEventCompletion(event.data || event);
+    const status = completion.isComplete ? "complete" : "incomplete";
+    if (!acc[status]) acc[status] = [];
+    acc[status].push(event);
+    return acc;
+  }, {} as Record<string, EventProject[]>);
+
+  const completeEvents = eventsByStatus.complete || [];
+  const incompleteEvents = eventsByStatus.incomplete || [];
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-      <header className="max-w-6xl mx-auto mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Events — Painel</h1>
-        <p className="text-slate-600 dark:text-slate-300 mt-1">Visão rápida dos teus eventos. Clica num cartão para abrir o playbook do evento.</p>
+      <header className="max-w-7xl mx-auto mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Events — Painel de Execução
+            </h1>
+            <p className="text-slate-600 dark:text-slate-300 mt-1">
+              Sistema de tracking e execução forçada. Todos os passos devem estar completos.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[2026, 2027, 2028, 2029].map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Link href="/events/annual">
+              <Button variant="outline" className="flex items-center gap-2">
+                <CalendarDays className="w-4 h-4" />
+                Vista Anual
+              </Button>
+            </Link>
+          </div>
+        </div>
       </header>
 
-      <main className="max-w-6xl mx-auto">
-        {/* Saved Events Section */}
-        {savedEvents.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Meus Projetos de Eventos</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              {savedEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className="relative rounded-2xl bg-white dark:bg-slate-800 shadow-md dark:shadow-slate-900/20 overflow-hidden transform transition hover:-translate-y-1 border border-slate-200 dark:border-slate-700"
-                >
-                  <Link href={`/events/${event.id}`} className="block">
-                    <div className="p-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{event.eventName || event.title || "Evento sem nome"}</h2>
-                          <div className="mt-2 space-y-1 text-sm text-slate-500 dark:text-slate-400">
-                            {event.date && (
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(event.date).toLocaleDateString('pt-PT')}
-                              </div>
-                            )}
-                            {event.venue && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {event.venue}
-                              </div>
-                            )}
-                            {event.eventType && (
-                              <div className="text-xs px-2 py-1 rounded bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 inline-block mt-2">
-                                {event.eventType}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="inline-block text-xs px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
-                            #{event.id.split('-')[1]?.slice(0, 6) || 'NOVO'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                  <footer className="bg-slate-50 dark:bg-slate-700 px-5 py-3 text-sm flex items-center justify-between border-t border-slate-200 dark:border-slate-600">
-                    <div className="text-slate-500 dark:text-slate-400 text-xs">
-                      {new Date(event.lastModified).toLocaleDateString('pt-PT')}
-                    </div>
-                    <div className="flex gap-2">
-                      <Link href={`/events/${event.id}`} className="text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
-                        Abrir
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openDeleteDialog(event.id);
-                        }}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </footer>
-                </div>
-              ))}
+      <main className="max-w-7xl mx-auto">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div className="text-sm text-slate-500 dark:text-slate-400">Total Eventos</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{filteredEvents.length}</div>
+          </div>
+          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="text-sm text-green-600 dark:text-green-400">Confirmados</div>
+            <div className="text-2xl font-bold text-green-700 dark:text-green-300">{completeEvents.length}</div>
+          </div>
+          <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+            <div className="text-sm text-red-600 dark:text-red-400">Por Completar</div>
+            <div className="text-2xl font-bold text-red-700 dark:text-red-300">{incompleteEvents.length}</div>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="text-sm text-blue-600 dark:text-blue-400">Taxa Conclusão</div>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+              {filteredEvents.length > 0 
+                ? Math.round((completeEvents.length / filteredEvents.length) * 100) 
+                : 0}%
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Mock Events Section (for reference) */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Templates de Exemplo</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MOCK_EVENTS.map((e) => (
-              <Link key={e.id} href={`/events/${e.id}/overview`} className="group">
-            <article className="relative rounded-2xl bg-white dark:bg-slate-800 shadow-md dark:shadow-slate-900/20 overflow-hidden transform transition hover:-translate-y-1 border border-slate-200 dark:border-slate-700">
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{e.name}</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{e.date} · {e.venue}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="inline-block text-xs px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">#{e.id}</span>
-                  </div>
-                </div>
+        <Tabs defaultValue="all" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="all">Todos ({filteredEvents.length})</TabsTrigger>
+            <TabsTrigger value="complete">
+              Confirmados ({completeEvents.length})
+            </TabsTrigger>
+            <TabsTrigger value="incomplete">
+              Por Completar ({incompleteEvents.length})
+            </TabsTrigger>
+          </TabsList>
 
-                <div className="mt-4 flex items-center gap-4">
-                  <div className="w-full">
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Venda de bilhetes</div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden border border-slate-200 dark:border-slate-600">
-                      <div className="h-3 rounded-full bg-indigo-600 dark:bg-indigo-500" style={{ width: `${Math.min(100, Math.round((e.sold / e.capacity) * 100))}%` }} />
-                    </div>
-                  </div>
-
-                  <div className="w-20 text-right">
-                    <div className="text-sm font-medium text-slate-900 dark:text-white">{Math.round((e.sold / e.capacity) * 100)}%</div>
-                    <div className="text-xs text-slate-400 dark:text-slate-500">{e.sold}/{e.capacity}</div>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex gap-2">
-                  <span className="text-xs px-2 py-1 border border-slate-200 dark:border-slate-600 rounded text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700">Bilhetes</span>
-                  <span className="text-xs px-2 py-1 border border-slate-200 dark:border-slate-600 rounded text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700">Merch</span>
-                  <span className="text-xs px-2 py-1 border border-slate-200 dark:border-slate-600 rounded text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700">Sponsors</span>
-                </div>
+          <TabsContent value="all" className="space-y-4">
+            {loading ? (
+              <div className="text-center py-12 text-slate-500">A carregar eventos...</div>
+            ) : filteredEvents.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                Nenhum evento encontrado para {selectedYear}
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredEvents.map((event) => (
+                  <EventCompletionCard
+                    key={event.id}
+                    event={event}
+                    onEmailVenue={handleEmailVenue}
+                    onEdit={(e) => window.location.href = `/events/${e.id}`}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-              <footer className="bg-slate-50 dark:bg-slate-700 px-5 py-3 text-sm flex items-center justify-between border-t border-slate-200 dark:border-slate-600">
-                <div className="text-slate-500 dark:text-slate-400">Status: Draft</div>
-                <div className="flex gap-2">
-                  <Link href={`/events/${e.id}/overview`} className="text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">Abrir</Link>
-                </div>
-              </footer>
-            </article>
-              </Link>
-            ))}
-          </div>
-        </div>
+          <TabsContent value="complete" className="space-y-4">
+            {completeEvents.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                Nenhum evento confirmado ainda
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {completeEvents.map((event) => (
+                  <EventCompletionCard
+                    key={event.id}
+                    event={event}
+                    onEmailVenue={handleEmailVenue}
+                    onEdit={(e) => window.location.href = `/events/${e.id}`}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-        {/* CTA card */}
-        <div className="rounded-2xl bg-white dark:bg-slate-800 shadow-md dark:shadow-slate-900/20 p-6 flex items-center justify-center border border-slate-200 dark:border-slate-700">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Criar novo evento</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Usa um template, clona um evento ou começa do zero.</p>
-            <div className="mt-4">
-              <Link href="/events/new" className="inline-block px-4 py-2 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white font-medium hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-sm">Criar Evento</Link>
-            </div>
-          </div>
-        </div>
+          <TabsContent value="incomplete" className="space-y-4">
+            {incompleteEvents.length === 0 ? (
+              <div className="text-center py-12 text-green-600 dark:text-green-400">
+                <Sparkles className="h-12 w-12 mx-auto mb-4" />
+                <div className="text-lg font-semibold">Todos os eventos estão completos!</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {incompleteEvents.map((event) => (
+                  <EventCompletionCard
+                    key={event.id}
+                    event={event}
+                    onEmailVenue={handleEmailVenue}
+                    onEdit={(e) => window.location.href = `/events/${e.id}`}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Delete Confirmation Dialog */}

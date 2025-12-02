@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "concurrently -k -n web,py -c green,cyan \"npm:dev:web\" \"npm:dev:py\"",
     "dev:web": "next dev",
-    "dev:py": "bash -lc 'cd src/app/python && [ -d .venv ] || python3 -m venv .venv && source .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt && python meter_api.py'",
+    "dev:py": "bash -lc 'cd src/app/python && [ -d .venv ] || python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install --upgrade pip && python3 -m pip install -r requirements.txt && python meter_api.py'",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

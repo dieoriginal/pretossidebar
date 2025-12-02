@@ -7,7 +7,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { UserSubscription, SUBSCRIPTION_PLANS, getUserPlan } from '@/lib/subscriptions';
 import { loadSubscriptionFromIndexedDB, saveSubscriptionToIndexedDB } from '@/lib/subscription-db';
-import { useUser } from '@clerk/nextjs';
 
 type SubscriptionStore = {
   subscription: UserSubscription | null;
@@ -63,15 +62,15 @@ export const useSubscription = create<SubscriptionStore>(
  * Hook React para usar subscrição
  */
 export function useUserSubscription() {
-  const { user } = useUser();
   const { subscription, isLoading, loadSubscription, setSubscription } = useSubscription();
+  const userId = "demo-user"; // Fallback without Clerk
 
-  // Carregar subscrição quando o usuário mudar
+  // Carregar subscrição quando montar
   React.useEffect(() => {
-    if (user?.id && !subscription && !isLoading) {
-      loadSubscription(user.id);
+    if (!subscription && !isLoading) {
+      loadSubscription(userId);
     }
-  }, [user?.id]);
+  }, [userId]);
 
   const plan = getUserPlan(subscription);
   const isActive = subscription?.status === 'active';
@@ -87,4 +86,3 @@ export function useUserSubscription() {
     loadSubscription,
   };
 }
-
