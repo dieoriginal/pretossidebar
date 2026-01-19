@@ -1,0 +1,10 @@
+.play {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s;
+}
+
+.play:hover {
+  cursor: pointer;
+  transform: scale(1.2);
+}

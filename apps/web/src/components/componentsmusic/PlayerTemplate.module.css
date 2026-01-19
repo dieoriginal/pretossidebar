@@ -1,0 +1,18 @@
+
+.wrapper {
+  border-radius: 8px; /* Ajustando o raio da borda */
+  height: 100%; /* Ajustando a altura para ocupar todo o espaço disponível */
+  width: 100%; /* Ajustando a largura para ocupar todo o espaço disponível */
+  padding: 0 15px; /* Mantendo o padding para caber no tamanho */
+  background-color: var(--playerBackground);
+  overflow: hidden; /* Removendo barras de rolagem */
+  font-family: 'Quicksand', sans-serif;
+  border: 1px solid white; /* Adicionando borda branca */
+}
+
+@media only screen and (max-width: 600px) {
+  .wrapper {
+    padding: 0 10px; /* Ajustando o padding para telas menores */
+    height: auto; /* Permitindo que a altura se ajuste automaticamente */
+  }
+}

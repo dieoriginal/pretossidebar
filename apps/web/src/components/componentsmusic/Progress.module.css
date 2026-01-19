@@ -1,0 +1,36 @@
+
+.container {
+  display: grid;
+  place-items: center;
+  margin-bottom: 5px; /* Reduzido para se ajustar melhor ao cartão */
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 80%; /* Ajustado para ser menor que 90% */
+  height: 2px; /* Diminuído para se adequar ao tamanho */
+  border-radius: 3px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; /* Diminuído para se ajustar melhor */
+  height: 10px; /* Diminuído para se ajustar melhor */
+  border-radius: 50%;
+  background: var(--progressSlider);
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 8px; /* Diminuído para se ajustar melhor */
+  height: 8px; /* Diminuído para se ajustar melhor */
+  border-radius: 50%;
+  background: var(--progressSlider);
+  cursor: pointer;
+}
+
+@media only screen and (max-width: 600px) {
+  .container {
+    margin: 10px 0; /* Ajustado para se adequar melhor em telas menores */
+  }
+}

@@ -1,226 +1,124 @@
-# Arquitetura do Sistema - PRETOS MUSIC
+# Arquitetura do Sistema - EventOS Platform
 
 ## Visão Geral
 
-Sistema modular e escalável para gestão de processos criativos e de negócio na indústria musical. Arquitetura baseada em **Factory Pattern**, **Configuration-Driven Development** e **Module Connector Pattern**.
+O sistema mantém **todas as funcionalidades originais** (escrita, música, projetos, etc.) e adiciona uma **nova plataforma de eventos** como funcionalidade adicional.
 
-## Princípios de Design
+## Estrutura de Funcionalidades
 
-1. **Modularidade**: Cada processo é um módulo independente
-2. **Configuração Centralizada**: Todos os processos definidos em `processes-config.ts`
-3. **Factory Pattern**: Criação dinâmica de instâncias de processos
-4. **Conexão entre Módulos**: Sistema de sincronização de dados entre processos
-5. **Extensibilidade**: Fácil adicionar novos processos sem modificar código existente
+### Funcionalidades Originais (Mantidas)
+- ✅ **Música e Videoclipe** - Criação e produção musical
+- ✅ **Escrita Literária** - Criação literária (`/obraeurudita`)
+- ✅ **Playbook** - Gestão de playbooks
+- ✅ **Superstar** - Gestão de superstar
+- ✅ **Eventos Antigos** - Sistema de eventos existente (`/events`)
+- ✅ **Projetos** - Sistema de projetos (`/dashboard`)
+- ✅ **Merchandise** - Gestão de produtos
+- ✅ **Todos os steps e processos existentes**
+
+### Nova Plataforma de Eventos (Adicionada)
+- 🆕 **Sistema de Booking** - Reserva de venues
+- 🆕 **Marketplace de Serviços** - Contratação de serviços
+- 🆕 **Ticketing Integrado** - Venda de bilhetes
+- 🆕 **Split Automático** - Divisão de receitas
+
+## Rotas e Navegação
+
+### Rotas Existentes (Mantidas)
+- `/` - Homepage original (backlog de projetos)
+- `/obraeurudita` - Escrita literária
+- `/events` - Eventos antigos
+- `/playbook` - Playbooks
+- `/superstar` - Superstar
+- `/dashboard` - Dashboard de projetos
+- Todas as outras rotas existentes
+
+### Novas Rotas (Adicionadas)
+- `/events/create` - Criar novo evento (wizard de 6 passos)
+- `/events/[id]/staff/accept` - Aceitar convite de staff
+- `/venues` - Lista de venues
+- `/venues/[id]` - Página de venue
+- Rotas públicas de eventos
+
+## Integração
+
+### Como Funciona
+1. **Sistema Original**: Continua funcionando normalmente
+2. **Nova Plataforma**: Adicionada como módulo adicional
+3. **Compartilhamento**: Ambos usam o mesmo:
+   - Banco de dados Supabase
+   - Autenticação Clerk
+   - Código compartilhado (`packages/shared-logic`)
+
+### Dados Compartilhados
+- **Usuários**: Mesmo sistema de autenticação
+- **Venues**: Podem ser usados em ambos os sistemas
+- **Eventos**: Sistema antigo e novo coexistem
+- **Projetos**: Sistema original mantido
 
 ## Estrutura de Arquivos
 
 ```
-src/
-├── lib/
-│   ├── processes-config.ts      # Configuração central de todos os processos
-│   ├── process-factory.ts       # Factory para criar/gerir instâncias
-│   └── module-connector.ts      # Sistema de conexão entre módulos
-├── hooks/
-│   ├── use-process-manager.ts   # Hook unificado para gerir processos
-│   ├── use-project.ts           # Hook específico para projetos de música
-│   └── use-events.ts            # Hook específico para eventos
+apps/web/src/
+├── app/
+│   ├── page.tsx              # Homepage original (BACKLOG)
+│   ├── page-new.tsx          # Nova homepage de eventos (opcional)
+│   ├── (demo)/
+│   │   ├── obraeurudita/     # Escrita (mantido)
+│   │   ├── events/           # Eventos antigos (mantido)
+│   │   ├── playbook/         # Playbook (mantido)
+│   │   └── ...               # Todas funcionalidades originais
+│   ├── events/               # NOVO - Sistema de eventos
+│   │   ├── create/           # Wizard de 6 passos
+│   │   └── [id]/             # Detalhes do evento
+│   └── venues/               # NOVO - Gestão de venues
 ├── components/
-│   └── process-manager/         # Componentes para gestão de processos
-└── app/
-    └── (demo)/                   # Páginas dos processos
+│   ├── ...                   # Componentes originais (mantidos)
+│   ├── events/               # NOVO - Componentes de eventos
+│   └── staff/                # NOVO - Componentes de staff
+├── hooks/
+│   ├── use-project.ts        # Hook original (mantido)
+│   └── ...                   # Todos hooks originais
+└── steps/
+    └── ...                   # Todos os steps originais (mantidos)
 ```
 
-## Como Adicionar um Novo Processo
+## Decisões de Design
 
-### 1. Adicionar Configuração
+### Homepage
+- **Opção 1**: Manter `page.tsx` original como homepage principal
+- **Opção 2**: Criar rota `/events-platform` para nova plataforma
+- **Opção 3**: Fazer homepage híbrida (mostrar ambos)
 
-Em `src/lib/processes-config.ts`:
+### Navegação
+- Sidebar original mantida
+- Nova navegação para eventos pode ser adicionada
+- Ambos sistemas acessíveis
 
-```typescript
-{
-  id: "meu-processo",
-  type: "custom",
-  label: "Meu Processo",
-  href: "/meu-processo",
-  section: "Processo X",
-  icon: MeuIcon,
-  description: "Descrição do processo",
-  enabled: true,
-  order: 13,
-  dbStore: "meuProcesso",
-  features: {
-    save: true,
-    export: true,
-    share: true,
-    templates: true,
-    analytics: true,
-  },
-  metadata: {
-    color: "blue",
-    category: "criação",
-    tags: ["tag1", "tag2"],
-  },
-}
-```
+## Migração e Compatibilidade
 
-### 2. Criar Página
+### Zero Breaking Changes
+- ✅ Nenhuma funcionalidade original foi removida
+- ✅ Todas as rotas antigas funcionam
+- ✅ Todos os componentes originais preservados
+- ✅ Banco de dados expandido (não substituído)
 
-Criar `src/app/(demo)/meu-processo/[id]/page.tsx`:
+### Adições
+- ✅ Novas tabelas no Supabase
+- ✅ Novas APIs
+- ✅ Novos componentes
+- ✅ Novo fluxo de eventos
 
-```typescript
-"use client";
+## Próximos Passos
 
-import { useProcessManager } from "@/hooks/use-process-manager";
-import { processFactory } from "@/lib/process-factory";
+1. **Decidir homepage**: Manter original ou criar híbrida
+2. **Navegação**: Adicionar link para nova plataforma no menu
+3. **Integração**: Conectar eventos antigos com novo sistema (opcional)
+4. **Documentação**: Atualizar guias de uso
 
-export default function MeuProcessoPage({ params }: { params: { id: string } }) {
-  const { loadInstances, saveInstance } = useProcessManager();
-  // ... implementação
-}
-```
+## Notas Importantes
 
-### 3. (Opcional) Criar Hook Específico
-
-Se necessário, criar hook em `src/hooks/use-meu-processo.ts`:
-
-```typescript
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { saveToIndexedDB, loadFromIndexedDB } from "@/lib/meu-processo-db";
-
-export const useMeuProcesso = create(
-  persist(
-    (set, get) => ({
-      // ... estado
-    }),
-    { name: "meuProcessoAtual" }
-  )
-);
-```
-
-## Sistema de Conexão entre Módulos
-
-### Registrar Conexão
-
-```typescript
-import { moduleConnector } from "@/lib/module-connector";
-
-moduleConnector.registerConnection({
-  sourceProcessId: "music",
-  targetProcessId: "event",
-  connectionType: "data",
-  mapping: {
-    "songInfo.title": "overview.eventName",
-  },
-});
-```
-
-### Sincronizar Dados
-
-```typescript
-const syncedInstance = await moduleConnector.syncData(
-  sourceInstanceId,
-  targetProcessId
-);
-```
-
-## Factory Pattern
-
-### Criar Instância
-
-```typescript
-import { processFactory } from "@/lib/process-factory";
-
-const instance = await processFactory.create("event", {
-  overview: { eventName: "Meu Evento" }
-});
-```
-
-### Listar Instâncias
-
-```typescript
-const instances = await processFactory.list("event");
-```
-
-### Duplicar Instância
-
-```typescript
-const duplicated = await processFactory.duplicate(instanceId);
-```
-
-## Process Manager Hook
-
-Hook unificado para gerir todos os processos:
-
-```typescript
-import { useProcessManager } from "@/hooks/use-process-manager";
-
-function MyComponent() {
-  const {
-    processes,
-    instances,
-    createInstance,
-    deleteInstance,
-    duplicateInstance,
-    getInstancesByProcess,
-  } = useProcessManager();
-
-  // Usar...
-}
-```
-
-## Componente ProcessManager
-
-Componente React para exibir e gerir processos:
-
-```typescript
-import { ProcessManager } from "@/components/process-manager/ProcessManager";
-
-<ProcessManager 
-  filterByCategory="criação"
-  showCreateButton={true}
-  viewMode="grid"
-/>
-```
-
-## Persistência
-
-Todos os processos usam IndexedDB para persistência local:
-
-- **projects**: Projetos de música
-- **events**: Eventos/Concertos
-- **processInstances**: Instâncias gerais de processos
-- Outros stores específicos por processo
-
-## Extensibilidade
-
-### Adicionar Features
-
-1. Adicionar feature flag em `ProcessConfig.features`
-2. Implementar lógica na página do processo
-3. Usar `processFactory` para persistência
-
-### Adicionar Templates
-
-1. Criar template em `src/lib/templates/`
-2. Adicionar referência em `ProcessConfig`
-3. Usar no componente do processo
-
-## Boas Práticas
-
-1. **Sempre usar `processFactory`** para criar/gerir instâncias
-2. **Usar `useProcessManager`** para acesso unificado
-3. **Configurar conexões** entre processos relacionados
-4. **Manter configuração centralizada** em `processes-config.ts`
-5. **Documentar novos processos** no README
-
-## Roadmap
-
-- [ ] Sistema de plugins/extensões
-- [ ] Sincronização em tempo real entre abas
-- [ ] Exportação/importação de configurações
-- [ ] Sistema de templates avançado
-- [ ] Analytics e métricas por processo
-- [ ] API REST para processos
-- [ ] Sincronização cloud (opcional)
-
+- **Tudo funciona**: Sistema original 100% funcional
+- **Adição, não substituição**: Nova plataforma é complementar
+- **Escolha do usuário**: Pode usar ambos sistemas
+- **Evolução gradual**: Migração opcional no futuro

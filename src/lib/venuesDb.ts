@@ -4,17 +4,62 @@ export type Venue = {
   name: string;
   city?: string;
   country?: string;
-  capacity?: number;
+  address?: string; // Endereço completo
+  capacity?: number | string; // Pode ser "30-80 (confirmar)"
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
   url?: string;
   photoUrl?: string; // legacy single photo
   photos?: string[]; // gallery of photos
+  instagramUrl?: string;
+  facebookUrl?: string;
   region?: string; // Norte | Centro | Sul | Ilhas | outro
   lat?: number;
   lng?: number;
   notes?: string;
+  cae?: string; // Código de Atividade Económica (ex: 90040, 93290, 56302, 93293)
+
+  // Modelo de remuneração
+  remunerationModel?: "flat" | "percentage" | "bar_split" | "minimum_guaranteed" | "negotiable" | string;
+  agreement?: string; // Descrição do acordo (ex: "70-30", "aluguer fixo", "bar split")
+
+  // Informações técnicas
+  equipment?: string; // PA, backline, iluminação, etc.
+  technicalRider?: string; // Contacto para envio de rider técnico
+
+  // Horários e logística
+  openingHours?: string; // Horários de abertura/fecho
+  curfew?: string; // Curfew/licenças
+  loadIn?: string; // Janela de load-in
+  loadOut?: string; // Janela de load-out
+  access?: string; // Acessos (carrinha, elevador)
+
+  // Staff e custos
+  doorStaff?: string; // Bilheteira/door staff e custos
+  technicalStaff?: string; // Disponibilidade de técnicos e custos
+
+  // Informações fiscais
+  responsibleEntity?: string; // Entidade responsável
+  nif?: string; // NIF
+  billingConditions?: string; // Condições de faturação
+  paymentMethod?: string; // Método de pagamento
+  paymentTerms?: string; // Prazo de pagamento
+
+  // SPA e registos
+  spaNumber?: string; // Nº de registo SPA
+  reportPolicy?: string; // Política de report
+
+  // Contactos adicionais
+  pressKitEmail?: string; // Email para press-kit/assets
+  operationalContact?: string; // Contacto operativo (telefone)
+
+  // Configuração da sala
+  roomConfiguration?: string; // Plateia/mesas
+
+  // Tipo de entidade
+  entityType?: "venue" | "event_production" | "other"; // Tipo de entidade: venue (espaço físico), event_production (produção de eventos), other (outros)
+
   createdAt: string; // ISO
   updatedAt: string; // ISO
 };
@@ -24,8 +69,8 @@ const STORE_NAME = 'venues';
 
 const initializeDB = () => {
   return new Promise<IDBDatabase>((resolve, reject) => {
-    // bump version to 2 to add new indexes (region)
-    const request = indexedDB.open(DB_NAME, 2);
+    // bump version to 4 to add entityType field
+    const request = indexedDB.open(DB_NAME, 4);
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
@@ -39,6 +84,8 @@ const initializeDB = () => {
       if (!idxNames.includes('name')) store.createIndex('name', 'name', { unique: false });
       if (!idxNames.includes('city')) store.createIndex('city', 'city', { unique: false });
       if (!idxNames.includes('region')) store.createIndex('region', 'region', { unique: false });
+      if (!idxNames.includes('cae')) store.createIndex('cae', 'cae', { unique: false });
+      // Bump version to 3 to add new fields
     };
 
     request.onsuccess = (event) => resolve((event.target as IDBOpenDBRequest).result);
@@ -46,14 +93,15 @@ const initializeDB = () => {
   });
 };
 
-export const addVenue = async (partial: Omit<Venue, 'id'|'createdAt'|'updatedAt'> & { id?: string }) => {
+export const addVenue = async (partial: Omit<Venue, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
   const now = new Date().toISOString();
   const venue: Venue = {
     id: partial.id || `venue-${Date.now()}`,
     name: partial.name?.trim() || 'Sem nome',
     city: partial.city?.trim(),
     country: partial.country?.trim(),
-    capacity: partial.capacity ? Number(partial.capacity) : undefined,
+    address: partial.address?.trim(),
+    capacity: typeof partial.capacity === 'string' ? partial.capacity : (partial.capacity ? Number(partial.capacity) : undefined),
     contactName: partial.contactName?.trim(),
     contactEmail: partial.contactEmail?.trim(),
     contactPhone: partial.contactPhone?.trim(),
@@ -64,6 +112,28 @@ export const addVenue = async (partial: Omit<Venue, 'id'|'createdAt'|'updatedAt'
     lat: partial.lat,
     lng: partial.lng,
     notes: partial.notes?.trim(),
+    cae: partial.cae?.trim(),
+    remunerationModel: partial.remunerationModel,
+    agreement: partial.agreement?.trim(),
+    equipment: partial.equipment?.trim(),
+    technicalRider: partial.technicalRider?.trim(),
+    openingHours: partial.openingHours?.trim(),
+    curfew: partial.curfew?.trim(),
+    loadIn: partial.loadIn?.trim(),
+    loadOut: partial.loadOut?.trim(),
+    access: partial.access?.trim(),
+    doorStaff: partial.doorStaff?.trim(),
+    technicalStaff: partial.technicalStaff?.trim(),
+    responsibleEntity: partial.responsibleEntity?.trim(),
+    nif: partial.nif?.trim(),
+    billingConditions: partial.billingConditions?.trim(),
+    paymentMethod: partial.paymentMethod?.trim(),
+    paymentTerms: partial.paymentTerms?.trim(),
+    spaNumber: partial.spaNumber?.trim(),
+    reportPolicy: partial.reportPolicy?.trim(),
+    pressKitEmail: partial.pressKitEmail?.trim(),
+    operationalContact: partial.operationalContact?.trim(),
+    roomConfiguration: partial.roomConfiguration?.trim(),
     createdAt: now,
     updatedAt: now,
   };
@@ -133,6 +203,22 @@ export const searchVenues = async (q: string): Promise<Venue[]> => {
     v.name.toLowerCase().includes(term) ||
     (v.city?.toLowerCase().includes(term) ?? false) ||
     (v.country?.toLowerCase().includes(term) ?? false) ||
+    (v.cae?.toLowerCase().includes(term) ?? false) ||
     (v.notes?.toLowerCase().includes(term) ?? false)
   );
+};
+
+// Initialize database with default venues if empty
+export const initializeDefaultVenues = async (defaultVenues: Array<Omit<Venue, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }>) => {
+  const existing = await getAllVenues();
+  if (existing.length > 0) return; // Already initialized
+
+  // Add all default venues
+  for (const v of defaultVenues) {
+    try {
+      await addVenue(v);
+    } catch (error) {
+      console.warn(`Failed to add default venue ${v.name}:`, error);
+    }
+  }
 };

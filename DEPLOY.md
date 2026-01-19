@@ -21,11 +21,18 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_ID_UNDERGROUND_ANNUAL=price_...
 
+# Supabase (Cloud Sync / Public Catalog)
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+# Opcional (server-side / admin ops). Se não colocares, algumas rotas admin podem ficar limitadas:
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+
 # Sentry Error Tracking (Opcional)
 NEXT_PUBLIC_SENTRY_DSN=https://...
 
 # App URL
 NEXT_PUBLIC_APP_URL=https://seu-dominio.com
+APP_URL=https://seu-dominio.com
 
 # SMTP (Opcional - para emails)
 SMTP_HOST=smtp.gmail.com
@@ -33,7 +40,16 @@ SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 SMTP_FROM=noreply@pretosmusic.com
+
+# (Opcional) Maps / Integrações
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=...
+NEXT_PUBLIC_MAPBOX_TOKEN=...
+NEXT_PUBLIC_ORS_KEY=...
+NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN=xxxx.myshopify.com
+NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN=...
 ```
+
+> Nota: A rota `POST /api/analyze` (métrica) já não depende de um servidor Flask local para funcionar em produção/Vercel. Em desenvolvimento, ainda pode usar Flask se `METER_API_URL` estiver definido (ou se estiveres em `NODE_ENV=development`).
 
 ### 2. Configurar Stripe
 

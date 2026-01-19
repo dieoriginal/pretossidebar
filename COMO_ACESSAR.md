@@ -42,7 +42,7 @@
 - **MultiVenueSelector** - Sistema de múltiplas venues
   - Venue Principal (verde)
   - Venues de Backup (amarelo)
-  - Filtro por capacidade
+  - Filtro por lotação
   - Filtro por cidade
   - Busca de venues
 
@@ -71,13 +71,13 @@
 
 ### 3. Múltiplas Venues
 - Venue principal + backups
-- Filtro automático por capacidade
+- Filtro automático por lotação
 - Filtro por cidade
-- Reconhecimento técnico de capacidade
+- Reconhecimento técnico de lotação
 
 ### 4. Dashboard de Lucro
 - Cálculo automático baseado em:
-  - Capacidade
+  - Lotação
   - Preço bilhetes
   - Taxa ocupação
   - Patrocínios

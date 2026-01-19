@@ -1,0 +1,10 @@
+.pause {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.1s;
+}
+
+.pause:hover {
+  cursor: pointer;
+  transform: scale(1.1);
+}

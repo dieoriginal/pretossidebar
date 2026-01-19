@@ -1,0 +1,15 @@
+ 
+.wrapper {
+    display: grid;
+    grid-template-columns: auto 30%;
+    height: 70px; /* Ajustando a altura para ser menor */
+    width: 350px; /* Ajustando a largura para ser menor */
+    margin-bottom: 0; /* Removendo a margem inferior */
+}
+
+@media only screen and (max-width: 800px) {
+    .wrapper {
+        grid-template-columns: 1fr;
+        height: auto; /* Ajustando a altura para telas menores */
+    }
+}

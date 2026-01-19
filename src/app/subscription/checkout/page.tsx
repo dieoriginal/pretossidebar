@@ -12,7 +12,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, CreditCard, Check } from "lucide-react";
 import { SUBSCRIPTION_PLANS } from "@/lib/subscriptions";
 
-export default function CheckoutPage() {
+function CheckoutFallback() {
+  return (
+    <div className="container py-12">
+      <div className="mx-auto max-w-2xl">
+        <h1 className="mb-8 text-3xl font-bold">Escolhe o Teu Plano</h1>
+        <Card className="border-2 border-yellow-500/40">
+          <CardHeader>
+            <CardTitle>Clerk não configurado</CardTitle>
+            <CardDescription>
+              Para ativar checkout/autenticação, define <code>NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code> e{" "}
+              <code>CLERK_SECRET_KEY</code> nas variáveis de ambiente (Vercel → Project → Settings → Environment Variables).
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function CheckoutWithClerk() {
   const { user } = useUser();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -109,3 +128,12 @@ export default function CheckoutPage() {
   );
 }
 
+export default function CheckoutPage() {
+  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const isClerkConfigured =
+    typeof clerkPublishableKey === "string" &&
+    /^pk_(test|live)_[A-Za-z0-9]+$/.test(clerkPublishableKey) &&
+    !clerkPublishableKey.includes("XXXX") &&
+    !clerkPublishableKey.includes("xxxx");  if (!isClerkConfigured) return <CheckoutFallback />;
+  return <CheckoutWithClerk />;
+}

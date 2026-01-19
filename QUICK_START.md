@@ -1,82 +1,118 @@
-# 🚀 Quick Start: Criar Release no GitHub
+# Quick Start - Como Executar o Projeto
 
-## Passo 1: Criar GitHub Token
+## ⚠️ Instalação Inicial
 
-1. Vai para: **https://github.com/settings/tokens**
-2. Clica em **"Generate new token"** > **"Generate new token (classic)"**
-3. Dá um nome: `electron-auto-updater`
-4. Marca a permissão: **`repo`** (Full control of private repositories)
-5. Clica em **"Generate token"**
-6. **COPIA O TOKEN** (começa com `ghp_`)
-
-## Passo 2: Configurar Token
+### 1. Instalar Dependências (Raiz)
 
 ```bash
-# Opção 1: Temporário (apenas esta sessão)
-export GH_TOKEN="ghp_seu_token_aqui"
-
-# Opção 2: Permanente (adiciona ao ~/.zshrc)
-echo 'export GH_TOKEN="ghp_seu_token_aqui"' >> ~/.zshrc
-source ~/.zshrc
+npm install
 ```
 
-## Passo 3: Criar Release Automaticamente
+### 2. Instalar Dependências dos Workspaces
 
 ```bash
-# Se GH_TOKEN estiver configurado
-node scripts/create-github-release.js
+# Instalar no web app
+cd apps/web
+npm install
 
-# Ou passar token diretamente
-node scripts/create-github-release.js --token=ghp_seu_token_aqui
+# Instalar no mobile app
+cd ../../apps/mobile
+npm install
+
+# Instalar no shared-logic
+cd ../../packages/shared-logic
+npm install
+
+# Voltar para raiz
+cd ../..
 ```
 
-O script irá:
-- ✅ Verificar se os DMGs existem
-- ✅ Criar a release no GitHub
-- ✅ Fazer upload automático dos DMGs
-- ✅ Configurar auto-updates
+Ou execute tudo de uma vez:
+```bash
+npm run install:all
+```
 
-## Passo 4: Testar Auto-Updates
+## 🚀 Executar o Projeto
 
-1. **Instalar versão atual:**
-   ```bash
-   open release/Faz\ Teu\ Mambo-0.1.0.dmg
-   ```
-
-2. **Incrementar versão e criar nova release:**
-   ```bash
-   # Editar package.json: "version": "0.1.1"
-   npm run build && npm run electron:compile && npm run electron:dist
-   node scripts/create-github-release.js
-   ```
-
-3. **Abrir aplicação instalada** - deve detectar atualização automaticamente!
-
----
-
-## Alternativa: Manual (sem token)
-
-Se não quiseres configurar o token, podes criar a release manualmente:
-
-1. Vai para: **https://github.com/dieoriginal/pretossidebar/releases**
-2. Clica em **"Draft a new release"**
-3. **Tag**: `v0.1.0` (deve corresponder à versão no package.json)
-4. **Title**: `v0.1.0 - Faz Teu Mambo Desktop App`
-5. **Description**: Adiciona notas da release
-6. **Arrasta os DMGs** de `release/`:
-   - `Faz Teu Mambo-0.1.0.dmg`
-   - `Faz Teu Mambo-0.1.0-arm64.dmg`
-7. Clica em **"Publish release"**
-
----
-
-## Verificar se Funcionou
+### Opção 1: Usando Scripts da Raiz
 
 ```bash
-# Verificar release criada
-curl https://api.github.com/repos/dieoriginal/pretossidebar/releases/latest
+# Web app
+npm run dev:web
 
-# Ou abrir no browser
-open https://github.com/dieoriginal/pretossidebar/releases
+# Mobile app
+npm run dev:mobile
 ```
 
+### Opção 2: Executar Diretamente
+
+```bash
+# Web app
+cd apps/web
+npm run dev
+
+# Mobile app (em outro terminal)
+cd apps/mobile
+npm run start
+```
+
+### Opção 3: Usando Turbo (quando instalado)
+
+```bash
+npm install turbo --save-dev
+npm run dev
+```
+
+## 🔧 Configuração
+
+### 1. Variáveis de Ambiente
+
+Criar `.env.local` na raiz ou em `apps/web/.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
+CLERK_SECRET_KEY=your_clerk_secret
+STRIPE_SECRET_KEY=your_stripe_secret
+NEXT_PUBLIC_APP_URL=http://localhost:3006
+```
+
+### 2. Executar Schema do Supabase
+
+Executar `supabase-schema.sql` no SQL Editor do Supabase Dashboard.
+
+## ✅ Verificar Instalação
+
+### Web App
+```bash
+cd apps/web
+npm run dev
+# Deve abrir em http://localhost:3006
+```
+
+### Mobile App
+```bash
+cd apps/mobile
+npm run start
+# Deve abrir Expo
+```
+
+## 🐛 Troubleshooting
+
+### Erro: "turbo: command not found"
+- **Solução**: Use `npm run dev:web` ou `npm run dev:mobile`
+- Ou instale turbo: `npm install turbo --save-dev`
+
+### Erro: "module not found"
+- **Solução**: Execute `npm run install:all` na raiz
+- Ou instale manualmente em cada workspace
+
+### Erro: "shared-logic not found"
+- **Solução**: Verifique que `packages/shared-logic` tem `package.json`
+- Execute `npm install` na raiz
+
+### Erro: Porta em uso
+- **Solução**: Pare outros processos ou mude a porta no `package.json`## 📝 Notas- Os scripts da raiz usam comandos diretos (não dependem do Turbo)
+- Turbo é opcional, mas recomendado para builds paralelos
+- Cada workspace tem seu próprio `package.json`

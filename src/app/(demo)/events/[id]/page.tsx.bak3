@@ -1,0 +1,4455 @@
+"use client";
+
+import React, { useState, useMemo, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useEvents } from "@/hooks/use-events";
+import { loadEventFromIndexedDB } from "@/lib/events-db";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+// addVenue is used for inline venue creation in the Venues step
+import { addVenue, getAllVenues, Venue } from "@/lib/venuesDb";
+import {
+  FileText,
+  Download,
+  Calendar,
+  Users,
+  DollarSign,
+  Settings,
+  BarChart3,
+  MapPin,
+  Ticket,
+  Megaphone,
+  Plus,
+  X,
+  Info,
+  Mail,
+  Clock,
+  Building,
+  User,
+  Phone,
+  Shirt,
+  Music,
+  CalendarClock,
+  Truck
+} from "lucide-react";
+import jsPDF from "jspdf";
+import Image from "next/image";
+import { ProfitDashboard } from "@/components/events/ProfitDashboard";
+import { MultiVenueSelector } from "@/components/events/MultiVenueSelector";
+import { EventMarketingServices } from "@/components/campaign/EventMarketingServices";
+import { Separator } from "@/components/ui/separator";
+import {
+  VenueStep,
+  AdvertisingStep,
+  VolunteerStep,
+  SpeakerStep,
+  SponsorStep,
+  ProducerStep,
+  StageStep,
+  AttendeesStep,
+} from "@/components/events/EventStepComponents";
+
+interface Step {
+  name: string;
+  link: string;
+  timeframe: string;
+  description: string;
+  status: "completed" | "current" | "upcoming";
+  icon: React.ReactNode;
+}
+
+interface Production {
+  sound: string;
+  lighting: string;
+  stage: string;
+  crew: Array<{ role: string; name: string; contact: string; gear?: string; deal?: string }>;
+  // ... resto do código
+}
+
+interface EventData {
+  id?: string;
+  overview: {
+    eventName: string;
+    eventType: string;
+    date: string;
+    venue: string;
+    city?: string;
+    capacity: number;
+    description: string;
+    organizerName: string;
+    organizerContact: string;
+  };
+  venues?: {
+    primary: Venue | null;
+    backups: Venue[];
+    requiredCapacity: number;
+  };
+  venueContact?: {
+    name: string;
+    email: string;
+    phone: string;
+    emailSent?: boolean;
+    emailSentDate?: string | null;
+    confirmed?: boolean;
+    confirmedDate?: string | null;
+  };
+  finance: {
+    budget: number;
+    ticketPrice: number;
+    sponsorship: number;
+    expenses: Array<{ name: string; amount: number }>;
+    venueSplit: number; // 70-30 split
+    cachetPago?: number; // Para third party events
+    expectedAttendance?: number;
+    merchPerPerson?: number;
+    estimatedProfit?: number;
+  };
+  lineup: {
+    artists: Array<{ name: string; time: string; fee: number; contact: string; instagram: string; spotify: string }>;
+    soundcheck: string;
+    curfew: string;
+    schedule?: Array<any>;
+  };
+  production: {
+    sound: string;
+    lighting: string;
+    stage: string;
+    crew: Array<{ role: string; name: string; contact: string; gear?: string; deal?: string }>;
+    technicalRider?: string;
+    technicalRiderConfirmed?: boolean;
+    team?: Array<any>;
+    estimatedCost?: number;
+  };
+  logistics: {
+    address: string;
+    parking: string;
+    loadIn: string;
+    loadOut: string;
+    catering: string;
+    material: Array<{ id: string; name: string; category: string; checked: boolean; returned: boolean }>; // Material que vai levar
+    travelOutfit: Array<{ id: string; name: string; category: string; checked: boolean; returned: boolean }>; // Roupa que vai vestir até chegar no local
+    estimatedCost?: number;
+    transport?: string;
+    accommodation?: string;
+  };
+  tickets: {
+    totalTickets: number;
+    soldTickets: number;
+    priceTiers: Array<{ name: string; price: number; quantity: number }>;
+    policy?: string;
+    prices?: Record<string, any>;
+  };
+  marketing: {
+    socialMedia: Array<{ platform: string; content: string; scheduled: string }>;
+    pressRelease: string;
+    influencers: Array<{ name: string; reach: number; fee: number }>;
+    strategy?: string;
+    assets?: string;
+    budget?: number;
+  };
+  month?: number;
+  year?: number;
+  week?: number;
+  template?: boolean;
+  templates: {
+    artistConfirmation: string;
+    venueProposal: string;
+  };
+  wardrobe: {
+    selectedHairstyles: string[];
+    selectedGlasses: string[];
+    selectedHeadWear: string[];
+    selectedSuperior: string[];
+    selectedPants: string[];
+    selectedShoes: string[];
+    selectedNeckAccessories: string[];
+    selectedBracelets: string[];
+    selectedWatch: string[];
+    selectedBelt: string[];
+    customItems: { name: string; category: string; price: number }[];
+    totalPrice: number;
+  };
+  setlist: {
+    songs: Array<{ name: string; autotuneNote: string; order: number; time: string }>;
+    autotuneSetting: string;
+    voiceType: "auto-tenor" | "low-male" | "";
+  };
+  rehearsalNotes: {
+    decisions: Array<{ song: string; decision: string; notes: string }>;
+    breathingIssues: Array<{ song: string; part: string; notes: string; timestamp?: string }>;
+    generalNotes: string;
+  };
+  dayItinerary: {
+    date: string;
+    location: string;
+    travelDetails: Array<{ id: string; type: string; time: string; details: string; notes: string }>;
+    accommodation: string;
+    clothingStores: Array<{ id: string; name: string; address: string; time: string; notes: string }>;
+    meals: Array<{ id: string; date: string; time: string; location: string; whatToEat: string; price: number }>;
+    soundcheckTime: string;
+    venueOpenTime: string;
+    studioVisits: Array<{ id: string; studio: string; artist: string; time: string; purpose: string; notes: string }>;
+    voicePractice: Array<{ id: string; type: string; time: string; duration: string; notes: string }>;
+    hydrationReminders: Array<{ id: string; time: string; completed: boolean; tip?: string }>;
+    audienceReminders: Array<{ id: string; time: string; completed: boolean; tip: string }>;
+    otherNotes: string;
+  };
+}
+
+interface Venue {
+  id: string;
+  name: string;
+  city: string;
+  capacity: string;
+  address: string;
+  responsible: string;
+  phone: string;
+  email: string;
+  website: string;
+  equipment: string;
+  agreement: string;
+  notes: string;
+  source: string;
+}
+
+const MultiStepper: React.FC<{
+  steps: Step[];
+  currentStep: number;
+  onStepClick?: (index: number) => void;
+}> = ({ steps, currentStep, onStepClick }) => {
+  const progressPercentage = ((currentStep + 1) / steps.length) * 100;
+
+  return (
+    <div className="flex flex-col gap-4 w-full overflow-x-auto">
+      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
+        <div
+          className="h-full bg-primary transition-all duration-300"
+          style={{ width: `${progressPercentage}%` }}
+        />
+      </div>
+     
+      <div className="flex items-center justify-between relative">
+        {steps.map((step, index) => (
+          <div key={step.name} className="flex flex-col items-center flex-1 min-w-[80px]">
+            <div className="flex items-center w-full">
+              <button
+                type="button"
+                onClick={() => onStepClick && onStepClick(index)}
+                className="flex items-center w-full focus:outline-none"
+              >
+                <Tooltip>
+                  <TooltipTrigger>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center border-2 text-sm font-medium transition-colors duration-300 ${
+                        index <= currentStep
+                          ? "bg-primary text-white border-primary shadow-lg"
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                      }`}
+                    >
+                      {step.icon}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{step.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </button>
+              {index !== steps.length - 1 && (
+                <div
+                  className={`flex-1 h-1 border-t-2 ${
+                    index < currentStep ? "bg-primary border-primary" : "bg-gray-300 dark:bg-gray-600 border-gray-300 dark:border-gray-600"
+                  } mx-2`}
+                ></div>
+              )}
+            </div>
+            <span className="mt-2 text-xs text-center font-medium">{step.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Event type descriptions database
+const EVENT_TYPE_DESCRIPTIONS: Record<string, string> = {
+  "diepretty-world": `Uma Noite com Diepretty Mercédes — Concertos & Eventos Ao Vivo (festival / tours / showcases / parties)
+
+CAE principais:
+90010 — Atividades das artes do espetáculo (Festas e Concertos)
+90020 — Serviços de apoio às artes do espetáculo (som, luz, montagem, aluguer de equipamento)
+
+Conceito global (resumido)
+Uma marca-evento centrada em Diepretty Mercédes que combina: concerto principal intimista/club, festa hip-hop para Gen Z, transmissões pay-per-view (híbrido/metaverse), mini-digressão universitária e pop-ups em clubes/warehouses. O formato é flexível: pode ser uma noite única com várias experiências simultâneas (palco principal + club takeover + stream) ou uma série curta (mini-tour / secret shows + festa after-hours).
+
+Formatos incluídos (cada um com conceito, receitas e 3 passos)
+1) Concerto Principal + Festas de Hip-Hop (Gen Z)
+Conceito: Vários atos curtos + DJ sets; vibe de festa jovem com Diepretty como headliner. Receitas: bilhetes (tiered), merch, patrocínios lifestyle, F&B, venda de stands. 3 passos: 1) fechar line-up e local; 2) vender early bird + procurar sponsors; 3) produzir som/luz, segurança e bilhética.
+
+2) Evento Híbrido — Metaverse / PPV
+Conceito: Concerto ao vivo com transmissão pay-per-view e experiência digital (camadas exclusivas para espectadores remotos). Público presencial 30–200 pax por sala (intimista). Receitas: bilhetes presenciais, PPV/streaming, patrocínios digitais, VOD pós-evento. 3 passos: 1) preparar infraestrutura de transmissão profissional; 2) vender combos presencial+stream; 3) entregar VOD e analytics pós-evento.
+
+3) Mini-digressão Universitária / Espetáculos Secretos
+Conceito: Tour curta por espaços intimistas (campus, salas secretas). Aposta em exclusividade e boca-a-boca. Receitas: bilhetes acessíveis por volume, merch, parcerias académicas. 3 passos: 1) fechar locais e calendário; 2) promoção segmentada (campus ambassadors); 3) vender ingressos limitados e maximizar merch.
+
+4) Invasão de Clube / Festa em Armazém (Warehouse Party)
+Conceito: Takeover underground com estética rave/warehouse. After-hours e experiência imersiva. Receitas: bilhetes, bar, merch, patrocínios locais. 3 passos: 1) fechar venue e promoter; 2) anunciar line com urgência (drop marketing); 3) operar som/segurança/produção.
+
+5) Festa de Lançamento / Show de Apresentação (com VIP)
+Conceito: Evento de lançamento de single/álbum com área VIP, meet & greet e bundles exclusivos. Receitas: bilhetes VIP/GA, bundles (álbum+merch+acesso exclusivo), subscrições de fã-club. 3 passos: 1) definir oferta VIP e bundles; 2) presale exclusiva para superfãs; 3) executar show e ativar upsells no local.
+
+Público-alvo
+Fãs Gen Z e Millennials (hip-hop / RnB / urban culture)
+Gatekeepers: promotores, bookers, programadores de clubes
+Marca lifestyle e parceiros de tecnologia para streaming
+Comunidades de campus e scenes locais underground
+
+Estrutura proposta para "one-night" (evento-hub com várias experiências)
+Palco Principal (Concerto): 60–90 min headliner + 2–3 suportes
+Club Room / Warehouse (After): festa até tarde com DJs e takeover
+Streaming Booth / Studio: equipa de transmissão + câmeras multicam para PPV
+Merch & Bundles Pop-up: vendas direct-to-fan + presales fan-club
+Área VIP / Meet & Greet: acesso pago limitado
+Backstage / Production Hub: catering, rider, descanso para artistas
+Bilheteira & Credenciação: entradas separadas para salas presenciais/PPV check-in
+
+Agenda exemplo (one-night)
+19:00 — Doors (merch & catering abrem)
+20:00 — Warm-up DJ + primeira atração (showcase)
+21:00 — Mini-sets de suporte (2 artistas)
+22:15 — Diepretty Mercédes — Show principal (45–60 min) + interação VIP
+23:30 — After-party (warehouse / club takeover) com DJs até 03:00
+Transmissão PPV ativa durante o concerto principal; VOD disponível 24h após o evento.
+
+
+Checklist operacional essencial
+Contratos: artista, venue, fornecedores (som, luz, streaming).
+Rider e logística artística (transportes, alojamento se necessário).
+Licenças: música, ocupação, venda de bebidas/comida.
+Segurança & seguros (event insurance, crowd management).
+Infra streaming: uplink dedicado, encoders, redundância de internet.
+Bilhética: sistema ticketing com verificações (RFID/barcode), controle de entradas para áreas VIP.
+Equipa: production manager, stage manager, audio techs, lighting techs, FOH engineer, monitor engineer, deck crew, security, front-of-house, merch & box office.
+Promoção: press kit, drops em redes sociais, parcerias campus, influencers locais.
+Pós-evento: upload VOD, analytics report, follow-up com patrocinadores e promoters.
+
+Risco & Mitigações rápidas
+Falha de stream → uplink de backup + fluxo de redundância; informar clientes e oferecer VOD gratuito se problema.
+Problemas de som → soundcheck rigoroso, técnico FOH experiente, backline de reserva.
+Overcapacity / segurança → plano de contingência com venue + segurança treinada.
+Baixas vendas early-bird → promo targeted (campus, playlists, influencers), bundle com merch.`,
+
+  "diepretty-beat-battles": `DIEPRETTY BEAT BATTLES - Batalha de Beats / Encontro de Produtores
+
+Conceito: Competição de beats + workshops técnicos.
+Receitas: inscrições/pagamento de participantes, patrocínios de marcas de equipamento, venda de conteúdos gravados.
+3 passos: estruturar formato e prémios → vender vagas + procurar sponsors tech → realizar competição e gravar conteúdo.`,
+
+  "industry-day": `Industry Day — Conferência & Dia de Networking (com Festival Urbano integrado)
+
+Conceito (resumido): Um evento de um dia que mistura conferência profissional para managers, selos, promoters e produtores com elementos de cultura urbana abertos ao público: showcases curtos, feira de streetwear/arte/comida, pop-up do selo e áreas de ativação (graffiti, skate, break). Objetivo: gerar negócios B2B, expor artistas e marcas, e criar networking orgânico entre indústria e público.
+
+Receitas
+Bilhetes (profissional — acesso à conferência / público geral — acesso às áreas urbanas e showcases).
+Stands de mercado urbano (taxas por vendor).
+Patrocínios (tiers B2B + lifestyle).
+Workshops pagos (masterclasses especializadas).
+Vendas de merch / % sobre vendas de artistas e marcas (rev-share).
+Bundles / presale do selo (álbum + merch + entrada VIP).
+
+Público-alvo
+Profissionais: managers, selos, bookers, promotores, produtores, agências.
+Público urbano: fãs, colecionadores, praticantes de skate/dance, marcas de streetwear.
+Parceiros: marcas lifestyle, plataformas de streaming, médias.
+
+3 passos para executar (integrado)
+Mapear e confirmar parceiros & conteúdo — speakers, selos, artistas para showcases, vendors de streetwear, marcas de lifestyle, workshops e jurados para jam.
+Comercializar & vender espaços — pacotes de patrocínio (B2B e lifestyle), stands do mercado, bilhetes (profissional + público), bundles do selo; lançar presale.
+Produzir o dia & operacionalizar matchmaking — montar áreas (auditório, jam, mercado, pop-up do selo), gerir credenciação, agenda de reuniões B2B e sistema de matchmaking (app ou sala dedicada).
+
+Estrutura / Áreas (essenciais)
+Auditório / Palco Conferência — keynotes, painéis, pitching sessions.
+Sala de Networking / Matchmaking Lounge — mesas por sector, área de speed-meetings.
+Jam Area (graffiti / break / skate demo) — programação contínua, ativação de marcas.
+Showcase Stage — sets de 15–25 min para artistas/selos.
+Mercado Urbano (vendors) — streetwear, food trucks, arte.
+Pop-up do Selo — bundles, presales, assinatura de fã-club.
+Workshops / Masterclasses (salas pequenas) — vendas separadas.
+Credenciação & Backstage — para delegados e artistas.
+
+Agenda exemplo (one-day)
+09:00 — Credenciação & café de boas-vindas (networking leve)
+10:00 — Abertura: keynote indústria + apresentação do formato do dia
+11:00 — Painéis: A&R & desenvolvimento de artistas / Revenue streams para selos
+12:30 — Almoço + Mercado urbano abre ao público
+13:30 — Masterclasses (paralelas) + speed-meetings B2B (matchmaking)
+15:00 — Showcase block A (artistas / selo) + pop-up activation
+16:30 — Painel: Marketing de rua e parcerias de lifestyle
+18:00 — Jam session (graffiti / break) + demos skate
+19:00 — Showcase block B + venda de bundles / meet & greet (limitado)
+21:00 — After-hours networking (DJ set / chill area)
+22:30 — Encerramento
+
+Pacotes de patrocínio (sugestão rápida)
+Title Sponsor (1) — naming rights, palco principal, 10 VIP passes, conteúdo branded no auditório.
+Gold (2–3) — stand premium, slot de 5 min no auditório, 5 passes VIP.
+Silver — stand + menção em materiais.
+Lifestyle Partners — ativações na jam/mercado, product placement.
+Media Partner — cobertura, bilhetes press.
+
+Credenciação & Matchmaking
+Vender bilhetes "Profissional (Conference Pass)" com acesso a painel + sala de networking.
+Criar formulário pré-evento para mapear interesses e agendar reuniões (ou usar app simples).
+Sessões de speed-meeting (10–12 min) coordenadas por tópico (bookers, selos, sync/licensing).
+
+KPI's a medir
+Nº de bilhetes vendidos (profissional / público).
+Nº de leads B2B gerados / reuniões agendadas.
+Receita por fonte (patrocínios, stands, bilhetes, workshops).
+Nº de negócios fechados pós-evento (follow-up 30/60 dias).
+Engajamento social e footfall por área.
+
+Checklist operacional essencial (resumido)
+Local com 4 zonas distintas (auditório, showcase, jam, mercado).
+Som/iluminação para palco e jam.
+Segurança e seguros (event insurance).
+Licenças (som, venda de comida, ocupação).
+Staffing: produção, credenciação, stage managers, floor managers, segurança.
+Plano de promoção (digital + PR + parcerias locais).
+Logística para artistas (camarins, rider simples, transporte se preciso).`,
+  "third-party-event": `Third Party Event — Evento contratado por terceiros.
+  
+Conceito: Festa ou evento onde foste contratado como artista ou produtor. Foco em logística pessoal, cachet pago e requisitos específicos do contratante.`
+};
+
+const VENUES_DATABASE: Venue[] = [
+  {
+    id: "1",
+    name: "Galeria Zé dos Bois (ZDB)",
+    city: "Lisboa",
+    capacity: "30-80 (confirmar)",
+    address: "Rua da Barroca nº59, 1200-047 Lisboa",
+    responsible: "",
+    phone: "+351 21 343 02 05",
+    email: "reservas@zedosbois.org",
+    website: "https://zedosbois.org/",
+    equipment: "PA disponível (confirmar rider)",
+    agreement: "A negociar (bilheteira / bar split)",
+    notes: "Espaço cultural com programação regular; confirmar capacidade da sala específica.",
+    source: "cite"
+  },
+  {
+    id: "2",
+    name: "Camones - Artes Bar",
+    city: "Lisboa (Graça)",
+    capacity: "30-60 (confirmar)",
+    address: "Graça, Lisboa (ver site/IG)",
+    responsible: "",
+    phone: "(reservas via Instagram / FB)",
+    email: "(ver Instagram/Facebook)",
+    website: "https://www.instagram.com/camonesartesbar/",
+    equipment: "PA / som house (confirmar)",
+    agreement: "Normalmente bar split / bilheteira local (confirmar)",
+    notes: "Local intimista com programação regular de concertos e open-mic.",
+    source: "cite"
+  },
+  {
+    id: "3",
+    name: "B.O.T.A (Base Organizada da Toca das Artes)",
+    city: "Lisboa (Anjos)",
+    capacity: "30-70 (confirmar)",
+    address: "Largo de Santa Bárbara, 3D, 1150-287 Lisboa",
+    responsible: "",
+    phone: "913 450 743",
+    email: "(ver site/contactos)",
+    website: "https://www.botaanjos.com/",
+    equipment: "PA / infra cultural (confirmar rider)",
+    agreement: "A negociar (frequentemente bilheteira / consumo)",
+    notes: "Espaço multidisciplinar, boa opção para shows intimistas.",
+    source: "cite"
+  },
+  {
+    id: "4",
+    name: "RCA Club",
+    city: "Lisboa (Alvalade)",
+    capacity: "30-100 (confirmar)",
+    address: "Rua João Saraiva, nº18, Alvalade, Lisboa",
+    responsible: "",
+    phone: "(ver Facebook)",
+    email: "(ver Facebook/contactos)",
+    website: "https://www.rcaclub.com/",
+    equipment: "PA e backline (club) - confirmar rider",
+    agreement: "Club split / bilheteira (negociável)",
+    notes: "Clube de rock com programação de concertos; boa opção para público alternativo.",
+    source: "cite"
+  },
+  {
+    id: "5",
+    name: "DAMAS - Bar & Sala de Concertos",
+    city: "Lisboa (Graça)",
+    capacity: "30-70 (confirmar)",
+    address: "Rua da Voz do Operário 60, Graça, Lisboa",
+    responsible: "",
+    phone: "351 912 162 249",
+    email: "damasreservas@gmail.com",
+    website: "https://www.instagram.com/damas.lisboa/",
+    equipment: "PA / setup para bandas e showcases (confirmar)",
+    agreement: "Consumo + bilheteira / bar split habitual",
+    notes: "Restaurante-bar com palco; ideal para shows intimistas e público 30-50.",
+    source: "cite"
+  },
+  {
+    id: "6",
+    name: "Maus Hábitos",
+    city: "Porto",
+    capacity: "40-120 (confirmar sala específica)",
+    address: "Rua Passos Manuel 178, 4º, 4000-382 Porto",
+    responsible: "",
+    phone: "351 937 202 918",
+    email: "geral@maushabitos.com / viciosdemesa@maushabitos.com",
+    website: "https://www.maushabitos.com/",
+    equipment: "Infra para concertos; PA disponível (confirmar rider)",
+    agreement: "Bilheteira / contrato por evento (negociável)",
+    notes: "Espaço cultural com historial de concertos; ideal para shows independentes.",
+    source: "cite"
+  },
+  {
+    id: "7",
+    name: "Hot Five Jazz & Blues Club",
+    city: "Porto",
+    capacity: "30-60 (confirmar)",
+    address: "Rua Guerra Junqueiro, nº495, 4150-098 Porto",
+    responsible: "",
+    phone: "(ver site)",
+    email: "(ver site/contactos)",
+    website: "https://hotfive.pt/",
+    equipment: "PA adequado para jazz/blues - confirmar rider",
+    agreement: "Bilheteira / consumação (negociável)",
+    notes: "Clube especialista em jazz/blues, sessões regulares e jam nights.",
+    source: "cite"
+  },
+  {
+    id: "8",
+    name: "M.Ou.Co (Hotel & música)",
+    city: "Porto (Bonfim)",
+    capacity: "30-80 (confirmar)",
+    address: "Rua de Frei Heitor Pinto 67, Porto",
+    responsible: "",
+    phone: "(ver site)",
+    email: "(ver site)",
+    website: "(hotel / espaços privados)",
+    equipment: "Espaço com infra para música (confirmar)",
+    agreement: "Eventos privados / programações do hotel (negociável)",
+    notes: "Hotel temático de música — opções de salas intimistas para showcases.",
+    source: "cite"
+  },
+  {
+    id: "9",
+    name: "TEXAS Club Leiria",
+    city: "Leiria (Barreiros/Amor)",
+    capacity: "40-200 (confirmar sala)",
+    address: "R. Padre Margalhau / R. Padre Joaquim G. Margalhau nº 1390, Amor/Barreiros, Leiria",
+    responsible: "",
+    phone: "(ver Facebook / Instagram / site)",
+    email: "(ver redes sociais)",
+    website: "https://www.facebook.com/texasleiria/",
+    equipment: "Sala de espetáculos; PA (confirmar rider)",
+    agreement: "Venda de bilhetes / promotoria local (negociável)",
+    notes: "Histórico de concertos desde 1992; boa opção regional.",
+    source: "cite"
+  },
+  {
+    id: "10",
+    name: "Mulligan's Irish Bar",
+    city: "Leiria (Centro)",
+    capacity: "30-80 (confirmar)",
+    address: "Largo Alexandre Herculano, 2, 2410-083 Leiria",
+    responsible: "",
+    phone: "351 244 204 741",
+    email: "(ver Facebook/site)",
+    website: "http://www.mulligans.pt/ (FB/IG)",
+    equipment: "PA pequeno possível; ambiente pub com música ao vivo",
+    agreement: "Bar split / entrada (negociável)",
+    notes: "Pub com tradição de música ao vivo — bom para shows intimistas.",
+    source: "cite"
+  },
+  {
+    id: "11",
+    name: "Á Capella (Fado de Coimbra)",
+    city: "Coimbra",
+    capacity: "30-60 (confirmar)",
+    address: "Rua Corpo de Deus - Largo da Vitória, Coimbra",
+    responsible: "",
+    phone: "351 239 833 985",
+    email: "mail.acapella@gmail.com",
+    website: "https://coimbramusica.com/ / Facebook aCapella",
+    equipment: "Som e palco pequeno (confirmar)",
+    agreement: "Bilheteira / jantares com espetáculo (negociável)",
+    notes: "Capela convertida em espaço musical — acústica favorável para intimista.",
+    source: "cite"
+  },
+  {
+    id: "12",
+    name: "Teatro Lethes",
+    city: "Faro (extra city)",
+    capacity: "50-200 (confirmar - teatro)",
+    address: "Rua de Portugal 58, 8000-281 Faro",
+    responsible: "",
+    phone: "351 289 878 908",
+    email: "geral@actateatro.org.pt",
+    website: "https://teatrolethes.com/",
+    equipment: "Infra teatral completa; PA a confirmar",
+    agreement: "Venda bilhetes via teatro (negociável)",
+    notes: "Teatro municipal histórico — possível para noites acústicas, confirmar capacidade mínima.",
+    source: "cite"
+  },
+  {
+    id: "13",
+    name: "Salpoente (Aveiro)",
+    city: "Aveiro (extra city)",
+    capacity: "30-80 (confirmar)",
+    address: "Canal de São Roque, nº 82/83, 3800-256 Aveiro",
+    responsible: "",
+    phone: "+351 234 382 674, +351 915 138 619",
+    email: "salpoente@salpoente.pt",
+    website: "https://salpoente.pt/",
+    equipment: "Espaço restaurante com possibilidade de música ao vivo (confirmar PA)",
+    agreement: "Eventos privados / jantar + bilheteira (negociável)",
+    notes: "Restaurante com espaço histórico — bom para showcases íntimos com jantar.",
+    source: "cite"
+  },
+  {
+    id: "14",
+    name: "Teatro Viriato",
+    city: "Viseu (extra city)",
+    capacity: "(teatro - confirmar sala pequena para 30-50)",
+    address: "L. Mouzinho de Albuquerque, Viriato / Teatro Municipal Viriato, Viseu",
+    responsible: "",
+    phone: "351 232 480 110",
+    email: "(ver site)",
+    website: "https://www.teatroviriato.com/",
+    equipment: "Infra completa (teatro) - confirmar sala pequena e PA",
+    agreement: "Venda bilhetes via bilheteira (negociável)",
+    notes: "Teatro municipal com várias salas — confirmar qual aluga para shows de 30-50 pessoas.",
+    source: "cite"
+  },
+  {
+    id: "15",
+    name: "Barreirinha Bar Café",
+    city: "Funchal (extra city)",
+    capacity: "30-80 (confirmar)",
+    address: "Largo do Socorro, nº1, 9060-305 Funchal, Madeira",
+    responsible: "",
+    phone: "(ver Facebook/IG)",
+    email: "(ver redes sociais)",
+    website: "https://www.instagram.com/barreirinhabarcafe/",
+    equipment: "PA pequeno possível; esplanada para música ao vivo",
+    agreement: "Bar split / consumo (negociável)",
+    notes: "Bar com programação musical noturna; boa visibilidade turística.",
+    source: "cite"
+  },
+  {
+    id: "16",
+    name: "Teatro Micaelense",
+    city: "Ponta Delgada (extra city)",
+    capacity: "(teatro - verificar sala pequena)",
+    address: "Largo de São João, 9500-106 Ponta Delgada, S. Miguel, Açores",
+    responsible: "",
+    phone: "351 296 308 340",
+    email: "info@teatromicaelense.pt / bilheteira@teatromicaelense.pt",
+    website: "https://www.teatromicaelense.pt/",
+    equipment: "Infra completa; bilheteira e técnica do teatro",
+    agreement: "Venda através da bilheteira; negociar split com teatro",
+    notes: "Centro cultural principal nos Açores — bom para datas específicas; confirmar sala adequada para 30-50.",
+    source: "cite"
+  },
+  {
+    id: "17",
+    name: "Titanic Sur Mer",
+    city: "Lisboa (Cais do Sodré)",
+    capacity: "(confirmar)",
+    address: "Cais da Ribeira Nova, Armazém B, Cais do Sodré, Lisboa, Portugal",
+    responsible: "",
+    phone: "",
+    email: "info.titanicsurmer@gmail.com",
+    website: "",
+    equipment: "PA / palco (confirmar)",
+    agreement: "A negociar (bilheteira/bar split — confirmar)",
+    notes: "Sala de eventos no Cais do Sodré; horário a confirmar.",
+    source: "user"
+  },
+  {
+    id: "18",
+    name: "Tokyo Lisboa",
+    city: "Lisboa (Cais do Sodré)",
+    capacity: "265 (lotação máxima)",
+    address: "Cais Gás 1, 1200-109 Lisboa",
+    responsible: "",
+    phone: "213 462 265",
+    email: "tokyo@tokyo.com.pt",
+    website: "",
+    equipment: "Club; PA (confirmar rider)",
+    agreement: "A negociar (confirmar política)",
+    notes: "Horário: Quarta à Sábado, 22h–06h. SPA: €87,00 (lucro por show — a confirmar).",
+    source: "user"
+  },
+  {
+    id: "19",
+    name: "Music Box",
+    city: "Lisboa (Pink Street, Cais do Sodré)",
+    capacity: "280 (lotação máxima)",
+    address: "R. Nova do Carvalho 24, 1200-019 Lisboa",
+    responsible: "Cultural Trend Lisbon",
+    phone: "213 430 107",
+    email: "office@musicboxlisboa.com",
+    website: "",
+    equipment: "Sala de concertos; PA e luz (confirmar)",
+    agreement: "A negociar (contrato/bilheteira)",
+    notes: "NIF: 507 589 939. SPA: €87,00 (lucro por show — a confirmar).",
+    source: "user"
+  },
+  {
+    id: "20",
+    name: "Palácio do Grillo",
+    city: "(Lisboa — a confirmar)",
+    capacity: "(confirmar)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "palaciogriloeventos@gmail.com",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Espaço histórico para eventos; detalhes a confirmar.",
+    source: "user"
+  },
+  {
+    id: "21",
+    name: "Cargo 111",
+    city: "(Lisboa — a confirmar)",
+    capacity: "(confirmar)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "Cargo111ba@gmail.com",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Bar/sala de eventos; detalhes a confirmar.",
+    source: "user"
+  },
+  {
+    id: "22",
+    name: "Teatro Sá de Miranda",
+    city: "Viana do Castelo",
+    capacity: "(teatro - confirmar sala pequena para 30-80)",
+    address: "Rua Sá de Miranda, 4900-529 Viana do Castelo",
+    responsible: "",
+    phone: "(ver site)",
+    email: "(ver site/contactos)",
+    website: "",
+    equipment: "Infra teatral completa; PA a confirmar",
+    agreement: "Venda bilhetes via teatro / parceria institucional",
+    notes: "Teatro histórico da cidade — espaço ideal para datas culturais e circuitos alternativos.",
+    source: "CAE90040"
+  },
+  {
+    id: "23",
+    name: "Teatro Aveirense",
+    city: "Aveiro",
+    capacity: "(teatro - confirmar sala alternativa para showcases)",
+    address: "Rua Belém Pará, 3810-066 Aveiro",
+    responsible: "",
+    phone: "(ver site)",
+    email: "(ver site/contactos)",
+    website: "https://www.teatroaveirense.pt/",
+    equipment: "Infra completa (som/luz), staff técnico",
+    agreement: "Venda bilheteira via teatro; contratual / parceria",
+    notes: "Equipamento municipal — ideal para programação estruturada.",
+    source: "CAE90040"
+  },
+  {
+    id: "24",
+    name: "Pavilhão do Arade",
+    city: "Lagoa (Algarve)",
+    capacity: "(multiusos - confirmar sala pequena para showcases)",
+    address: "Urb. Passagem, 8400-611 Parchal",
+    responsible: "",
+    phone: "(ver site)",
+    email: "(ver site)",
+    website: "",
+    equipment: "Infraestrutura para congressos e espetáculos",
+    agreement: "A negociar (contrato de espaço / bilheteira)",
+    notes: "Centro de congressos e espetáculos regional — boa alternativa no Algarve.",
+    source: "CAE90040"
+  },
+  {
+    id: "25",
+    name: "Centro de Bridge de Lisboa S.A",
+    city: "Lisboa",
+    capacity: "(confirmar salas para eventos culturais)",
+    address: "Av. António Augusto de Aguiar, 163, 4ºE, 1050-014 Lisboa",
+    responsible: "",
+    phone: "(ver site)",
+    email: "(ver site)",
+    website: "",
+    equipment: "A confirmar",
+    agreement: "A negociar",
+    notes: "Operador registado em CAE 90040 — possível espaço multiusos em Lisboa.",
+    source: "CAE90040"
+  },
+  {
+    id: "26",
+    name: "Praça das Flores - Produção de Espectáculos, Lda.",
+    city: "Lisboa",
+    capacity: "(operador — confirmar espaços próprios ou gestão de salas)",
+    address: "Rua Imprensa Nacional 36, 1250-126 Lisboa",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Produtora com CAE 90040 — possível parceira para co-produções ou aluguer de salas.",
+    source: "CAE90040"
+  },
+  {
+    id: "27",
+    name: "Smart Events - Produção de Espectáculos e Organização de Eventos, Lda.",
+    city: "Lisboa",
+    capacity: "(operador — confirmar salas próprias ou eventos itinerantes)",
+    address: "Av. Infante D. Henrique 333, 5º - 62, 1800-282 Lisboa",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Empresa especializada em eventos e espetáculos; potencial para parcerias e datas em circuito.",
+    source: "CAE90040"
+  },
+  {
+    id: "28",
+    name: "Empresa Artística S.A",
+    city: "Porto",
+    capacity: "(confirmar espaços próprios ou gestão de salas)",
+    address: "Rua Gonçalo Sampaio, Nº39, 6º, 4150-366 Porto",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Empresa de espetáculos sediada no Porto com CAE 90040 — possível contacto para produções.",
+    source: "CAE90040"
+  },
+  {
+    id: "29",
+    name: "Casino Fundanense S.A",
+    city: "Fundão",
+    capacity: "(confirmar sala de espetáculos)",
+    address: "Praça do Município, 6230-338 Fundão",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "A confirmar",
+    agreement: "A negociar",
+    notes: "Operador regional com CAE 90040 — potencial para circuitos no interior.",
+    source: "CAE90040"
+  },
+  {
+    id: "30",
+    name: "Cul.tur - Empresa Municipal de Cultura e Turismo de Santarém, Eem",
+    city: "Marvila, Santarém",
+    capacity: "(confirmar)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Empresa municipal de cultura e turismo — possível espaço/gestão de eventos.",
+    source: "CAE90040/NIF:509477755"
+  },
+  {
+    id: "31",
+    name: "Agência Roque - Produções e Agenciamento de Espectáculos, Lda",
+    city: "Portela, Loures",
+    capacity: "(operador)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Produtora e agenciamento de espetáculos — possível parceria para tours e eventos.",
+    source: "NIF:502953713"
+  },
+  {
+    id: "32",
+    name: "Jovens Cantores de Lisboa - Animação Cultural, Crl",
+    city: "Lisboa",
+    capacity: "(confirmar)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Associação cultural de animação musical — potencial para colaborações educativas e concertos.",
+    source: "NIF:502918942"
+  },
+  {
+    id: "33",
+    name: "Promodel, Lda",
+    city: "Alcabideche, Cascais",
+    capacity: "(operador)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Empresa de produção e eventos — possível parceiro para shows e logística.",
+    source: "NIF:508915287"
+  },
+  {
+    id: "34",
+    name: "Eurobowling Imobiliária e Técnica, Lda",
+    city: "São João de Lourosa, Viseu",
+    capacity: "(confirmar)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Empresa técnica com experiência em eventos — verificar disponibilidade de espaço e infra.",
+    source: "NIF:502215780"
+  },
+  {
+    id: "35",
+    name: "Share Your Views Lda",
+    city: "Lovelhe, Vila Nova de Cerveira",
+    capacity: "(confirmar)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Produtora/empresa de eventos — potencial para showcases ou eventos corporativos.",
+    source: "NIF:508991889"
+  },
+  {
+    id: "36",
+    name: "Chaves Viva - Associação Promotora Para O Ensino e Divulgação das Artes e Ofícios da Região Flaviense",
+    city: "Chaves, Vila Real",
+    capacity: "(confirmar)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Associação cultural — ideal para concertos educativos e atividades de difusão artística.",
+    source: "NIF:509013740"
+  },
+  {
+    id: "37",
+    name: "Cinema Em Conversa - Cineclube da Maia",
+    city: "Maia, Porto",
+    capacity: "(sala de cinema / espaço cultural)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "PA e projeção audiovisual (confirmar)",
+    agreement: "(negociável)",
+    notes: "Cineclube com programação cultural — possível para eventos híbridos ou showcases.",
+    source: "NIF:509295401"
+  },
+  {
+    id: "38",
+    name: "Coniorquestra - Sociedade Musical, Lda",
+    city: "Caldelas, Guimarães",
+    capacity: "(confirmar)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Sociedade musical — possível parceria para concertos e ensaios abertos.",
+    source: "NIF:501484647"
+  },
+  {
+    id: "39",
+    name: "Jorge Miguel Rodrigues, Unipessoal Lda",
+    city: "Pombeiro da Beira, Arganil",
+    capacity: "(confirmar)",
+    address: "",
+    responsible: "",
+    phone: "",
+    email: "",
+    website: "",
+    equipment: "(confirmar)",
+    agreement: "(confirmar)",
+    notes: "Produtor/empresa de eventos locais — verificar capacidade para shows intimistas.",
+    source: "NIF:509767060"
+  }
+
+
+];
+
+const CREW_TEMPLATES = {
+  technical: [
+    {
+      role: "Deejay e SFX",
+      name: "Xando",
+      contact: "",
+      gear: "Roland SP, Headphones, 2x CDJ",
+      deal: "20€ por hora",
+      category: "DJ"
+    },
+    {
+      role: "Técnico de Autotune & Ecrã",
+      name: "Luís Brás",
+      contact: "964858863",
+      gear: "MIDI Autotune, Ecrã (VFX)",
+      deal: "20€",
+      category: "Áudio"
+    },
+    {
+      role: "Touch Design Expert (VFX)",
+      name: "Deox",
+      contact: "964858863 | diogo.viegas888@gmail.com",
+      gear: "Touch Design",
+      deal: "40€",
+      category: "Visual"
+    },
+    {
+      role: "Técnico de Luz",
+      name: "XXXX",
+      contact: "",
+      gear: "",
+      deal: "20€",
+      category: "Iluminação"
+    },
+    {
+      role: "Técnico de Vídeo",
+      name: "Adilson Tavares",
+      contact: "",
+      gear: "",
+      deal: "20€",
+      category: "Vídeo"
+    }
+  ],
+  artistic: [
+    {
+      role: "Duo Coral - Menina 1",
+      name: "",
+      contact: "",
+      gear: "",
+      deal: "20€",
+      category: "Vocal"
+    },
+    {
+      role: "Duo Coral - Menina 2",
+      name: "",
+      contact: "",
+      gear: "",
+      deal: "20€",
+      category: "Vocal"
+    },
+    {
+      role: "Teatro e Dança - Menina 1",
+      name: "",
+      contact: "",
+      gear: "",
+      deal: "20€",
+      category: "Performance"
+    },
+    {
+      role: "Teatro e Dança - Menina 2",
+      name: "",
+      contact: "",
+      gear: "",
+      deal: "20€",
+      category: "Performance"
+    }
+  ],
+  creative: [
+    {
+      role: "ARV",
+      name: "Leugim",
+      contact: "",
+      gear: "",
+      deal: "",
+      category: "Direção Criativa"
+    },
+    {
+      role: "Fotógrafo",
+      name: "Gonçalo Tavares",
+      contact: "https://www.instagram.com/goncalomdcastro/",
+      gear: "",
+      deal: "20€",
+      category: "Fotografia"
+    }
+  ]
+};
+
+const TemplateCard = ({ template, onAdd }: { template: any; onAdd: () => void }) => (
+  <div className="flex items-center justify-between p-3 border-2 border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+    <div className="flex-1">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="font-semibold text-sm">{template.name || template.role}</span>
+        {template.deal && (
+          <Badge variant="outline" className="text-xs bg-green-100 dark:bg-green-900">
+            {template.deal}
+          </Badge>
+        )}
+      </div>
+      <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
+        <div>{template.role}</div>
+        {template.gear && <div>🛠️ {template.gear}</div>}
+        {template.contact && <div>📞 {template.contact}</div>}
+      </div>
+    </div>
+    <Button
+      size="sm"
+      onClick={onAdd}
+      className="bg-indigo-600 hover:bg-indigo-700 text-white border-2 border-indigo-600"
+    >
+      <Plus className="w-4 h-4" />
+    </Button>
+  </div>
+);
+
+// Crew Member Card Component
+const CrewMemberCard = ({ member, index, onUpdate, onRemove }: {
+  member: any;
+  index: number;
+  onUpdate: (member: any) => void;
+  onRemove: () => void;
+}) => (
+  <div className="grid grid-cols-12 gap-3 items-start p-4 border-2 border-slate-200 dark:border-slate-700 rounded-lg">
+    <div className="col-span-3">
+      <Label className="text-xs">Função</Label>
+      <Input
+        value={member.role}
+        onChange={(e) => onUpdate({ ...member, role: e.target.value })}
+        placeholder="Ex: Deejay, Técnico"
+        className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm"
+      />
+    </div>
+   
+    <div className="col-span-2">
+      <Label className="text-xs">Nome</Label>
+      <Input
+        value={member.name}
+        onChange={(e) => onUpdate({ ...member, name: e.target.value })}
+        placeholder="Nome"
+        className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm"
+      />
+    </div>
+   
+    <div className="col-span-3">
+      <Label className="text-xs">Contacto</Label>
+      <Input
+        value={member.contact}
+        onChange={(e) => onUpdate({ ...member, contact: e.target.value })}
+        placeholder="Telefone/Email/Instagram"
+        className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm"
+      />
+    </div>
+   
+    <div className="col-span-2">
+      <Label className="text-xs">Equipamento</Label>
+      <Input
+        value={member.gear || ""}
+        onChange={(e) => onUpdate({ ...member, gear: e.target.value })}
+        placeholder="Gear trazido"
+        className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm"
+      />
+    </div>
+   
+    <div className="col-span-1">
+      <Label className="text-xs">Deal</Label>
+      <Input
+        value={member.deal || ""}
+        onChange={(e) => onUpdate({ ...member, deal: e.target.value })}
+        placeholder="20€"
+        className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm"
+      />
+    </div>
+   
+    <div className="col-span-1 flex justify-end pt-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onRemove}
+        className="border-2 border-red-200 dark:border-red-700 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+      >
+        <X className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
+);
+
+export default function EventPage({ params }: { params: { id: string } }) {
+  const { updateEvent, setCurrentEvent } = useEvents();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  // Component for paste songs dialog
+  const PasteSongsDialog = ({ onPaste }: { onPaste: (songs: string[]) => void }) => {
+    const [open, setOpen] = useState(false);
+    const [pasteText, setPasteText] = useState("");
+
+    const handlePaste = () => {
+      // Split by empty lines or newlines
+      const lines = pasteText.split(/\n\s*\n|\n/).filter(line => line.trim() !== "");
+      onPaste(lines);
+      setPasteText("");
+      setOpen(false);
+    };
+
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Colar Lista
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Colar Lista de Músicas</DialogTitle>
+            <DialogDescription>
+              Cola a lista de músicas (uma por linha). O sistema irá separar automaticamente cada música por linha vazia.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Música 1&#10;Música 2&#10;&#10;Música 3&#10;&#10;Cada música numa linha separada..."
+              rows={10}
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              className="font-mono text-sm"
+            />
+            <Button
+              onClick={handlePaste}
+              className="w-full"
+              disabled={!pasteText.trim()}
+            >
+              Adicionar Músicas
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  const [requirementsDialogOpen, setRequirementsDialogOpen] = useState(false);
+  const [requirementsVenue, setRequirementsVenue] = useState<Venue | null>(null);
+  const [showVenueDropdown, setShowVenueDropdown] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [requirementsForm, setRequirementsForm] = useState({
+    remunerationModel: "", // flat, bar split, bilheteira %, mínimo garantido
+    hasSoundTech: false,
+    hasLightTech: false,
+    hasBoxOffice: false,
+    techCosts: "",
+    openHours: "",
+    curfewRules: "",
+    capacityConfirmed: "",
+    loadInWindow: "",
+    loadOutWindow: "",
+    backlineProvided: "",
+    riderRequired: false,
+    invoiceNif: "",
+    responsibleEntity: "",
+    musicalDirector: "",
+    spaRegistryNumber: "",
+    emailForAssets: "",
+    phoneForOps: "",
+    paymentMethod: "", // transferência, numerário, outro
+    paymentDeadline: "", // antes/depois do show, 30 dias, etc.
+  });
+
+  // Venues: quick add dialog state (inline, no separate page)
+  const [addVenueOpen, setAddVenueOpen] = useState(false);
+  const [savingVenue, setSavingVenue] = useState(false);
+  const [venuesQuery, setVenuesQuery] = useState("");
+  const [localVenues, setLocalVenues] = useState<Venue[]>([]);
+  const [vName, setVName] = useState("");
+  const [vCity, setVCity] = useState("");
+  const [vCountry, setVCountry] = useState("");
+  const [vCapacity, setVCapacity] = useState("");
+  const [vContactName, setVContactName] = useState("");
+  const [vContactEmail, setVContactEmail] = useState("");
+  const [vContactPhone, setVContactPhone] = useState("");
+  const [vUrl, setVUrl] = useState("");
+  const [vPhotoUrl, setVPhotoUrl] = useState("");
+  const [vNotes, setVNotes] = useState("");
+
+  const canSaveVenue = vName.trim().length > 0;
+
+  const resetVenueForm = () => {
+    setVName("");
+    setVCity("");
+    setVCountry("");
+    setVCapacity("");
+    setVContactName("");
+    setVContactEmail("");
+    setVContactPhone("");
+    setVUrl("");
+    setVPhotoUrl("");
+    setVNotes("");
+  };
+
+  const lookupVenuePhoto = async () => {
+    const query = [vName, vCity, vCountry].filter(Boolean).join(" ");
+    if (!query.trim()) return;
+    try {
+      const r = await fetch(`/api/venue-photo?query=${encodeURIComponent(query)}`);
+      const j = await r.json();
+      if (j?.url) setVPhotoUrl(j.url);
+    } catch {}
+  };
+
+  const handleSaveVenue = async () => {
+    if (!canSaveVenue) return;
+    setSavingVenue(true);
+    try {
+      await addVenue({
+        name: vName,
+        city: vCity,
+        country: vCountry,
+        capacity: vCapacity ? Number(vCapacity) : undefined,
+        contactName: vContactName,
+        contactEmail: vContactEmail,
+        contactPhone: vContactPhone,
+        url: vUrl,
+        photoUrl: vPhotoUrl,
+        notes: vNotes,
+      });
+      // Add to local list for immediate selection in this step
+      setLocalVenues(prev => [
+        {
+          id: `local-${Date.now()}`,
+          name: vName,
+          city: vCity || "",
+          capacity: vCapacity || "(confirmar)",
+          address: "",
+          responsible: vContactName || "",
+          phone: vContactPhone || "",
+          email: vContactEmail || "",
+          website: vUrl || "",
+          equipment: "",
+          agreement: "",
+          notes: vNotes || "",
+          source: "local",
+        },
+        ...prev,
+      ]);
+      // Preencher imediatamente o campo 'Local' com o novo venue
+      setEventData(prev => ({
+        ...prev,
+        overview: { ...prev.overview, venue: vName }
+      }));
+      setAddVenueOpen(false);
+      resetVenueForm();
+    } finally {
+      setSavingVenue(false);
+    }
+  };
+
+  const resetRequirementsForm = () => {
+    setRequirementsForm({
+      remunerationModel: "",
+      hasSoundTech: false,
+      hasLightTech: false,
+      hasBoxOffice: false,
+      techCosts: "",
+      openHours: "",
+      curfewRules: "",
+      capacityConfirmed: "",
+      loadInWindow: "",
+      loadOutWindow: "",
+      backlineProvided: "",
+      riderRequired: false,
+      invoiceNif: "",
+      responsibleEntity: "",
+      musicalDirector: "",
+      spaRegistryNumber: "",
+      emailForAssets: "",
+      phoneForOps: "",
+      paymentMethod: "",
+      paymentDeadline: "",
+    });
+  };
+
+  const generateMissingQuestions = () => {
+    const questions: string[] = [];
+    if (!requirementsForm.remunerationModel) questions.push("Qual o modelo de remuneração (flat / % bilheteira / bar split / mínimo garantido)?");
+    if (!requirementsForm.capacityConfirmed) questions.push("Qual a lotação máxima confirmada da sala?");
+    if (!requirementsForm.openHours) questions.push("Quais os horários de abertura/fecho?");
+    if (!requirementsForm.curfewRules) questions.push("Há curfew/regras de ruído/licenciamento a cumprir? Qual o horário limite?");
+    if (!requirementsForm.loadInWindow) questions.push("Janela de load-in (entrada de material) e acesso (carrinha/elevador)?");
+    if (!requirementsForm.loadOutWindow) questions.push("Janela de load-out (saída de material)?");
+    if (!requirementsForm.backlineProvided) questions.push("Há backline/PA/monição fornecidos? Podem enviar ficha técnica?");
+    if (!requirementsForm.hasSoundTech) questions.push("Há técnico de som? Custos incluídos?");
+    if (!requirementsForm.hasLightTech) questions.push("Há técnico de luz? Custos incluídos?");
+    if (!requirementsForm.hasBoxOffice) questions.push("Há equipa de bilheteira/door? Custos?");
+    if (!requirementsForm.techCosts) questions.push("Custos técnicos adicionais (som/luz/bilheteira)?");
+    if (!requirementsForm.riderRequired) questions.push("Exigem rider técnico/avançado? Para onde enviar?");
+    if (!requirementsForm.responsibleEntity) questions.push("Entidade responsável pelo contrato/faturação?");
+    if (!requirementsForm.invoiceNif) questions.push("NIF para faturação?");
+    if (!requirementsForm.musicalDirector) questions.push("Director musical / responsável operacional no dia?");
+    if (!requirementsForm.spaRegistryNumber) questions.push("Nº de registo SPA (se aplicável) e política de report?");
+    if (!requirementsForm.emailForAssets) questions.push("Email para envio de press-kit/assets?");
+    if (!requirementsForm.phoneForOps) questions.push("Contacto telefónico para operações no dia?");
+    if (!requirementsForm.paymentMethod) questions.push("Método de pagamento (transferência, numerário, outro)?");
+    if (!requirementsForm.paymentDeadline) questions.push("Prazo de pagamento (antes/depois do show, 30 dias, etc.)?");
+    return questions.join("\n• ");
+  };
+  const [eventData, setEventData] = useState<EventData>({
+    overview: {
+      eventName: "",
+      eventType: "",
+      date: "",
+      venue: "",
+      capacity: 0,
+      description: "",
+      organizerName: "",
+      organizerContact: "",
+    },
+    finance: {
+      budget: 0,
+      ticketPrice: 0,
+      sponsorship: 0,
+      expenses: [
+        { name: "Som", amount: 0 },
+        { name: "Iluminação", amount: 0 },
+        { name: "Palco", amount: 0 },
+        { name: "Técnicos", amount: 0 },
+        { name: "Catering", amount: 0 },
+        { name: "Segurança", amount: 0 },
+        { name: "Bilheteira", amount: 0 },
+        { name: "Seguros", amount: 0 },
+        { name: "Licenças (SPA)", amount: 87 },
+        { name: "Marketing", amount: 0 },
+        { name: "Transporte", amount: 0 },
+        { name: "Alojamento", amount: 0 },
+        { name: "Equipamento adicional", amount: 0 },
+        { name: "Streaming / Transmissão", amount: 0 },
+        { name: "Merch produção", amount: 0 },
+      ],
+      venueSplit: 30, // 30% para venue, 70% para organizador
+      cachetPago: 0,
+    },
+    lineup: {
+      artists: [],
+      soundcheck: "",
+      curfew: "",
+    },
+    production: {
+      sound: "",
+      lighting: "",
+      stage: "",
+      crew: [],
+    },
+    logistics: {
+      address: "",
+      parking: "",
+      loadIn: "",
+      loadOut: "",
+      catering: "",
+      material: [],
+      travelOutfit: [],
+    },
+    tickets: {
+      totalTickets: 0,
+      soldTickets: 0,
+      priceTiers: [],
+    },
+    marketing: {
+      socialMedia: [],
+      pressRelease: "",
+      influencers: [],
+    },
+    templates: {
+      artistConfirmation: "",
+      venueProposal: "",
+    },
+    wardrobe: {
+      selectedHairstyles: [],
+      selectedGlasses: [],
+      selectedHeadWear: [],
+      selectedSuperior: [],
+      selectedPants: [],
+      selectedShoes: [],
+      selectedNeckAccessories: [],
+      selectedBracelets: [],
+      selectedWatch: [],
+      selectedBelt: [],
+      customItems: [],
+      totalPrice: 0,
+    },
+    setlist: {
+      songs: [],
+      autotuneSetting: "",
+      voiceType: "",
+    },
+    rehearsalNotes: {
+      decisions: [],
+      breathingIssues: [],
+      generalNotes: "",
+    },
+    dayItinerary: {
+      date: "",
+      location: "",
+      travelDetails: [],
+      accommodation: "",
+      meals: [],
+      soundcheckTime: "",
+      venueOpenTime: "",
+      clothingStores: [],
+      studioVisits: [],
+      voicePractice: [],
+      hydrationReminders: [],
+      audienceReminders: [],
+      otherNotes: "",
+    },
+  });
+
+  // Load event from database if ID exists and is not "new"
+  useEffect(() => {
+    // Function to normalize event data (ensure all new fields exist)
+    const normalizeEventData = (data: any): EventData => {
+      return {
+        ...data,
+        // Ensure finance exists with all required fields
+        finance: {
+          budget: data.finance?.budget || 0,
+          ticketPrice: data.finance?.ticketPrice || 0,
+          sponsorship: data.finance?.sponsorship || 0,
+          expenses: data.finance?.expenses || [],
+          venueSplit: data.finance?.venueSplit || 70,
+          cachetPago: data.finance?.cachetPago || 0,
+          expectedAttendance: data.finance?.expectedAttendance || 70,
+          merchPerPerson: data.finance?.merchPerPerson || 5,
+          estimatedProfit: data.finance?.estimatedProfit || 0,
+        },
+        // Ensure venues exists
+        venues: data.venues || {
+          primary: null,
+          backups: [],
+          requiredCapacity: data.overview?.capacity || 0,
+        },
+        // Ensure overview has city
+        overview: {
+          ...data.overview,
+          city: data.overview?.city || "",
+        },
+        // Ensure lineup has schedule
+        lineup: {
+          ...data.lineup,
+          artists: data.lineup?.artists || [],
+          soundcheck: data.lineup?.soundcheck || "",
+          curfew: data.lineup?.curfew || "",
+          schedule: data.lineup?.schedule || [],
+        },
+        // Ensure production has required fields
+        production: {
+          ...data.production,
+          sound: data.production?.sound || "",
+          lighting: data.production?.lighting || "",
+          stage: data.production?.stage || "",
+          crew: data.production?.crew || [],
+          technicalRider: data.production?.technicalRider || "",
+          technicalRiderConfirmed: data.production?.technicalRiderConfirmed || false,
+          team: data.production?.team || [],
+          estimatedCost: data.production?.estimatedCost || 0,
+        },
+        // Ensure tickets has required fields
+        tickets: {
+          ...data.tickets,
+          totalTickets: data.tickets?.totalTickets || 0,
+          soldTickets: data.tickets?.soldTickets || 0,
+          priceTiers: data.tickets?.priceTiers || [],
+          policy: data.tickets?.policy || "",
+          prices: data.tickets?.prices || {},
+        },
+        // Ensure logistics has required fields
+        logistics: {
+          ...data.logistics,
+          address: data.logistics?.address || "",
+          parking: data.logistics?.parking || "",
+          loadIn: data.logistics?.loadIn || "",
+          loadOut: data.logistics?.loadOut || "",
+          catering: data.logistics?.catering || "",
+          material: data.logistics?.material || [],
+          travelOutfit: data.logistics?.travelOutfit || [],
+          estimatedCost: data.logistics?.estimatedCost || 0,
+          transport: data.logistics?.transport || "",
+          accommodation: data.logistics?.accommodation || "",
+        },
+        // Ensure marketing has required fields
+        marketing: {
+          ...data.marketing,
+          socialMedia: data.marketing?.socialMedia || [],
+          pressRelease: data.marketing?.pressRelease || "",
+          influencers: data.marketing?.influencers || [],
+          strategy: data.marketing?.strategy || "",
+          assets: data.marketing?.assets || "",
+          budget: data.marketing?.budget || 0,
+        },
+        // Ensure rehearsalNotes exists
+        rehearsalNotes: data.rehearsalNotes || {
+          decisions: [],
+          breathingIssues: [],
+          generalNotes: "",
+        },
+        // Ensure setlist songs have time field
+        setlist: {
+          ...data.setlist,
+          songs: (data.setlist?.songs || []).map((song: any) => ({
+            ...song,
+            time: song.time || "",
+          })),
+        },
+        // Ensure logistics material and travelOutfit are arrays
+        logistics: {
+          ...data.logistics,
+          material: Array.isArray(data.logistics?.material)
+            ? data.logistics.material
+            : data.logistics?.material
+            ? [{ 
+                id: `material-${Date.now()}`,
+                name: data.logistics.material,
+                category: "Outros",
+                checked: false,
+                returned: false,
+              }]
+            : [],
+          travelOutfit: Array.isArray(data.logistics?.travelOutfit)
+            ? data.logistics.travelOutfit
+            : data.logistics?.travelOutfit
+            ? [{ 
+                id: `outfit-${Date.now()}`,
+                name: data.logistics.travelOutfit,
+                category: "Outros",
+                checked: false,
+                returned: false,
+              }]
+            : [],
+        },
+        // Ensure dayItinerary arrays exist
+        dayItinerary: {
+          ...data.dayItinerary,
+          travelDetails: Array.isArray(data.dayItinerary?.travelDetails)
+            ? data.dayItinerary.travelDetails
+            : data.dayItinerary?.travelDetails
+            ? [{ 
+                id: `travel-${Date.now()}`,
+                type: "Transporte",
+                time: "",
+                details: data.dayItinerary.travelDetails,
+                notes: "",
+              }]
+            : [],
+          clothingStores: Array.isArray(data.dayItinerary?.clothingStores)
+            ? data.dayItinerary.clothingStores
+            : data.dayItinerary?.clothingStores
+            ? [{ 
+                id: `store-${Date.now()}`,
+                name: data.dayItinerary.clothingStores,
+                address: "",
+                time: "",
+                notes: "",
+              }]
+            : [],
+          studioVisits: Array.isArray(data.dayItinerary?.studioVisits)
+            ? data.dayItinerary.studioVisits
+            : data.dayItinerary?.studioVisits
+            ? [{ 
+                id: `studio-${Date.now()}`,
+                studio: "",
+                artist: "",
+                time: "",
+                purpose: "",
+                notes: data.dayItinerary.studioVisits,
+              }]
+            : [],
+          voicePractice: Array.isArray(data.dayItinerary?.voicePractice)
+            ? data.dayItinerary.voicePractice
+            : data.dayItinerary?.voicePractice
+            ? [{ 
+                id: `voice-${Date.now()}`,
+                type: "",
+                time: "",
+                duration: "",
+                notes: data.dayItinerary.voicePractice,
+              }]
+            : [],
+          hydrationReminders: Array.isArray(data.dayItinerary?.hydrationReminders)
+            ? data.dayItinerary.hydrationReminders
+            : data.dayItinerary?.hydrationReminders
+            ? [{ 
+                id: `hydration-${Date.now()}`,
+                time: "",
+                completed: false,
+              }]
+            : [],
+          audienceReminders: Array.isArray(data.dayItinerary?.audienceReminders)
+            ? data.dayItinerary.audienceReminders
+            : [],
+          meals: Array.isArray(data.dayItinerary?.meals)
+            ? data.dayItinerary.meals
+            : (typeof data.dayItinerary?.meals === 'string' && (data.dayItinerary.meals as string).trim() !== ''
+              ? [{
+                  id: `meal-${Date.now()}`,
+                  date: data.dayItinerary?.date || "",
+                  time: "",
+                  location: "",
+                  whatToEat: data.dayItinerary.meals as string,
+                  price: 0,
+                }]
+              : []),
+        },
+      };
+    };
+
+    const loadEvent = async () => {
+      if (params.id && params.id !== "new") {
+        try {
+          setIsLoading(true);
+          const loadedEvent = await loadEventFromIndexedDB(params.id);
+          if (loadedEvent) {
+            const normalizedEvent = normalizeEventData(loadedEvent);
+            setEventData(normalizedEvent);
+            setCurrentEvent(normalizedEvent);
+            setLastSaved(new Date());
+          }
+        } catch (error) {
+          console.error('Error loading event:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // New event - initialize with ID
+        const newEventData = { ...eventData, id: `evento-${Date.now()}` };
+        setEventData(newEventData);
+        setIsLoading(false);
+      }
+    };
+    loadEvent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.id]);
+
+  // Ensure meals is always an array
+  useEffect(() => {
+    if (eventData && !Array.isArray(eventData.dayItinerary?.meals)) {
+      setEventData(prev => {
+        const mealsValue = prev.dayItinerary?.meals;
+        const normalizedMeals = typeof mealsValue === 'string' && (mealsValue as string).trim() !== ''
+          ? [{
+              id: `meal-${Date.now()}`,
+              date: prev.dayItinerary?.date || "",
+              time: "",
+              location: "",
+              whatToEat: mealsValue,
+              price: 0,
+            }]
+          : (Array.isArray(mealsValue) ? mealsValue : []);
+        
+        return {
+          ...prev,
+          dayItinerary: {
+            ...prev.dayItinerary,
+            meals: normalizedMeals
+          }
+        };
+      });
+    }
+  }, [eventData?.dayItinerary?.meals]);
+
+  // Auto-save when eventData changes (debounced)
+  useEffect(() => {
+    if (!isLoading && eventData) {
+      const timer = setTimeout(() => {
+        const eventToSave: EventData & { id: string } = { ...eventData, id: eventData.id || params.id || `evento-${Date.now()}` };
+        updateEvent(eventToSave);
+        setLastSaved(new Date());
+      }, 2000); // Save after 2 seconds of inactivity
+
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventData, isLoading, params.id]);
+
+  const handleManualSave = () => {
+    const eventToSave: EventData & { id: string } = { ...eventData, id: eventData.id || params.id || `evento-${Date.now()}` };
+    setCurrentEvent(eventToSave);
+    setLastSaved(new Date());
+  };
+
+  // Determinar o tipo de evento baseado no localStorage ou eventData
+  const getEventType = (): 'yearly-templates' | 'single-concert' | 'third-party-hired' | 'mini-tour' => {
+    if (typeof window !== 'undefined') {
+      const storedType = localStorage.getItem('selectedEventType');
+      if (storedType && ['yearly-templates', 'single-concert', 'third-party-hired', 'mini-tour'].includes(storedType)) {
+        return storedType as any;
+      }
+    }
+    // Fallback baseado no eventType do overview
+    const eventType = eventData.overview?.eventType || '';
+    if (eventType === 'third-party-event') return 'third-party-hired';
+    if (eventType.includes('tour') || eventType.includes('digressão')) return 'mini-tour';
+    return 'single-concert'; // Default
+  };
+
+  const eventType = getEventType();
+
+  // Função para gerar steps baseados no tipo de evento
+  const getStepsForEventType = (type: string): Step[] => {
+    switch (type) {
+      case 'single-concert':
+        // Concerto Único - Fluxograma completo padrão
+        return [
+          {
+            name: "Event",
+            link: "/event",
+            timeframe: "Fase 1",
+            description: "Show, Operations, Legal, Accounting",
+            status: currentStep === 0 ? "current" : currentStep > 0 ? "completed" : "upcoming",
+            icon: <BarChart3 className="w-4 h-4" />,
+          },
+          {
+            name: "Venue",
+            link: "/venue",
+            timeframe: "Fase 1",
+            description: "Logistics, Food, Beverage, Decor",
+            status: currentStep === 1 ? "current" : currentStep > 1 ? "completed" : "upcoming",
+            icon: <Building className="w-4 h-4" />,
+          },
+          {
+            name: "Marketing",
+            link: "/marketing",
+            timeframe: "Fase 2",
+            description: "Website, Social, Email, Print",
+            status: currentStep === 2 ? "current" : currentStep > 2 ? "completed" : "upcoming",
+            icon: <Megaphone className="w-4 h-4" />,
+          },
+          {
+            name: "Advertising",
+            link: "/advertising",
+            timeframe: "Fase 2",
+            description: "Radio, TV, Newspaper, Magazines",
+            status: currentStep === 3 ? "current" : currentStep > 3 ? "completed" : "upcoming",
+            icon: <FileText className="w-4 h-4" />,
+          },
+          {
+            name: "Volunteer",
+            link: "/volunteer",
+            timeframe: "Fase 2",
+            description: "Contract, Roles, Meetings, Schedule, Contacts",
+            status: currentStep === 4 ? "current" : currentStep > 4 ? "completed" : "upcoming",
+            icon: <Users className="w-4 h-4" />,
+          },
+          {
+            name: "Speaker",
+            link: "/speaker",
+            timeframe: "Fase 2",
+            description: "Contract, Curation, Program, Bio, Practice",
+            status: currentStep === 5 ? "current" : currentStep > 5 ? "completed" : "upcoming",
+            icon: <User className="w-4 h-4" />,
+          },
+          {
+            name: "Sponsor",
+            link: "/sponsor",
+            timeframe: "Fase 3",
+            description: "Contracts, Marketing, Logistic",
+            status: currentStep === 6 ? "current" : currentStep > 6 ? "completed" : "upcoming",
+            icon: <DollarSign className="w-4 h-4" />,
+          },
+          {
+            name: "Producer",
+            link: "/producer",
+            timeframe: "Fase 3",
+            description: "Contracts, Audio, Video",
+            status: currentStep === 7 ? "current" : currentStep > 7 ? "completed" : "upcoming",
+            icon: <Settings className="w-4 h-4" />,
+          },
+          {
+            name: "Stage",
+            link: "/stage",
+            timeframe: "Fase 3",
+            description: "Project, Screen, Mic, Internet, Batteries, Cable",
+            status: currentStep === 8 ? "current" : currentStep > 8 ? "completed" : "upcoming",
+            icon: <MapPin className="w-4 h-4" />,
+          },
+          {
+            name: "Attendees",
+            link: "/attendees",
+            timeframe: "Fase 3",
+            description: "Communication, Payment, Email, Directions, Badges, Access",
+            status: currentStep === 9 ? "current" : currentStep > 9 ? "completed" : "upcoming",
+            icon: <Ticket className="w-4 h-4" />,
+          },
+        ];
+
+      case 'third-party-hired':
+        // Evento Contratado por Terceiros - Foco em contratos e cachet
+        return [
+          {
+            name: "Contract",
+            link: "/contract",
+            timeframe: "Fase 1",
+            description: "Contrato Principal, Cachet, Termos",
+            status: currentStep === 0 ? "current" : currentStep > 0 ? "completed" : "upcoming",
+            icon: <FileText className="w-4 h-4" />,
+          },
+          {
+            name: "Rider",
+            link: "/rider",
+            timeframe: "Fase 1",
+            description: "Rider Técnico, Alimentação, Transporte",
+            status: currentStep === 1 ? "current" : currentStep > 1 ? "completed" : "upcoming",
+            icon: <Settings className="w-4 h-4" />,
+          },
+          {
+            name: "Venue",
+            link: "/venue",
+            timeframe: "Fase 1",
+            description: "Local, Load-in/out, Backstage",
+            status: currentStep === 2 ? "current" : currentStep > 2 ? "completed" : "upcoming",
+            icon: <Building className="w-4 h-4" />,
+          },
+          {
+            name: "Production",
+            link: "/production",
+            timeframe: "Fase 2",
+            description: "Som, Luz, Palco, Equipa",
+            status: currentStep === 3 ? "current" : currentStep > 3 ? "completed" : "upcoming",
+            icon: <Settings className="w-4 h-4" />,
+          },
+          {
+            name: "Setlist",
+            link: "/setlist",
+            timeframe: "Fase 2",
+            description: "Músicas, Autotune, Horários",
+            status: currentStep === 4 ? "current" : currentStep > 4 ? "completed" : "upcoming",
+            icon: <Music className="w-4 h-4" />,
+          },
+          {
+            name: "Payment",
+            link: "/payment",
+            timeframe: "Fase 3",
+            description: "Cachet, Pagamento, Invoicing",
+            status: currentStep === 5 ? "current" : currentStep > 5 ? "completed" : "upcoming",
+            icon: <DollarSign className="w-4 h-4" />,
+          },
+        ];
+
+      case 'mini-tour':
+        // Mini-Digressão / Tour - Foco em múltiplas paragens
+        return [
+          {
+            name: "Tour Overview",
+            link: "/tour-overview",
+            timeframe: "Fase 1",
+            description: "Roteiro, Datas, Cidades, Conceito",
+            status: currentStep === 0 ? "current" : currentStep > 0 ? "completed" : "upcoming",
+            icon: <MapPin className="w-4 h-4" />,
+          },
+          {
+            name: "Venues",
+            link: "/venues",
+            timeframe: "Fase 1",
+            description: "Locais por Cidade, Capacidades, Contratos",
+            status: currentStep === 1 ? "current" : currentStep > 1 ? "completed" : "upcoming",
+            icon: <Building className="w-4 h-4" />,
+          },
+          {
+            name: "Logistics",
+            link: "/logistics",
+            timeframe: "Fase 1",
+            description: "Transporte, Alojamento, Equipamento",
+            status: currentStep === 2 ? "current" : currentStep > 2 ? "completed" : "upcoming",
+            icon: <Truck className="w-4 h-4" />,
+          },
+          {
+            name: "Line-up",
+            link: "/lineup",
+            timeframe: "Fase 2",
+            description: "Artistas, Horários, Setlists por Data",
+            status: currentStep === 3 ? "current" : currentStep > 3 ? "completed" : "upcoming",
+            icon: <Users className="w-4 h-4" />,
+          },
+          {
+            name: "Marketing",
+            link: "/marketing",
+            timeframe: "Fase 2",
+            description: "Campanha Tour, Social Media, Press",
+            status: currentStep === 4 ? "current" : currentStep > 4 ? "completed" : "upcoming",
+            icon: <Megaphone className="w-4 h-4" />,
+          },
+          {
+            name: "Tickets",
+            link: "/tickets",
+            timeframe: "Fase 2",
+            description: "Bilhetes por Data, Preços, Vendas",
+            status: currentStep === 5 ? "current" : currentStep > 5 ? "completed" : "upcoming",
+            icon: <Ticket className="w-4 h-4" />,
+          },
+          {
+            name: "Production",
+            link: "/production",
+            timeframe: "Fase 3",
+            description: "Som, Luz, Equipa Itinerante",
+            status: currentStep === 6 ? "current" : currentStep > 6 ? "completed" : "upcoming",
+            icon: <Settings className="w-4 h-4" />,
+          },
+          {
+            name: "Finance",
+            link: "/finance",
+            timeframe: "Fase 3",
+            description: "Orçamento Tour, Receitas, Custos",
+            status: currentStep === 7 ? "current" : currentStep > 7 ? "completed" : "upcoming",
+            icon: <DollarSign className="w-4 h-4" />,
+          },
+        ];
+
+      case 'yearly-templates':
+        // Sistema de Templates Anuais - Foco em planeamento recorrente
+        return [
+          {
+            name: "Template Setup",
+            link: "/template-setup",
+            timeframe: "Fase 1",
+            description: "Configurar Template, Parâmetros Base",
+            status: currentStep === 0 ? "current" : currentStep > 0 ? "completed" : "upcoming",
+            icon: <FileText className="w-4 h-4" />,
+          },
+          {
+            name: "Schedule",
+            link: "/schedule",
+            timeframe: "Fase 1",
+            description: "Calendário Anual, Datas, Frequência",
+            status: currentStep === 1 ? "current" : currentStep > 1 ? "completed" : "upcoming",
+            icon: <CalendarClock className="w-4 h-4" />,
+          },
+          {
+            name: "Venues",
+            link: "/venues",
+            timeframe: "Fase 1",
+            description: "Locais Recorrentes, Contratos Anuais",
+            status: currentStep === 2 ? "current" : currentStep > 2 ? "completed" : "upcoming",
+            icon: <Building className="w-4 h-4" />,
+          },
+          {
+            name: "Production",
+            link: "/production",
+            timeframe: "Fase 2",
+            description: "Equipa Fixa, Equipamento, Setup Padrão",
+            status: currentStep === 3 ? "current" : currentStep > 3 ? "completed" : "upcoming",
+            icon: <Settings className="w-4 h-4" />,
+          },
+          {
+            name: "Marketing",
+            link: "/marketing",
+            timeframe: "Fase 2",
+            description: "Estratégia Anual, Templates Comunicação",
+            status: currentStep === 4 ? "current" : currentStep > 4 ? "completed" : "upcoming",
+            icon: <Megaphone className="w-4 h-4" />,
+          },
+          {
+            name: "Finance",
+            link: "/finance",
+            timeframe: "Fase 2",
+            description: "Orçamento Anual, Previsões, Custos Fixos",
+            status: currentStep === 5 ? "current" : currentStep > 5 ? "completed" : "upcoming",
+            icon: <DollarSign className="w-4 h-4" />,
+          },
+        ];
+
+      default:
+        // Fallback para single-concert
+        return getStepsForEventType('single-concert');
+    }
+  };
+
+  const steps: Step[] = getStepsForEventType(eventType);
+
+  const handleStepClick = (index: number) => {
+    setCurrentStep(index);
+  };
+
+  // Função para gerar email de confirmação para artistas
+  const generateArtistConfirmationEmail = () => {
+    const { eventName, date, organizerName, organizerContact } = eventData.overview;
+    const formattedDate = new Date(date).toLocaleDateString("pt-PT");
+
+    return `Assunto: CONFIRMAÇÃO: ${eventName} — ${formattedDate}
+
+Olá [Nome do Artista],
+
+Confirmamos a tua participação no ${eventName} no dia ${formattedDate}. Por favor envia:
+
+• Rider técnico
+• Bio + foto(s) em alta resolução
+• Quanto tempo precisas para soundcheck?
+• Horário preferido para atuação (se tiveres restrições)
+
+Vamos enviar o timetable oficial assim que estiver fechado.
+
+Abraço,
+${organizerName}
+${organizerContact}`;
+  };
+
+  // Função para gerar proposta para venue
+  const generateVenueProposalEmail = () => {
+    const { eventName, date, description, organizerName, organizerContact } = eventData.overview;
+    const formattedDate = new Date(date).toLocaleDateString("pt-PT");
+    const alternativeDate = new Date(new Date(date).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-PT");
+    const month = new Date(date).toLocaleDateString("pt-PT", { month: "long" });
+
+    const artistList = eventData.lineup.artists.map(artist =>
+      `• ${artist.name} — ${artist.instagram || 'N/A'}`
+    ).join("\n");
+
+    return `Assunto: Proposta de evento — ${eventName} — Data preferida: ${formattedDate} (alternativas: ${alternativeDate})
+
+Olá [Nome / Equipa],
+
+Chamo-me ${organizerName} e estou a planear um evento chamado ${eventName}. O conceito é ${description}.
+
+Datas: Preferimos ${formattedDate}. Caso não seja possível, temos disponibilidade também em ${alternativeDate} ou idealmente uma sexta/sábado no mês de ${month}.
+
+Line-up (proposta):
+${artistList}
+
+Perguntas:
+• Qual o modelo de remuneração que a venue prefere (flat / percentagem da bilheteira)?
+• Têm técnico de som e luz e pessoal na bilheteira? Em caso afirmativo, há custos associados?
+• Quais os horários de abertura/fecho do espaço?
+• Para onde envio riders técnicos e conteúdos para promo (bio + fotos)?
+
+Agradeço se nos puderem confirmar disponibilidade e eventuais condições. Posso enviar um press-kit e mais detalhes sobre o projecto.
+
+Cumprimentos,
+${organizerName} — ${organizerContact}`;
+  };
+
+  // Função para exportar o itinerário completo em PDF
+  const exportFullItineraryPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const contentWidth = pageWidth - (margin * 2);
+    let yPosition = margin;
+
+    // Helper to check if new page is needed
+    const checkNewPage = (requiredSpace: number = 20) => {
+      if (yPosition + requiredSpace > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+        return true;
+      }
+      return false;
+    };
+
+    // Title page
+    yPosition = margin;
+    doc.setFontSize(24);
+      doc.setFont("helvetica", "bold");
+    doc.setTextColor(75, 85, 99); // slate-600
+    doc.text("ITINERÁRIO COMPLETO", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 8;
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
+    doc.text(eventData.overview.eventName || "Evento", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 15;
+
+    // Helper function for section titles with background
+    const addSectionTitle = (title: string, color: number[] = [59, 130, 246]) => {
+      checkNewPage(25);
+      doc.setFillColor(color[0], color[1], color[2]);
+      doc.roundedRect(margin, yPosition - 5, contentWidth, 10, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(title, margin + 5, yPosition + 2);
+      yPosition += 12;
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "normal");
+    };
+
+    // Helper for key-value pairs with nice formatting
+    const addKeyValue = (key: string, value: string | number, indent: number = 0) => {
+      checkNewPage(8);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text(`${key}:`, margin + indent, yPosition);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      const valueStr = String(value);
+      const lines = doc.splitTextToSize(valueStr, contentWidth - indent - 40);
+      doc.text(lines, margin + indent + 35, yPosition);
+      yPosition += lines.length * 5 + 2;
+    };
+
+    // Helper for lists with bullets
+    const addList = (label: string, items: any[], formatter?: (item: any) => string) => {
+      if (!items || items.length === 0) return;
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text(`${label}:`, margin, yPosition);
+      yPosition += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      items.forEach((item, idx) => {
+        checkNewPage(6);
+        const text = formatter ? formatter(item) : (typeof item === 'object' ? JSON.stringify(item) : String(item));
+        const lines = doc.splitTextToSize(`  • ${text}`, contentWidth - 10);
+        doc.text(lines, margin + 5, yPosition);
+        yPosition += lines.length * 5 + 1;
+      });
+      yPosition += 3;
+    };
+
+    // Helper for divider line
+    const addDivider = () => {
+      checkNewPage(5);
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 5;
+    };
+
+    // Overview Section
+    addSectionTitle("VISAO GERAL", [59, 130, 246]); // blue
+    addKeyValue("Nome do Evento", eventData.overview.eventName || "N/A");
+    addKeyValue("Tipo", eventData.overview.eventType || "N/A");
+    if (eventData.overview.date) {
+      addKeyValue("Data", new Date(eventData.overview.date).toLocaleDateString("pt-PT"));
+    }
+    addKeyValue("Local", eventData.overview.venue || "N/A");
+    if (eventData.logistics.address) {
+      addKeyValue("Endereço", eventData.logistics.address);
+    }
+    addKeyValue("Capacidade", eventData.overview.capacity || 0);
+    if (eventData.overview.description) {
+      addKeyValue("Descrição", eventData.overview.description);
+    }
+    if (eventData.overview.organizerName) {
+      addKeyValue("Organizador", `${eventData.overview.organizerName}${eventData.overview.organizerContact ? ` - ${eventData.overview.organizerContact}` : ""}`);
+    }
+    addDivider();
+
+    // Financeiro Section
+    addSectionTitle("FINANCEIRO", [34, 197, 94]); // green
+    addKeyValue("Orcamento Total", `EUR ${(eventData.finance.budget || 0).toLocaleString('pt-PT')}`);
+    addKeyValue("Preco do Bilhete", `EUR ${(eventData.finance.ticketPrice || 0).toLocaleString('pt-PT')}`);
+    addKeyValue("Patrocinios", `EUR ${(eventData.finance.sponsorship || 0).toLocaleString('pt-PT')}`);
+    addKeyValue("Divisão com Venue", `${eventData.finance.venueSplit || 0}% venue / ${100 - (eventData.finance.venueSplit || 0)}% organizador`);
+    if (eventData.overview.eventType === "third-party-event" && eventData.finance.cachetPago) {
+      addKeyValue("Cachet Pago", `EUR ${(eventData.finance.cachetPago || 0).toLocaleString('pt-PT')}`);
+    }
+    if (eventData.finance.expenses && eventData.finance.expenses.length > 0) {
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Despesas:", margin, yPosition);
+    yPosition += 5;
+      eventData.finance.expenses.forEach(exp => {
+        checkNewPage(6);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.text(`  - ${exp.name}: EUR ${exp.amount.toLocaleString('pt-PT')}`, margin + 5, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 3;
+    }
+    addDivider();
+
+    // Line-up Section
+    addSectionTitle("LINE-UP", [168, 85, 247]); // purple
+    if (eventData.lineup.soundcheck) {
+      addKeyValue("Soundcheck", eventData.lineup.soundcheck);
+    }
+    if (eventData.lineup.curfew) {
+      addKeyValue("Curfew", eventData.lineup.curfew);
+    }
+    if (eventData.lineup.artists && eventData.lineup.artists.length > 0) {
+      addList("Artistas", eventData.lineup.artists, (artist) => {
+        return `${artist.name}${artist.time ? ` (${artist.time})` : ""}${artist.fee ? ` - EUR ${artist.fee.toLocaleString('pt-PT')}` : ""}`;
+      });
+    }
+    addDivider();
+
+    // Setlist Section
+    if (eventData.setlist && eventData.setlist.songs && eventData.setlist.songs.length > 0) {
+      addSectionTitle("SETLIST", [236, 72, 153]); // pink
+      if (eventData.setlist.autotuneSetting) {
+        addKeyValue("Autotune Setting", eventData.setlist.autotuneSetting);
+      }
+      if (eventData.setlist.voiceType) {
+        addKeyValue("Tipo de Voz", eventData.setlist.voiceType);
+      }
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Músicas:", margin, yPosition);
+    yPosition += 5;
+      eventData.setlist.songs.sort((a, b) => a.order - b.order).forEach((song, idx) => {
+        checkNewPage(6);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        const songText = `${idx + 1}. ${song.name || "Música sem nome"}${song.time ? ` [${song.time}]` : ""}${song.autotuneNote ? ` (${song.autotuneNote})` : ""}`;
+        const lines = doc.splitTextToSize(`  ${songText}`, contentWidth - 10);
+        doc.text(lines, margin + 5, yPosition);
+        yPosition += lines.length * 5 + 1;
+      });
+      yPosition += 3;
+      addDivider();
+    }
+
+    // Equipa Section
+    addSectionTitle("EQUIPA", [251, 146, 60]); // orange
+    if (eventData.production.sound) {
+      addKeyValue("Som", eventData.production.sound);
+    }
+    if (eventData.production.lighting) {
+      addKeyValue("Iluminação", eventData.production.lighting);
+    }
+    if (eventData.production.stage) {
+      addKeyValue("Palco", eventData.production.stage);
+    }
+    if (eventData.production.crew && eventData.production.crew.length > 0) {
+      addList("Crew", eventData.production.crew, (member) => {
+        return `${member.role}: ${member.name}${member.contact ? ` (${member.contact})` : ""}`;
+      });
+    }
+    addDivider();
+
+    // Vestuário Section
+    addSectionTitle("VESTUARIO", [239, 68, 68]); // red
+    
+    // Mapeamento de IDs para nomes legíveis e preços
+    const wardrobeItemMap: Record<string, { label: string; price: number }> = {
+      // Óculos
+      "sem_oculos": { label: "Sem Óculos", price: 0 },
+      "com_oculos": { label: "Com Óculos Estilosos", price: 15 },
+      // Head Wear
+      "gorro_personalizado": { label: "Gorro Personalizado", price: 5 },
+      "gorro": { label: "Gorro", price: 3 },
+      "babushka": { label: "Babushka", price: 4 },
+      "russian_headwear": { label: "Russian Headwear", price: 6 },
+      "militar_camoflage": { label: "Militar Camoflage", price: 7 },
+      // Parte Superior
+      "dtf": { label: "Let's Copy DTF", price: 11 },
+      "brincos": { label: "Tshirt Vazia", price: 9 },
+      "balmacan": { label: "Balmacan Personalizada", price: 5 },
+      "colete": { label: "Colete", price: 15 },
+      "cravat": { label: "Cravat de Seda", price: 4 },
+      "chainspersonalizados": { label: "Chains Personalizado", price: 560 },
+      "gravata_ascot": { label: "Gravata Ascot", price: 10 },
+      // Pants
+      "custom_pants": { label: "Custom Pants", price: 20 },
+      "zara_pants": { label: "Zara Pants", price: 25 },
+      "pants_chain": { label: "Pants Chain", price: 10 },
+      // Shoes
+      "zara_boots": { label: "Zara Boots", price: 40 },
+      "bershka_boots": { label: "Bershka Boots", price: 35 },
+      // Neck Accessories
+      "nenhum": { label: "Nenhum", price: 0 },
+      "correntes": { label: "Correntes", price: 130 },
+      // Bracelets
+      "glitter_bracelet": { label: "Glitter Bracelet", price: 3.5 },
+      "personalized_bracelet": { label: "Personalized Bracelet", price: 15 },
+      // Watch
+      "watch": { label: "Watch", price: 20 },
+      // Belt
+      "triparte_belt": { label: "TRIPARTE BELT", price: 30 },
+    };
+    
+    const getWardrobeItemName = (id: string): string => {
+      return wardrobeItemMap[id]?.label || id;
+    };
+    
+    const getWardrobeItemPrice = (id: string): number => {
+      return wardrobeItemMap[id]?.price || 0;
+    };
+    
+    const wardrobeSections = [
+      { label: "Cabelo", items: eventData.wardrobe.selectedHairstyles },
+      { label: "Óculos", items: eventData.wardrobe.selectedGlasses },
+      { label: "Head Wear", items: eventData.wardrobe.selectedHeadWear },
+      { label: "Parte Superior", items: eventData.wardrobe.selectedSuperior },
+      { label: "Pants", items: eventData.wardrobe.selectedPants },
+      { label: "Shoes", items: eventData.wardrobe.selectedShoes },
+      { label: "Neck Accessories", items: eventData.wardrobe.selectedNeckAccessories },
+      { label: "Bracelets", items: eventData.wardrobe.selectedBracelets },
+      { label: "Watch", items: eventData.wardrobe.selectedWatch },
+      { label: "Belt", items: eventData.wardrobe.selectedBelt },
+    ];
+    
+    wardrobeSections.forEach(({ label, items }) => {
+      if (items && items.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text(`${label}:`, margin, yPosition);
+    yPosition += 5;
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        items.forEach((itemId) => {
+          checkNewPage(6);
+          const itemName = getWardrobeItemName(itemId);
+          const itemPrice = getWardrobeItemPrice(itemId);
+          const priceText = itemPrice > 0 ? ` - EUR ${itemPrice.toFixed(2)}` : "";
+          doc.text(`  - ${itemName}${priceText}`, margin + 5, yPosition);
+          yPosition += 5;
+        });
+        yPosition += 3;
+      }
+    });
+    
+    if (eventData.wardrobe.customItems && eventData.wardrobe.customItems.length > 0) {
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Itens Personalizados:", margin, yPosition);
+    yPosition += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      eventData.wardrobe.customItems.forEach((item) => {
+        checkNewPage(6);
+        doc.text(`  - ${item.name} (${item.category}) - EUR ${item.price.toFixed(2)}`, margin + 5, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 3;
+    }
+    if (eventData.wardrobe.totalPrice > 0) {
+      checkNewPage(8);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Total Vestuario: EUR ${eventData.wardrobe.totalPrice.toLocaleString('pt-PT')}`, margin, yPosition);
+      yPosition += 8;
+    }
+    addDivider();
+
+    // Logística Section
+    addSectionTitle("LOGISTICA", [14, 165, 233]); // cyan
+    if (eventData.logistics.address) {
+      addKeyValue("Endereço Completo", eventData.logistics.address);
+    }
+    if (eventData.logistics.parking) {
+      addKeyValue("Estacionamento", eventData.logistics.parking);
+    }
+    if (eventData.logistics.loadIn) {
+      addKeyValue("Load-In", eventData.logistics.loadIn);
+    }
+    if (eventData.logistics.loadOut) {
+      addKeyValue("Load-Out", eventData.logistics.loadOut);
+    }
+    if (eventData.logistics.catering) {
+      addKeyValue("Catering", eventData.logistics.catering);
+    }
+    if (eventData.logistics.material && eventData.logistics.material.length > 0) {
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Material a Levar:", margin, yPosition);
+    yPosition += 5;
+      eventData.logistics.material.forEach((item) => {
+        checkNewPage(6);
+        const status = item.checked ? "[LEVADO]" : "[NAO LEVADO]";
+        const returned = item.returned ? " [DEVOLVIDO]" : "";
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.text(`  ${status} ${item.category}: ${item.name}${returned}`, margin + 5, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 3;
+    }
+    if (eventData.logistics.travelOutfit && eventData.logistics.travelOutfit.length > 0) {
+      checkNewPage(15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Roupa até Chegar no Local:", margin, yPosition);
+      yPosition += 5;
+      eventData.logistics.travelOutfit.forEach((item) => {
+        checkNewPage(6);
+        const status = item.checked ? "[LEVADO]" : "[NAO LEVADO]";
+        const returned = item.returned ? " [DEVOLVIDO]" : "";
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.text(`  ${status} ${item.category}: ${item.name}${returned}`, margin + 5, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 3;
+    }
+    addDivider();
+
+    // Bilheteira Section
+    addSectionTitle("BILHETEIRA", [245, 158, 11]); // yellow
+    addKeyValue("Total Bilhetes", eventData.tickets.totalTickets || 0);
+    addKeyValue("Vendidos", eventData.tickets.soldTickets || 0);
+    if (eventData.tickets.priceTiers && eventData.tickets.priceTiers.length > 0) {
+      addList("Preços por Categoria", eventData.tickets.priceTiers, (tier) => {
+        return `${tier.name}: EUR ${tier.price.toLocaleString('pt-PT')} (${tier.quantity} bilhetes)`;
+      });
+    }
+    addDivider();
+
+    // Marketing Section
+    addSectionTitle("MARKETING", [139, 92, 246]); // violet
+    if (eventData.marketing.pressRelease) {
+      addKeyValue("Press Release", eventData.marketing.pressRelease);
+    }
+    if (eventData.marketing.socialMedia && eventData.marketing.socialMedia.length > 0) {
+      addList("Redes Sociais", eventData.marketing.socialMedia, (sm) => {
+        return `${sm.platform}: ${sm.content}${sm.scheduled ? ` (${sm.scheduled})` : ""}`;
+      });
+    }
+    if (eventData.marketing.influencers && eventData.marketing.influencers.length > 0) {
+      addList("Influencers", eventData.marketing.influencers, (inf) => {
+        return `${inf.name} - Reach: ${inf.reach.toLocaleString('pt-PT')}${inf.fee ? ` (EUR ${inf.fee.toLocaleString('pt-PT')})` : ""}`;
+      });
+    }
+    addDivider();
+
+    // Day Itinerary Section
+    if (eventData.dayItinerary && (eventData.dayItinerary.date || eventData.dayItinerary.location)) {
+      addSectionTitle("ITINERARIO DO DIA DO SHOW", [59, 130, 246]); // blue
+      if (eventData.dayItinerary.date) {
+        addKeyValue("Data", new Date(eventData.dayItinerary.date).toLocaleDateString("pt-PT"));
+      }
+      if (eventData.dayItinerary.location) {
+        addKeyValue("Localização", eventData.dayItinerary.location);
+      }
+      if (eventData.dayItinerary.accommodation) {
+        addKeyValue("Alojamento", eventData.dayItinerary.accommodation);
+      }
+      if (eventData.dayItinerary.meals && eventData.dayItinerary.meals.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Refeicoes:", margin, yPosition);
+    yPosition += 5;
+        let totalMeals = 0;
+        eventData.dayItinerary.meals.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const dateStr = item.date ? new Date(item.date).toLocaleDateString("pt-PT") : "";
+          const timeStr = item.time || "";
+          const locationStr = item.location || "";
+          const whatStr = item.whatToEat || "";
+          const priceStr = item.price ? `EUR ${item.price.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "";
+          const text = `${dateStr} ${timeStr} - ${locationStr}${whatStr ? `: ${whatStr}` : ""}${priceStr ? ` (${priceStr})` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+          totalMeals += item.price || 0;
+        });
+        if (totalMeals > 0) {
+          checkNewPage(8);
+          doc.setFont("helvetica", "bold");
+          doc.text(`  Total Refeicoes: EUR ${totalMeals.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, margin + 5, yPosition);
+          yPosition += 8;
+        }
+        yPosition += 3;
+      }
+      if (eventData.dayItinerary.soundcheckTime) {
+        addKeyValue("Horário Soundcheck", eventData.dayItinerary.soundcheckTime);
+      }
+      if (eventData.dayItinerary.venueOpenTime) {
+        addKeyValue("Abertura do Venue", eventData.dayItinerary.venueOpenTime);
+      }
+      
+      // Travel Details
+      if (eventData.dayItinerary.travelDetails && eventData.dayItinerary.travelDetails.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Detalhes de Viagem:", margin, yPosition);
+    yPosition += 5;
+        eventData.dayItinerary.travelDetails.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const text = `${item.time || "Sem horário"} - ${item.type}: ${item.details}${item.notes ? ` (${item.notes})` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
+
+      // Clothing Stores
+      if (eventData.dayItinerary.clothingStores && eventData.dayItinerary.clothingStores.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Lojas de Roupa:", margin, yPosition);
+    yPosition += 5;
+        eventData.dayItinerary.clothingStores.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const text = `${item.time || "Sem horário"} - ${item.name}${item.address ? ` (${item.address})` : ""}${item.notes ? ` - ${item.notes}` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
+
+      // Studio Visits
+      if (eventData.dayItinerary.studioVisits && eventData.dayItinerary.studioVisits.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Visitas a Estúdios:", margin, yPosition);
+    yPosition += 5;
+        eventData.dayItinerary.studioVisits.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const text = `${item.time || "Sem horário"} - ${item.studio}${item.artist ? ` com ${item.artist}` : ""}${item.purpose ? ` (${item.purpose})` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
+
+      // Voice Practice
+      if (eventData.dayItinerary.voicePractice && eventData.dayItinerary.voicePractice.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(75, 85, 99);
+        doc.text("Práticas de Voz:", margin, yPosition);
+    yPosition += 5;
+        eventData.dayItinerary.voicePractice.forEach((item) => {
+          checkNewPage(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(0, 0, 0);
+          const text = `${item.time || "Sem horário"} - ${item.type || "Prática"}${item.duration ? ` (${item.duration})` : ""}${item.notes ? `: ${item.notes}` : ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
+
+      // Hydration Reminders
+      if (eventData.dayItinerary.hydrationReminders && eventData.dayItinerary.hydrationReminders.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(59, 130, 246); // blue
+        doc.text("LEMBRETES DE HIDRATACAO", margin, yPosition);
+        yPosition += 6;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        eventData.dayItinerary.hydrationReminders.forEach((item) => {
+          checkNewPage(6);
+          const status = item.completed ? "[FEITO]" : "[PENDENTE]";
+          doc.text(`  - ${item.time || "Sem horario"} - ${status}`, margin + 5, yPosition);
+          yPosition += 5;
+        });
+        yPosition += 3;
+      }
+
+      // Audience Reminders
+      if (eventData.dayItinerary.audienceReminders && eventData.dayItinerary.audienceReminders.length > 0) {
+        checkNewPage(15);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(139, 92, 246); // purple
+        doc.text("O QUE A AUDIENCIA REALMENTE QUER VER", margin, yPosition);
+        yPosition += 6;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        eventData.dayItinerary.audienceReminders.forEach((item) => {
+          checkNewPage(6);
+          const status = item.completed ? "[FEITO]" : "[PENDENTE]";
+          const text = `${item.time || "Sem horario"} - ${status} - ${item.tip || ""}`;
+          const lines = doc.splitTextToSize(`  - ${text}`, contentWidth - 10);
+          doc.text(lines, margin + 5, yPosition);
+          yPosition += lines.length * 5 + 1;
+        });
+        yPosition += 3;
+      }
+
+      if (eventData.dayItinerary.otherNotes) {
+        addKeyValue("Outras Notas", eventData.dayItinerary.otherNotes);
+      }
+    }
+
+    // Save PDF
+    doc.save(`${eventData.overview.eventName || "evento"}_itinerario_completo.pdf`);
+  };
+
+  const renderStepContent = () => {
+    // Renderizar conteúdo baseado no tipo de evento e step atual
+    const currentStepName = steps[currentStep]?.name || "";
+    
+    // Single Concert - Fluxograma completo padrão
+    if (eventType === 'single-concert') {
+      switch (currentStep) {
+        case 0: // Event
+          return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="eventName">Nome do Evento</Label>
+                <Input
+                  id="eventName"
+                  value={eventData.overview.eventName}
+                  onChange={(e) => setEventData(prev => ({
+                    ...prev,
+                    overview: { ...prev.overview, eventName: e.target.value }
+                  }))}
+                  placeholder="Ex: DAY DREAM II Underworld"
+                  className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                />
+              </div>
+              <div>
+                <Label htmlFor="eventType">Tipo de Evento</Label>
+                <Select
+                  value={eventData.overview.eventType}
+                  onValueChange={(value) => {
+                    setEventData(prev => ({
+                      ...prev,
+                      overview: {
+                        ...prev.overview,
+                        eventType: value,
+                        description: EVENT_TYPE_DESCRIPTIONS[value] || prev.overview.description
+                      }
+                    }));
+                  }}
+                >
+                  <SelectTrigger className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400">
+                    <SelectValue placeholder="Selecionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="diepretty-world">Diepretty World</SelectItem>
+                    <SelectItem value="diepretty-beat-battles">Die808s Batalha de Beats</SelectItem>
+                    <SelectItem value="industry-day">Industry Day</SelectItem>
+                    <SelectItem value="concerto">Concerto</SelectItem>
+                    <SelectItem value="festival">Festival</SelectItem>
+                    <SelectItem value="conferencia">Conferência</SelectItem>
+                    <SelectItem value="workshop">Workshop</SelectItem>
+                    <SelectItem value="third-party-event">Third Party Event</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="date">Data do Evento</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={eventData.overview.date}
+                  onChange={(e) => setEventData(prev => ({
+                    ...prev,
+                    overview: { ...prev.overview, date: e.target.value }
+                  }))}
+                  className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                />
+              </div>
+              <div>
+                <Label htmlFor="organizerName">Nome do Organizador</Label>
+                <Input
+                  id="organizerName"
+                  value={eventData.overview.organizerName}
+                  onChange={(e) => setEventData(prev => ({
+                    ...prev,
+                    overview: { ...prev.overview, organizerName: e.target.value }
+                  }))}
+                  placeholder="Ex: João Silva"
+                  className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="description">Descrição do Evento</Label>
+              <Textarea
+                id="description"
+                value={eventData.overview.description}
+                onChange={(e) => setEventData(prev => ({
+                  ...prev,
+                  overview: { ...prev.overview, description: e.target.value }
+                }))}
+                placeholder="Descreva o conceito e objetivos do evento..."
+                rows={4}
+                className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+              />
+            </div>
+            
+            {/* Sub-etapas: Show, Operations, Legal, Accounting */}
+            <div className="grid grid-cols-2 gap-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Show</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Conceito do Show</Label>
+                    <Textarea
+                      value={eventData.overview.description}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        overview: { ...prev.overview, description: e.target.value }
+                      }))}
+                      placeholder="Descreva o conceito do show..."
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label>Duração Estimada</Label>
+                    <Input placeholder="Ex: 2 horas" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Operations</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Horário de Operações</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input type="time" placeholder="Abertura" />
+                      <Input type="time" placeholder="Fecho" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Equipa de Operações</Label>
+                    <Input placeholder="Número de pessoas" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Legal</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Contratos Necessários</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox id="contract-venue" />
+                        <Label htmlFor="contract-venue" className="font-normal">Contrato Venue</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox id="contract-artists" />
+                        <Label htmlFor="contract-artists" className="font-normal">Contratos Artistas</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox id="contract-vendor" />
+                        <Label htmlFor="contract-vendor" className="font-normal">Contratos Fornecedores</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox id="insurance" />
+                        <Label htmlFor="insurance" className="font-normal">Seguro do Evento</Label>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Licenças Necessárias</Label>
+                    <Textarea placeholder="Liste as licenças necessárias..." rows={2} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Accounting</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>NIF do Evento</Label>
+                    <Input placeholder="PT123456789" />
+                  </div>
+                  <div>
+                    <Label>Conta Bancária</Label>
+                    <Input placeholder="IBAN" />
+                  </div>
+                  <div>
+                    <Label>Método de Pagamento</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="transfer">Transferência</SelectItem>
+                        <SelectItem value="cash">Dinheiro</SelectItem>
+                        <SelectItem value="card">Cartão</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+        case 1: // Venue
+          return <VenueStep eventData={eventData} setEventData={setEventData} />;
+
+        case 2: // Marketing
+          return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="soundcheck">Soundcheck</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="w-4 h-4 text-slate-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Horário para os artistas testarem o som e equipamentos antes do evento</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="soundcheck"
+                  type="time"
+                  value={eventData.lineup.soundcheck}
+                  onChange={(e) => setEventData(prev => ({
+                    ...prev,
+                    lineup: { ...prev.lineup, soundcheck: e.target.value }
+                  }))}
+                  className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="curfew">Curfew</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="w-4 h-4 text-slate-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Horário limite para terminar o evento (imposto pelo local ou licenças)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="curfew"
+                  type="time"
+                  value={eventData.lineup.curfew}
+                  onChange={(e) => setEventData(prev => ({
+                    ...prev,
+                    lineup: { ...prev.lineup, curfew: e.target.value }
+                  }))}
+                  className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Artistas</Label>
+              <div className="space-y-2">
+                {eventData.lineup.artists.map((artist, index) => (
+                  <div key={index} className="grid grid-cols-6 gap-2">
+                    <Input
+                      value={artist.name}
+                      onChange={(e) => {
+                        const newArtists = [...eventData.lineup.artists];
+                        newArtists[index].name = e.target.value;
+                        setEventData(prev => ({
+                          ...prev,
+                          lineup: { ...prev.lineup, artists: newArtists }
+                        }));
+                      }}
+                      placeholder="Nome do artista"
+                      className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                    />
+                    <Input
+                      type="time"
+                      value={artist.time}
+                      onChange={(e) => {
+                        const newArtists = [...eventData.lineup.artists];
+                        newArtists[index].time = e.target.value;
+                        setEventData(prev => ({
+                          ...prev,
+                          lineup: { ...prev.lineup, artists: newArtists }
+                        }));
+                      }}
+                      className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                    />
+                    <Input
+                      type="number"
+                      value={artist.fee}
+                      onChange={(e) => {
+                        const newArtists = [...eventData.lineup.artists];
+                        newArtists[index].fee = parseInt(e.target.value) || 0;
+                        setEventData(prev => ({
+                          ...prev,
+                          lineup: { ...prev.lineup, artists: newArtists }
+                        }));
+                      }}
+                      placeholder="Cachet (€)"
+                      className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                    />
+                    <Input
+                      value={artist.contact}
+                      onChange={(e) => {
+                        const newArtists = [...eventData.lineup.artists];
+                        newArtists[index].contact = e.target.value;
+                        setEventData(prev => ({
+                          ...prev,
+                          lineup: { ...prev.lineup, artists: newArtists }
+                        }));
+                      }}
+                      placeholder="Contacto"
+                      className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                    />
+                    <Input
+                      value={artist.instagram}
+                      onChange={(e) => {
+                        const newArtists = [...eventData.lineup.artists];
+                        newArtists[index].instagram = e.target.value;
+                        setEventData(prev => ({
+                          ...prev,
+                          lineup: { ...prev.lineup, artists: newArtists }
+                        }));
+                      }}
+                      placeholder="@instagram"
+                      className="border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newArtists = eventData.lineup.artists.filter((_, i) => i !== index);
+                        setEventData(prev => ({
+                          ...prev,
+                          lineup: { ...prev.lineup, artists: newArtists }
+                        }));
+                      }}
+                      className="border-2 border-slate-200 dark:border-slate-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  onClick={() => setEventData(prev => ({
+                    ...prev,
+                    lineup: {
+                      ...prev.lineup,
+                      artists: [...prev.lineup.artists, { name: "", time: "", fee: 0, contact: "", instagram: "", spotify: "" }]
+                    }
+                  }))}
+                  className="border-2 border-slate-200 dark:border-slate-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Artista
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+
+        case 3: // Advertising
+          return <AdvertisingStep eventData={eventData} setEventData={setEventData} />;
+
+        case 4: // Volunteer
+          return <VolunteerStep eventData={eventData} setEventData={setEventData} />;
+
+        case 5: // Speaker
+          return <SpeakerStep eventData={eventData} setEventData={setEventData} />;
+
+        case 6: // Sponsor
+          return <SponsorStep eventData={eventData} setEventData={setEventData} />;
+
+        case 7: // Producer
+          return <ProducerStep eventData={eventData} setEventData={setEventData} />;
+
+        case 8: // Stage
+          return <StageStep eventData={eventData} setEventData={setEventData} />;
+
+        case 9: // Attendees
+          return <AttendeesStep eventData={eventData} setEventData={setEventData} />;
+
+        default:
+          return <div>Selecione uma etapa</div>;
+      }
+    }
+
+    // Third Party Hired - Foco em contratos e cachet
+    if (eventType === 'third-party-hired') {
+      switch (currentStep) {
+        case 0: // Contract
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contrato Principal</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Contratante</Label>
+                    <Input
+                      value={eventData.overview.organizerName}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        overview: { ...prev.overview, organizerName: e.target.value }
+                      }))}
+                      placeholder="Nome da entidade contratante"
+                    />
+                  </div>
+                  <div>
+                    <Label>Cachet (€)</Label>
+                    <Input
+                      type="number"
+                      value={eventData.finance.cachetPago || 0}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        finance: { ...prev.finance, cachetPago: parseFloat(e.target.value) || 0 }
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Termos do Contrato</Label>
+                    <Textarea
+                      placeholder="Termos específicos do contrato..."
+                      rows={6}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        case 1: // Rider
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rider Técnico</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Requisitos de Som</Label>
+                    <Textarea
+                      value={eventData.production.sound}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        production: { ...prev.production, sound: e.target.value }
+                      }))}
+                      rows={4}
+                    />
+                  </div>
+                  <div>
+                    <Label>Requisitos de Luz</Label>
+                    <Textarea
+                      value={eventData.production.lighting}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        production: { ...prev.production, lighting: e.target.value }
+                      }))}
+                      rows={4}
+                    />
+                  </div>
+                  <div>
+                    <Label>Alimentação</Label>
+                    <Textarea
+                      value={eventData.logistics.catering}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        logistics: { ...prev.logistics, catering: e.target.value }
+                      }))}
+                      placeholder="Requisitos alimentares..."
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        case 2: // Venue
+          return <VenueStep eventData={eventData} setEventData={setEventData} />;
+
+        case 3: // Production
+          return <ProducerStep eventData={eventData} setEventData={setEventData} />;
+
+        case 4: // Setlist
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Setlist</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {eventData.setlist.songs.map((song, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input value={song.name} placeholder="Nome da música" />
+                        <Input value={song.autotuneNote} placeholder="Autotune" />
+                        <Input type="time" value={song.time} placeholder="Hora" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        case 5: // Payment
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pagamento</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Cachet Acordado (€)</Label>
+                    <Input
+                      type="number"
+                      value={eventData.finance.cachetPago || 0}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        finance: { ...prev.finance, cachetPago: parseFloat(e.target.value) || 0 }
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Método de Pagamento</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="transfer">Transferência</SelectItem>
+                        <SelectItem value="cash">Dinheiro</SelectItem>
+                        <SelectItem value="check">Cheque</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Data de Pagamento</Label>
+                    <Input type="date" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        default:
+          return <div>Selecione uma etapa</div>;
+      }
+    }
+
+    // Mini Tour - Foco em múltiplas paragens
+    if (eventType === 'mini-tour') {
+      switch (currentStep) {
+        case 0: // Tour Overview
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Visão Geral da Tour</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Nome da Tour</Label>
+                    <Input
+                      value={eventData.overview.eventName}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        overview: { ...prev.overview, eventName: e.target.value }
+                      }))}
+                      placeholder="Ex: Diepretty Mini Tour 2026"
+                    />
+                  </div>
+                  <div>
+                    <Label>Conceito da Tour</Label>
+                    <Textarea
+                      value={eventData.overview.description}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        overview: { ...prev.overview, description: e.target.value }
+                      }))}
+                      rows={4}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Data de Início</Label>
+                      <Input type="date" />
+                    </div>
+                    <div>
+                      <Label>Data de Fim</Label>
+                      <Input type="date" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        case 1: // Venues
+          return <VenueStep eventData={eventData} setEventData={setEventData} />;
+
+        case 2: // Logistics
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Logística da Tour</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Transporte</Label>
+                    <Textarea
+                      value={eventData.logistics.transport}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        logistics: { ...prev.logistics, transport: e.target.value }
+                      }))}
+                      placeholder="Detalhes de transporte entre cidades..."
+                      rows={4}
+                    />
+                  </div>
+                  <div>
+                    <Label>Alojamento</Label>
+                    <Textarea
+                      placeholder="Hotéis/alojamento por cidade..."
+                      rows={4}
+                    />
+                  </div>
+                  <div>
+                    <Label>Equipamento Itinerante</Label>
+                    <Textarea
+                      placeholder="Equipamento que viaja na tour..."
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        case 3: // Line-up
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Line-up da Tour</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {eventData.lineup.artists.map((artist, index) => (
+                      <div key={index} className="border p-4 rounded">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input value={artist.name} placeholder="Nome do artista" />
+                          <Input type="time" value={artist.time} placeholder="Hora" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        case 4: // Marketing
+          return (
+            <div className="space-y-6">
+              <EventMarketingServices eventData={eventData} setEventData={setEventData} />
+            </div>
+          );
+
+        case 5: // Tickets
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bilhetes por Data</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {eventData.tickets.priceTiers.map((tier, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input value={tier.name} placeholder="Categoria" />
+                        <Input type="number" value={tier.price} placeholder="Preço" />
+                        <Input type="number" value={tier.quantity} placeholder="Quantidade" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        case 6: // Production
+          return <ProducerStep eventData={eventData} setEventData={setEventData} />;
+
+        case 7: // Finance
+          return (
+            <div className="space-y-6">
+              <ProfitDashboard
+                eventData={eventData}
+                onUpdate={(updates) => {
+                  setEventData(prev => ({
+                    ...prev,
+                    finance: { ...prev.finance, ...updates }
+                  }));
+                }}
+              />
+            </div>
+          );
+
+        default:
+          return <div>Selecione uma etapa</div>;
+      }
+    }
+
+    // Yearly Templates - Foco em planeamento recorrente
+    if (eventType === 'yearly-templates') {
+      switch (currentStep) {
+        case 0: // Template Setup
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Configuração do Template</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Nome do Template</Label>
+                    <Input
+                      value={eventData.overview.eventName}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        overview: { ...prev.overview, eventName: e.target.value }
+                      }))}
+                      placeholder="Ex: Template Concerto Mensal"
+                    />
+                  </div>
+                  <div>
+                    <Label>Parâmetros Base</Label>
+                    <Textarea
+                      value={eventData.overview.description}
+                      onChange={(e) => setEventData(prev => ({
+                        ...prev,
+                        overview: { ...prev.overview, description: e.target.value }
+                      }))}
+                      placeholder="Configurações padrão que se aplicam a todos os eventos deste template..."
+                      rows={6}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        case 1: // Schedule
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Calendário Anual</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Frequência</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecionar frequência" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Semanal</SelectItem>
+                        <SelectItem value="biweekly">Quinzenal</SelectItem>
+                        <SelectItem value="monthly">Mensal</SelectItem>
+                        <SelectItem value="quarterly">Trimestral</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Ano</Label>
+                    <Input type="number" placeholder="2026" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+
+        case 2: // Venues
+          return <VenueStep eventData={eventData} setEventData={setEventData} />;
+
+        case 3: // Production
+          return <ProducerStep eventData={eventData} setEventData={setEventData} />;
+
+        case 4: // Marketing
+          return (
+            <div className="space-y-6">
+              <EventMarketingServices eventData={eventData} setEventData={setEventData} />
+            </div>
+          );
+
+        case 5: // Finance
+          return (
+            <div className="space-y-6">
+              <ProfitDashboard
+                eventData={eventData}
+                onUpdate={(updates) => {
+                  setEventData(prev => ({
+                    ...prev,
+                    finance: { ...prev.finance, ...updates }
+                  }));
+                }}
+              />
+            </div>
+          );
+
+        default:
+          return <div>Selecione uma etapa</div>;
+      }
+    }
+
+    // Fallback
+    return <div>Selecione uma etapa</div>;
+  };
+
+  return (
+    <TooltipProvider>
+      <div className="w-full">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">
+            Evento — <span className="text-indigo-600 dark:text-indigo-400">{params.id}</span>
+          </h1>
+          {eventType && (
+            <Badge variant="outline" className="mt-2">
+              Tipo: {
+                eventType === 'single-concert' ? 'Concerto Único' :
+                eventType === 'third-party-hired' ? 'Evento Contratado' :
+                eventType === 'mini-tour' ? 'Mini-Digressão' :
+                eventType === 'yearly-templates' ? 'Templates Anuais' : 'Evento'
+              }
+            </Badge>
+          )}
+        </div>
+
+        {/* Fluxograma de Execução */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <MultiStepper
+              steps={steps}
+              currentStep={currentStep}
+              onStepClick={handleStepClick}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Conteúdo do Step Atual */}
+        <Card className="w-full border-2 border-slate-200 dark:border-slate-700 shadow-lg">
+          <CardContent className="pt-6">
+            {renderStepContent()}
+          </CardContent>
+        </Card>
+
+        {/* Botões de Navegação */}
+        <Card className="w-full border-2 border-slate-200 dark:border-slate-700 shadow-lg mt-6">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                disabled={currentStep === 0}
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Anterior
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleManualSave}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar
+                </Button>
+                {lastSaved && (
+                  <span className="text-sm text-muted-foreground flex items-center">
+                    Guardado: {lastSaved.toLocaleTimeString("pt-PT")}
+                  </span>
+                )}
+              </div>
+              <Button
+                onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                disabled={currentStep === steps.length - 1}
+              >
+                Próximo
+                <ChevronLeft className="w-4 h-4 ml-2 rotate-180" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </TooltipProvider>
+  );
+}
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Cabelo")?.length ? (
+            <div className="mb-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Cabelo")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`cabelo-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Cabelo)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Cabelo", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <Label className="mb-2 block">Óculos</Label>
+          <div className="flex flex-wrap gap-4 mb-4">
+            {glassesOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={
+                  selectedGlasses.includes(option.value) ? "default" : "outline"
+                }
+                onClick={() => toggleGlasses(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Óculos")?.length ? (
+            <div className="mb-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Óculos")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`oculos-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Óculos)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Óculos", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <Label className="mb-2 block">Head Wear</Label>
+          <div className="flex flex-wrap gap-4">
+            {headWearOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={
+                  selectedHeadWear.includes(option.value) ? "default" : "outline"
+                }
+                onClick={() => toggleHeadWear(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Head Wear")?.length ? (
+            <div className="mt-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Head Wear")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`headwear-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Head Wear)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Head Wear", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* UPPER Section */}
+        <div className="border rounded p-4 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">PARTES SUPERIORES</h2>
+          <Label className="mb-2 block">Parte Superior</Label>
+          <div className="flex flex-wrap gap-4">
+            {superiorOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={
+                  selectedSuperior.includes(option.value) ? "default" : "outline"
+                }
+                onClick={() => toggleSuperior(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Parte Superior")?.length ? (
+            <div className="mt-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Parte Superior")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`superior-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Parte Superior)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Parte Superior", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* LOWER Section */}
+        <div className="border rounded p-4 shadow-sm">
+                  <h2 className="text-xl font-semibold mb-4">PARTES INFERIORES</h2>
+          <Label className="mb-2 block">Pants</Label>
+          <div className="flex flex-wrap gap-4">
+            {pantsOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={
+                  selectedPants.includes(option.value) ? "default" : "outline"
+                }
+                onClick={() => togglePants(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Pants")?.length ? (
+            <div className="mt-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Pants")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`pants-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Pants)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Pants", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* FEET Section */}
+        <div className="border rounded p-4 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">PÉ</h2>
+          <Label className="mb-2 block">Tênis</Label>
+          <div className="flex flex-wrap gap-4">
+            {shoesOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={
+                  selectedShoes.includes(option.value) ? "default" : "outline"
+                }
+                onClick={() => toggleShoes(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Tênis")?.length ? (
+            <div className="mt-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Tênis")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`tenis-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Tênis)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Tênis", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* ACCESSORIES Section */}
+        <div className="border rounded p-4 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">ACESSÓRIOS</h2>
+          <Label className="mb-2 block">Acessórios de Pescoço</Label>
+          <div className="flex flex-wrap gap-4 mb-4">
+            {neckAccessoryOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={
+                  selectedNeckAccessories.includes(option.value) ? "default" : "outline"
+                }
+                onClick={() => toggleNeckAccessory(option.value)}
+              >
+                {option.label} {option.price > 0 && `(€${option.price})`}
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Acessórios de Pescoço")?.length ? (
+            <div className="mb-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Acessórios de Pescoço")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`neck-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Acessórios de Pescoço)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Acessórios de Pescoço", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <Label className="mb-2 block">Pulseiras</Label>
+          <div className="flex flex-wrap gap-4 mb-4">
+            {braceletOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={
+                  selectedBracelets.includes(option.value) ? "default" : "outline"
+                }
+                onClick={() => toggleBracelet(option.value)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Pulseiras")?.length ? (
+            <div className="mb-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Pulseiras")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`pulseiras-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Pulseiras)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Pulseiras", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <Label className="mb-2 block">Relógio</Label>
+          <div className="flex flex-wrap gap-4 mb-4">
+            {watchOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={
+                  selectedWatch.includes(option.value) ? "default" : "outline"
+                }
+                onClick={() => toggleWatch(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Relógio")?.length ? (
+            <div className="mb-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Relógio")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`relogio-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Relógio)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Relógio", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+            <Label className="mb-2 block">Cinto</Label>
+          <div className="flex flex-wrap gap-4">
+            {beltOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={
+                  selectedBelt.includes(option.value) ? "default" : "outline"
+                }
+                onClick={() => toggleBelt(option.value)}
+              >
+                {option.label} (€{option.price})
+              </Button>
+            ))}
+          </div>
+          {groupedCatalog.get("Cinto")?.length ? (
+            <div className="mt-6">
+              <p className="text-sm text-muted-foreground mb-2">Sugestões do Catálogo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedCatalog.get("Cinto")!.map(({ section, item }) => (
+                  <CatalogItemCard
+                    key={`cinto-${section.key}-${item.id}`}
+                    section={section}
+                    item={item}
+                    onAdd={(it) => {
+                      const priceStr = window.prompt(`Preço para ${it.namePt} (Cinto)`, "0");
+                      if (priceStr && priceStr.trim() !== "" && !isNaN(parseFloat(priceStr))) {
+                        addCustomItem(`${it.namePt} (${it.nameIt})`, "Cinto", priceStr);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Custom Item Section */}
+        <div className="border rounded p-4 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Adicionar Item Personalizado</h2>
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            placeholder="Nome do Item"
+            className="border rounded p-2 w-full mb-2"
+          />
+          <input
+            type="text"
+            value={customCategory}
+            onChange={(e) => setCustomCategory(e.target.value)}
+            placeholder="Categoria"
+            className="border rounded p-2 w-full mb-2"
+          />
+          <input
+            type="number"
+            value={customPrice}
+            onChange={(e) => setCustomPrice(e.target.value)}
+            placeholder="Preço"
+            className="border rounded p-2 w-full mb-2"
+          />
+          <Button onClick={handleAddCustomItem}>Adicionar Item</Button>
+        </div>
+      </div>
+
+      {/* Summary Section */}
+      <div className="border rounded p-4 shadow-md flex flex-col gap-4">
+        <h2 className="text-2xl font-bold">Resumo do Vestuário</h2>
+        <pre className="text-sm whitespace-pre-wrap">
+          {JSON.stringify(eventData.wardrobe, null, 2)}
+        </pre>
+        <div className="text-xl font-bold">Total Estimado: €{totalPrice.toFixed(2)}</div>
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={() => (window.location.href = "/filmagem")}>
+            Confirmar Vestuário
+          </Button>
+          <Button variant="outline" onClick={handleExportInvoice}>
+            EXPORTAR FATURA
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Definições para o vestuário (do código fornecido)
+type PricedOption = { label: string; value: string; price: number };
+
+const hairstyleOptions: PricedOption[] = [
+  { label: "Tinta Preta", value: "tintapreta", price: 6 },
+  { label: "Relaxing", value: "moderno", price: 9 },
+  { label: "Retoque", value: "criativo", price: 5 },
+];
+
+const glassesOptions: PricedOption[] = [
+  { label: "Sem Óculos", value: "sem_oculos", price: 0 },
+  { label: "Com Óculos Estilosos", value: "com_oculos", price: 15 },
+];
+
+const headWearOptions: PricedOption[] = [
+  { label: "Gorro Personalizado", value: "gorro_personalizado", price: 5 },
+  { label: "Gorro", value: "gorro", price: 3 },
+  { label: "Babushka", value: "babushka", price: 4 },
+  { label: "Russian Headwear", value: "russian_headwear", price: 6 },
+  { label: "Militar Camoflage", value: "militar_camoflage", price: 7 },
+];
+
+const superiorOptions: PricedOption[] = [
+  { label: "Let's Copy DTF", value: "dtf", price: 11 },
+  { label: "Tshirt Vazia", value: "brincos", price: 9 },
+  { label: "Balmacan Personalizada", value: "balmacan", price: 5 },
+  { label: "Colete", value: "colete", price: 15 },
+  { label: "Cravat de Seda", value: "cravat", price: 4 },
+  { label: "Chains Personalizado", value: "chainspersonalizados", price: 560 },
+  { label: "Gravata Ascot", value: "gravata_ascot", price: 10 },
+];
+
+const pantsOptions: PricedOption[] = [
+  { label: "Custom Pants", value: "custom_pants", price: 20 },
+  { label: "Zara Pants", value: "zara_pants", price: 25 },
+  { label: "Pants Chain", value: "pants_chain", price: 10 },
+];
+
+const shoesOptions: PricedOption[] = [
+  { label: "Zara Boots", value: "zara_boots", price: 40 },
+  { label: "Bershka Boots", value: "bershka_boots", price: 35 },
+];
+
+const neckAccessoryOptions: PricedOption[] = [
+  { label: "Nenhum", value: "nenhum", price: 0 },
+  { label: "Cravat de Seda", value: "cravat", price: 4 },
+  { label: "Correntes", value: "correntes", price: 130 },
+];
+
+const braceletOptions: PricedOption[] = [
+  { label: "Glitter Bracelet (€3.50)", value: "glitter_bracelet", price: 3.5 },
+  { label: "Personalized Bracelet", value: "personalized_bracelet", price: 15 },
+];
+
+const watchOptions: PricedOption[] = [
+  { label: "Watch", value: "watch", price: 20 },
+];
+
+const beltOptions: PricedOption[] = [
+  { label: "TRIPARTE BELT", value: "triparte_belt", price: 30 },
+];
+
+const ALLOWED_CATEGORIES = [
+  "Cabelo",
+  "Óculos",
+  "Head Wear",
+  "Parte Superior",
+  "Pants",
+  "Tênis",
+  "Acessórios de Pescoço",
+  "Pulseiras",
+  "Relógio",
+  "Cinto",
+] as const;
+
+type AllowedCategory = typeof ALLOWED_CATEGORIES[number];
+
+type WardrobeItem = {
+  id: string;
+  nameIt: string;
+  namePt: string;
+  tooltip: string;
+  photo?: string;
+};
+
+type WardrobeSection = {
+  key: string;
+  title: string;
+  subtitle?: string;
+  items: WardrobeItem[];
+};
+
+const foto = (q: string) => `https://source.unsplash.com/640x480/?${encodeURIComponent(q)}`;
+
+const abbigliamento: WardrobeSection[] = [
+  {
+    key: "camicie",
+    title: "Camicie e Maglieria",
+    subtitle: "Camisas, t-shirts e malhas que compõem a base do visual",
+    items: [
+      { id: "camicia-classica", nameIt: "Camicia", namePt: "Camisa", tooltip: "Camisa de mangas compridas, formal ou casual, base para fatos e blazers.", photo: foto("dress shirt") },
+      { id: "camicia-sportiva", nameIt: "Camicia sportiva", namePt: "Camisa desportiva", tooltip: "Modelos mais descontraídos, tecidos leves e padrões variados.", photo: foto("casual shirt") },
+      { id: "camiseta", nameIt: "Maglietta", namePt: "T-shirt", tooltip: "Camiseta de malha, gola redonda (girocollo) ou em V.", photo: foto("tshirt white") },
+      { id: "dolcevita", nameIt: "Dolcevita", namePt: "Gola alta", tooltip: "Malha com gola alta, elegante e versátil sob blazers.", photo: foto("turtleneck sweater") },
+      { id: "cardigan", nameIt: "Cardigan", namePt: "Cardigã", tooltip: "Casaco de malha com abertura frontal, ótimo para camadas.", photo: foto("cardigan knit") },
+    ],
+  },
+  {
+    key: "giacche",
+    title: "Giacche e Cappotti",
+    subtitle: "Jaquetas e casacos que definem estrutura e presença",
+    items: [
+      { id: "giacca", nameIt: "Giacca", namePt: "Blazer/Casaco", tooltip: "Blazer de alfaiataria; último botão inferior deve ficar desabotoado.", photo: foto("blazer menswear") },
+      { id: "doppiopetto", nameIt: "Giacca doppiopetto", namePt: "Casaco peito duplo", tooltip: "Casaco com duas fileiras de botões; presença clássica e imponente.", photo: foto("double breasted blazer") },
+      { id: "cappotto", nameIt: "Cappotto", namePt: "Sobretudo", tooltip: "Casaco longo para clima frio; peça durável e atemporal.", photo: foto("overcoat wool") },
+      { id: "mantello", nameIt: "Mantello", namePt: "Capa", tooltip: "Capa elegante para ocasiões formais ou de gala.", photo: foto("cape coat fashion") },
+      { id: "impermeabile", nameIt: "Impermeabile", namePt: "Trench/Impermeável", tooltip: "Trench coat resistente à chuva, clássico e funcional.", photo: foto("trench coat") },
+      { id: "giubbotto", nameIt: "Giubbotto", namePt: "Blusão", tooltip: "Casaco curto; pode ser em pele, ganga ou tecido técnico.", photo: foto("leather jacket mens") },
+    ],
+  },
+  {
+    key: "pantaloni-gonne",
+    title: "Pantaloni e Gonne",
+    subtitle: "Peças de baixo masculinas e femininas",
+    items: [
+      { id: "pantaloni-classici", nameIt: "Pantaloni", namePt: "Calças", tooltip: "Calças de alfaiataria; corte e queda precisos para elegância.", photo: foto("dress trousers") },
+      { id: "jeans", nameIt: "Jeans", namePt: "Jeans", tooltip: "Calças de ganga/denim; do slim ao reto, versáteis no dia a dia.", photo: foto("jeans denim") },
+      { id: "chino", nameIt: "Pantaloni chino", namePt: "Chino", tooltip: "Calça casual em sarja leve, entre o formal e o descontraído.", photo: foto("chino pants") },
+      { id: "gonna", nameIt: "Gonna", namePt: "Saia", tooltip: "Peça feminina com inúmeras variações: lápis, plissada, midi, longa.", photo: foto("pleated skirt") },
+      { id: "shorts", nameIt: "Pantaloncini", namePt: "Calções", tooltip: "Versões curtas; alfaiataria, cargo ou desportivo.", photo: foto("tailored shorts") },
+    ],
+  },
+  {
+    key: "completi-tute",
+    title: "Completi e Tute",
+    subtitle: "Fatos completos e peças de corpo inteiro",
+    items: [
+      { id: "abito", nameIt: "Abito / Completo", namePt: "Fato (terno)", tooltip: "Conjunto de jaqueta e calça; pode incluir colete (gilet).", photo: foto("mens suit three piece") },
+      { id: "spezzato", nameIt: "Spezzato", namePt: "Spezzato (misto)", tooltip: "Jaqueta e calças de cores/tecidos diferentes para contraste.", photo: foto("blazer trousers outfit") },
+      { id: "tuta-sportiva", nameIt: "Tuta sportiva", namePt: "Fato de treino", tooltip: "Conjunto desportivo de casaco e calça, confortável.", photo: foto("tracksuit fashion") },
+      { id: "tutina", nameIt: "Tutina / Tuta intera", namePt: "Macacão", tooltip: "Peça única de corpo inteiro, elegante ou utilitária.", photo: foto("jumpsuit fashion") },
+      { id: "vestito", nameIt: "Vestito / Abito", namePt: "Vestido", tooltip: "Do casual ao de gala (abito da sera), comprimentos diversos.", photo: foto("evening dress") },
+      { id: "gilet", nameIt: "Gilet", namePt: "Colete", tooltip: "Peça do fato de três peças; último botão costuma ficar aberto.", photo: foto("waistcoat mens") },
+    ],
+  },
+];
+
+const accessori: WardrobeSection[] = [
+  {
+    key: "cappelli",
+    title: "Cappelli e Berretti",
+    subtitle: "Chapéus e gorros que moldam o porte e a atitude",
+    items: [
+      { id: "fedora", nameIt: "Fedora", namePt: "Fedora", tooltip: "Chapéu clássico com aba média e copa vincada.", photo: foto("fedora hat") },
+      { id: "panama", nameIt: "Panamá", namePt: "Panamá", tooltip: "Chapéu leve de fibra natural, ideal para clima quente.", photo: foto("panama hat") },
+      { id: "trilby", nameIt: "Trilby", namePt: "Trilby", tooltip: "Semelhante ao fedora com aba mais curta e atitude moderna.", photo: foto("trilby hat") },
+      { id: "cappello-cilindro", nameIt: "Cappello a cilindro", namePt: "Cartola", tooltip: "Topo alto e formal, presença teatral/clássica.", photo: foto("top hat") },
+      { id: "bombetta", nameIt: "Bombetta", namePt: "Chapéu coco", tooltip: "Copa arredondada e rígida, ícone do século XX.", photo: foto("bowler hat") },
+      { id: "berretto-baseball", nameIt: "Berretto da baseball", namePt: "Boné", tooltip: "Boné com pala; do desporto ao streetwear.", photo: foto("baseball cap") },
+      { id: "basco", nameIt: "Basco", namePt: "Boina", tooltip: "Boina de lã, clássica europeia; versões militares e artísticas.", photo: foto("beret hat") },
+      { id: "cuffia-lana", nameIt: "Cuffia di lana", namePt: "Gorro de lã", tooltip: "Gorro para frio; pode ser justo ou oversized.", photo: foto("knit beanie") },
+      { id: "cloche", nameIt: "Cloche", namePt: "Cloche", tooltip: "Chapéu feminino de copa arredondada e aba curta, anos 20.", photo: foto("cloche hat vintage") },
+    ],
+  },
+  {
+    key: "borse",
+    title: "Borse, Zaini e Valigie",
+    subtitle: "Bolsas, mochilas e malas – utilidade e assinatura de estilo",
+    items: [
+      { id: "borsa", nameIt: "Borsa", namePt: "Bolsa", tooltip: "Categoria ampla: ombro, mão, tiracolo, clutch, tote, etc.", photo: foto("handbag leather") },
+      { id: "pochette", nameIt: "Pochette", namePt: "Carteira de mão", tooltip: "Acessório de mão elegante; forte impacto visual em gala.", photo: foto("clutch bag woman") },
+      { id: "valigetta", nameIt: "Valigetta", namePt: "Pasta/briefcase", tooltip: "Pasta rígida ou flexível para trabalho; pele de qualidade.", photo: foto("leather briefcase") },
+      { id: "zaino", nameIt: "Zaino", namePt: "Mochila", tooltip: "Do urbano ao outdoor; atenção a materiais e ergonomia.", photo: foto("backpack urban leather") },
+      { id: "borsone", nameIt: "Borsone sport", namePt: "Mala desportiva", tooltip: "Capacidade e robustez; ideal para viagem curta ou ginásio.", photo: foto("duffle bag") },
+      { id: "secchiello", nameIt: "Borsa a secchiello", namePt: "Bolsa saco", tooltip: "Formato cilíndrico com fecho por cordão; feminino e prático.", photo: foto("bucket bag leather") },
+    ],
+  },
+  {
+    key: "calzature",
+    title: "Calzature",
+    subtitle: "Sapatos e botas – o fundamento do porte",
+    items: [
+      { id: "richelieu", nameIt: "Richelieu (Oxford)", namePt: "Oxford", tooltip: "Sapato social com atacadores fechados; formalidade máxima.", photo: foto("oxford shoes men") },
+      { id: "derby", nameIt: "Derby", namePt: "Derby", tooltip: "Atacadores abertos; um pouco mais casual que o Oxford.", photo: foto("derby shoes men") },
+      { id: "brogue", nameIt: "Brogue", namePt: "Brogue", tooltip: "Perfurações decorativas; do semi ao full brogue (wingtip).", photo: foto("brogue shoes wingtip") },
+      { id: "chelsea", nameIt: "Stivaletto Chelsea", namePt: "Bota Chelsea", tooltip: "Bota de cano curto com elástico lateral; elegante e prática.", photo: foto("chelsea boots men") },
+      { id: "stivale-militare", nameIt: "Stivale militare", namePt: "Bota militar", tooltip: "Robusta com sola tratorada e atacadores; atitude utilitária.", photo: foto("combat boots") },
+      { id: "tacco", nameIt: "Scarpa con tacco", namePt: "Sapato de salto", tooltip: "Modelo feminino de salto; do stiletto ao bloco.", photo: foto("high heels stiletto") },
+      { id: "sneaker", nameIt: "Sneaker / Zapatilla", namePt: "Ténis desportivo", tooltip: "Calçado desportivo/urbano; conforto e tecnologia.", photo: foto("sneakers modern") },
+    ],
+  },
+  {
+    key: "gioielli",
+    title: "Gioelleria",
+    subtitle: "Joias e adereços de impacto controlado",
+    items: [
+      { id: "anello-chevalier", nameIt: "Anello chevalier", namePt: "Anel de minguinho", tooltip: "Tradicional de sinete; iniciais ou brasão; unissexo moderno.", photo: foto("signet ring") },
+      { id: "fede", nameIt: "Fede nuziale", namePt: "Aliança", tooltip: "Anel de casamento; simplicidade simbólica.", photo: foto("wedding ring closeup") },
+      { id: "bracciale", nameIt: "Bracciale", namePt: "Pulseira", tooltip: "Metal, couro, contas; discreta ou protagonista.", photo: foto("bracelet men leather") },
+      { id: "collana", nameIt: "Collana", namePt: "Colar", tooltip: "Do choker (gargantilha) às correntes longas com pingente.", photo: foto("necklace pendant") },
+      { id: "gemelli", nameIt: "Gemelli", namePt: "Botões de punho", tooltip: "Fechos decorativos para punhos de camisa dupla.", photo: foto("cufflinks luxury") },
+      { id: "fermacravatta", nameIt: "Fermacravatta", namePt: "Alfinete de gravata", tooltip: "Mantém a gravata alinhada; detalhe clássico masculino.", photo: foto("tie bar clip") },
+    ],
+  },
+  {
+    key: "altri",
+    title: "Altri Accessori",
+    subtitle: "Complementos funcionais e expressivos",
+    items: [
+      { id: "cintura", nameIt: "Cintura", namePt: "Cinto", tooltip: "Couro de qualidade; combinar com os sapatos; fivela como detalhe.", photo: foto("leather belt") },
+      { id: "corsetto", nameIt: "Corsetto", namePt: "Corset/Cinta", tooltip: "Modelador de cintura; estética, suporte e construção de silhueta.", photo: foto("corset fashion") },
+      { id: "pochette-tasca", nameIt: "Pochette da taschino", namePt: "Lenço de bolso", tooltip: "Toque de cor no bolso do blazer; nunca combinar com a gravata.", photo: foto("pocket square suit") },
+      { id: "cravatta", nameIt: "Cravatta", namePt: "Gravata", tooltip: "Lisas, texturadas ou estampadas; nó adequado ao colarinho.", photo: foto("necktie suit") },
+      { id: "pajarita", nameIt: "Papillon / Pajarita", namePt: "Laço/gravata borboleta", tooltip: "Formal clássico; preto em black tie, variações criativas no casual.", photo: foto("bow tie tuxedo") },
+      { id: "bufanda", nameIt: "Bufanda / Sciarpa", namePt: "Cachecol/lenço", tooltip: "Lã, seda ou algodão; proteção e textura visual.", photo: foto("scarf wool") },
+      { id: "occhiali", nameIt: "Occhiali", namePt: "Óculos", tooltip: "De grau ou de sol; armação molda o caráter do rosto.", photo: foto("sunglasses fashion") },
+      { id: "guanti", nameIt: "Guanti", namePt: "Luvas", tooltip: "Curtas (matinée), médias (midi) ou longas (de ópera).", photo: foto("leather gloves") },
+      { id: "orologio", nameIt: "Orologio da polso", namePt: "Relógio de pulso", tooltip: "Único acessório masculino permitido em gala (com aliança).", photo: foto("wristwatch classic") },
+    ],
+  },
+];
+
+function normalizeInputCategory(input: string | null): AllowedCategory | undefined {
+  if (!input) return undefined;
+  const trimmed = input.trim().toLowerCase();
+  const found = ALLOWED_CATEGORIES.find((c) => c.toLowerCase() === trimmed);
+  return found as AllowedCategory | undefined;
+}
+
+function mapToCategory(section: WardrobeSection, item: WardrobeItem): AllowedCategory | undefined {
+  switch (section.key) {
+    case "camicie":
+    case "giacche":
+    case "completi-tute":
+      return "Parte Superior";
+    case "pantaloni-gonne":
+      return "Pants";
+    case "cappelli":
+      return "Head Wear";
+    case "calzature":
+      return "Tênis";
+    case "gioielli": {
+      if (item.id.includes("bracciale")) return "Pulseiras";
+      if (item.id.includes("collana")) return "Acessórios de Pescoço";
+      if (item.id.includes("fermacravatta")) return "Acessórios de Pescoço";
+      if (item.id.includes("gemelli")) return "Acessórios de Pescoço";
+      return undefined;
+    }
+    case "altri": {
+      if (item.id === "cintura") return "Cinto";
+      if (item.id === "occhiali") return "Óculos";
+      if (item.id === "orologio") return "Relógio";
+      if (["pochette-tasca", "cravatta", "pajarita", "bufanda"].includes(item.id))
+        return "Acessórios de Pescoço";
+      if (item.id === "corsetto") return "Parte Superior";
+      return undefined;
+    }
+    // "borse" e outros sem correspondência explícita → undefined para o utilizador escolher
+    default:
+      return undefined;
+  }
+}
+
+function Section({
+  section,
+  onAdd,
+}: {
+  section: WardrobeSection;
+  onAdd: (item: WardrobeItem, section: WardrobeSection) => void;
+}) {
+  return (
+    <section className="space-y-4">
+      <div>
+        <h4 className="text-lg font-semibold leading-tight">{section.title}</h4>
+        {section.subtitle ? (
+          <p className="text-sm text-muted-foreground">{section.subtitle}</p>
+        ) : null}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {section.items.map((item) => (
+          <Card key={item.id} className="overflow-hidden">
+            {item.photo ? (
+              <div className="aspect-[4/3] w-full bg-muted/30 relative">
+                <Image
+                  src={item.photo}
+                  alt={`${item.namePt} (${item.nameIt})`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover"
+                  unoptimized
+                  priority={false}
+                />
+              </div>
+            ) : null}
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div className="space-y-1">
+                <CardTitle className="text-base">
+                  <span className="font-semibold">{item.nameIt}</span>
+                  <span className="ml-2 align-middle rounded bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
+                    {item.namePt}
+                  </span>
+                </CardTitle>
+                <CardDescription className="text-xs">Original em italiano + etiqueta em PT</CardDescription>
+              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      aria-label={`O que é ${item.namePt}`}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border bg-background text-sm hover:bg-muted"
+                    >
+                      i
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs leading-relaxed">
+                    {item.tooltip}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </CardHeader>
+            <CardContent className="pt-0 pb-4">
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label={`Adicionar ${item.namePt} ao orçamento`}
+                onClick={() => onAdd(item, section)}
+              >
+                Adicionar ao orçamento
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CatalogItemCard({
+  section,
+  item,
+  onAdd,
+}: {
+  section: WardrobeSection;
+  item: WardrobeItem;
+  onAdd: (item: WardrobeItem, section: WardrobeSection) => void;
+}) {
+  return (
+    <Card key={`${section.key}-${item.id}`} className="overflow-hidden">
+      {item.photo ? (
+        <div className="aspect-[4/3] w-full bg-muted/30 relative">
+          <Image
+            src={item.photo}
+            alt={`${item.namePt} (${item.nameIt})`}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover"
+            unoptimized
+            priority={false}
+          />
+        </div>
+      ) : null}
+      <CardHeader className="flex flex-row items-start justify-between gap-3">
+        <div className="space-y-1">
+          <CardTitle className="text-base">
+            <span className="font-semibold">{item.nameIt}</span>
+            <span className="ml-2 align-middle rounded bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
+              {item.namePt}
+            </span>
+          </CardTitle>
+          <CardDescription className="text-xs">Sugestão do Catálogo</CardDescription>
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                aria-label={`O que é ${item.namePt}`}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border bg-background text-sm hover:bg-muted"
+              >
+                i
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-xs leading-relaxed">
+              {item.tooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </CardHeader>
+      <CardContent className="pt-0 pb-4">
+        <Button
+          size="sm"
+          variant="outline"
+          aria-label={`Adicionar ${item.namePt} ao orçamento`}
+          onClick={() => onAdd(item, section)}
+        >
+          Adicionar ao orçamento
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
