@@ -62,14 +62,7 @@ const nextConfig = {
       };
     }
 
-    // Deduplicate React in monorepo — prevents "Cannot read useContext of null"
-    // caused by styled-jsx loading root react vs apps/web react
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      react: pathResolve(__dirname, 'node_modules/react'),
-      'react-dom': pathResolve(__dirname, 'node_modules/react-dom'),
-    };
-
+    // React is now deduplicated via root package.json "overrides"
     return config;
   },
 
