@@ -12,6 +12,8 @@ import { TitleSuggestionsDialog, TShirtTextsDialog, AdlibsDialog, SymbolicPostCo
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { AutoSaveStatus } from "@/components/auto-save-status";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 const POETIC_FORMS = [
   "Didática / Poesia didática",
@@ -50,7 +52,7 @@ const METHOD_FAMILIES = [
 export default function NarratologiaStep() {
   const { project, update } = useProject();
   const projectId = project?.id || 'current-project';
-  
+
   // Auto-save para synopsis draft
   const { save: saveSynopsis, status: synopsisStatus, load: loadSynopsis } = useAutoSave<string>({
     stepKey: 'narratologia_synopsis',
@@ -95,85 +97,116 @@ export default function NarratologiaStep() {
 
   return (
     <ContentLayout title="Narratologia e Forma">
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle>Sinopse do Single</CardTitle>
-              <div className="flex items-center gap-2">
-                <AutoSaveStatus status={synopsisStatus} />
-                <TitleSuggestionsDialog />
-                <TShirtTextsDialog />
-                <AdlibsDialog />
-                <SymbolicPostComposer />
-                <FeaturingManager />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Label htmlFor="synopsis">Escreve a ideia geral que queres explorar neste single</Label>
-            <Textarea id="synopsis" value={synopsisDraft} onChange={(e: any) => setSynopsisDraft(e.target.value)} rows={6} placeholder="Uma sinopse curta que guia a escrita…" />
-            <div className="flex gap-2">
-              <Button onClick={commitSynopsis}>Guardar sinopse</Button>
-              {project?.songInfo?.synopsis && (
-                <div className="text-sm text-muted-foreground">
-                  Última: {project.songInfo.synopsis?.slice(0, 80)}
-                  {(project.songInfo.synopsis?.length ?? 0) > 80 ? "…" : ""}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        {/* Sinopse do Single — collapsible */}
+        <Collapsible defaultOpen className="xl:col-span-2">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer py-3 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold">Sinopse do Single</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <AutoSaveStatus status={synopsisStatus} />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
+                  </div>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-3 pt-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <TitleSuggestionsDialog />
+                  <TShirtTextsDialog />
+                  <AdlibsDialog />
+                  <SymbolicPostComposer />
+                  <FeaturingManager />
+                </div>
+                <Label htmlFor="synopsis">Escreve a ideia geral que queres explorar neste single</Label>
+                <Textarea id="synopsis" value={synopsisDraft} onChange={(e: any) => setSynopsisDraft(e.target.value)} rows={5} placeholder="Uma sinopse curta que guia a escrita…" />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={commitSynopsis}>Guardar sinopse</Button>
+                  {project?.songInfo?.synopsis && (
+                    <div className="text-xs text-muted-foreground self-center">
+                      Última: {project.songInfo.synopsis?.slice(0, 60)}{(project.songInfo.synopsis?.length ?? 0) > 60 ? "…" : ""}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Formas e Métodos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            {METHOD_FAMILIES.map((g) => (
-              <div key={g.title}>
-                <div className="font-semibold mb-1">{g.title}</div>
-                <ul className="list-disc pl-5 space-y-1">
-                  {g.items.map((it) => (
-                    <li key={it}>{it}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        {/* Formas e Métodos — collapsible */}
+        <Collapsible defaultOpen={false}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer py-3 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold">Formas e Métodos</CardTitle>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-3 text-sm pt-0">
+                {METHOD_FAMILIES.map((g) => (
+                  <div key={g.title}>
+                    <div className="font-semibold mb-1">{g.title}</div>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {g.items.map((it) => (
+                        <li key={it}>{it}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       </div>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-2">
-            <CardTitle>Forma poética por estrofe</CardTitle>
-            <Button size="sm" onClick={addStrophe}>Adicionar estrofe</Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {strophes.length === 0 && <div className="text-sm text-muted-foreground">Ainda não há estrofes neste projeto.</div>}
-          {strophes.map((s: any, idx: number) => (
-            <div key={s.id} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-              <div className="text-sm font-medium">Estrofe {idx + 1}</div>
-              <div className="md:col-span-2">
-                <Select value={s.poeticForm || ""} onValueChange={(val: string) => setStropheForm(s.id, val)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Escolhe a forma poética" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {POETIC_FORMS.map((f) => (
-                      <SelectItem key={f} value={f}>
-                        {f}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+      {/* Forma poética por estrofe — collapsible, starts collapsed */}
+      <Collapsible defaultOpen={false} className="mt-4">
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer py-3 hover:bg-muted/30 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold">Forma poética por estrofe</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={(e) => { e.stopPropagation(); addStrophe(); }}>
+                    Adicionar estrofe
+                  </Button>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
+                </div>
               </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4 pt-0">
+              {strophes.length === 0 && <div className="text-sm text-muted-foreground">Ainda não há estrofes neste projeto.</div>}
+              {strophes.map((s: any, idx: number) => (
+                <div key={s.id} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                  <div className="text-sm font-medium">Estrofe {idx + 1}</div>
+                  <div className="md:col-span-2">
+                    <Select value={s.poeticForm || ""} onValueChange={(val: string) => setStropheForm(s.id, val)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Escolhe a forma poética" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {POETIC_FORMS.map((f) => (
+                          <SelectItem key={f} value={f}>
+                            {f}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     </ContentLayout>
   );
 }

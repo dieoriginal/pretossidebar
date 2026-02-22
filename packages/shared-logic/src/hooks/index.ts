@@ -1,2 +1,4 @@
 // Export all hooks
-export * from './useRealtime';
+// Note: useRealtime is client-only and must be imported directly
+// export * from './useRealtime';
+

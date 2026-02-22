@@ -5,10 +5,9 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "outputDirectory": ".next",
-  "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_VERCEL_ENV": "@vercel-env"
-  },
+  "regions": [
+    "iad1"
+  ],
   "build": {
     "env": {
       "NODE_ENV": "production"
@@ -18,12 +17,5 @@
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
-  },
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
-  ]
+  }
 }
-

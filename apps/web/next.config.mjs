@@ -1,10 +1,13 @@
 /** @type {import('next').NextConfig} */
 import { withSentryConfig } from '@sentry/nextjs';
+import { resolve as pathResolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig = {
-  // Enable standalone output for Electron
-  output: 'standalone',
-  
+  // Vercel deployment (no standalone needed)
+
   // Optimize for Electron
   images: {
     unoptimized: false,
@@ -23,17 +26,17 @@ const nextConfig = {
       },
     ],
   },
-  
+
   // Disable ESLint during build for Electron (temporary)
   eslint: {
     ignoreDuringBuilds: true,
   },
-  
+
   // Disable TypeScript errors during build (temporary)
   typescript: {
     ignoreBuildErrors: true,
   },
-  
+
   // Build ID:
   // - Vercel: usa SHA do commit (determinístico, melhora cache)
   // - Local/Electron: mantém o comportamento anterior (sempre único)
@@ -41,13 +44,13 @@ const nextConfig = {
     if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA;
     return 'electron-build-' + Date.now();
   },
-  
+
   // Enable experimental features if needed
   experimental: {
     // serverActions: true,
   },
-  
-  // Webpack configuration for Electron
+
+  // Webpack configuration for Electron + monorepo React deduplication
   webpack: (config, { isServer }) => {
     // Fix for electron
     if (!isServer) {
@@ -58,10 +61,18 @@ const nextConfig = {
         tls: false,
       };
     }
-    
+
+    // Deduplicate React in monorepo — prevents "Cannot read useContext of null"
+    // caused by styled-jsx loading root react vs apps/web react
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      react: pathResolve(__dirname, 'node_modules/react'),
+      'react-dom': pathResolve(__dirname, 'node_modules/react-dom'),
+    };
+
     return config;
   },
-  
+
   // Suppress warnings about missing _document (App Router doesn't need it)
   onDemandEntries: {
     maxInactiveAge: 25 * 1000,
@@ -78,7 +89,7 @@ const sentryOptions = {
   silent: true,
   org: 'pretos-media-group',
   project: 'javascript-nextjs',
-  
+
   // Only upload source maps in production
   widenClientFileUpload: true,
   hideSourceMaps: true,
