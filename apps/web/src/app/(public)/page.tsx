@@ -3,7 +3,7 @@
  * Página inicial antes do login
  */
 
-"use client";
+
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
