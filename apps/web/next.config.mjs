@@ -90,4 +90,4 @@ const sentryOptions = {
   automaticVercelMonitors: true,
 };
 
-export default withSentryConfig(nextConfig, sentryOptions);
+export default nextConfig;
