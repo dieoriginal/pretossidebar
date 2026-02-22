@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getSupabaseClient } from 'shared-logic';
-import { UpdateBankAccountRequest } from 'shared-logic';
+
+type UpdateBankAccountRequest = {
+  iban: string;
+  swift?: string;
+  account_name: string;
+};
+
 
 // Lazy load Stripe
 function getStripe() {

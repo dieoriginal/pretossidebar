@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { HelpCircle, Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AppShell } from "@/components/layout/app-shell";
 
 const faqs = [
   {
@@ -46,72 +47,72 @@ const faqs = [
 
 export default function HelpPage() {
   return (
-    <div>
+    <AppShell title="Ajuda">
       <div className="container py-12">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-12 text-center">
-          <HelpCircle className="mx-auto mb-4 h-12 w-12 text-primary" />
-          <h1 className="mb-4 text-4xl font-bold">Centro de Ajuda</h1>
-          <p className="text-lg text-muted-foreground">
-            Encontra respostas para as tuas perguntas
-          </p>
-        </div>
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-12 text-center">
+            <HelpCircle className="mx-auto mb-4 h-12 w-12 text-primary" />
+            <h1 className="mb-4 text-4xl font-bold">Centro de Ajuda</h1>
+            <p className="text-lg text-muted-foreground">
+              Encontra respostas para as tuas perguntas
+            </p>
+          </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Perguntas Frequentes</CardTitle>
-            <CardDescription>
-              As respostas às perguntas mais comuns
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {faqs.map((faq, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger>{faq.question}</AccordionTrigger>
-                  <AccordionContent>{faq.answer}</AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
+          <Card className="mb-8">
             <CardHeader>
-              <Mail className="mb-2 h-8 w-8 text-primary" />
-              <CardTitle>Contacto por Email</CardTitle>
+              <CardTitle>Perguntas Frequentes</CardTitle>
               <CardDescription>
-                Envia-nos um email e responderemos em 24h
+                As respostas às perguntas mais comuns
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild variant="outline" className="w-full">
-                <a href="mailto:support@pretosmusic.com">
-                  support@pretosmusic.com
-                </a>
-              </Button>
+              <Accordion type="single" collapsible className="w-full">
+                {faqs.map((faq, index) => (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger>{faq.question}</AccordionTrigger>
+                    <AccordionContent>{faq.answer}</AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <MessageCircle className="mb-2 h-8 w-8 text-primary" />
-              <CardTitle>Suporte em Tempo Real</CardTitle>
-              <CardDescription>
-                Chat com a nossa equipa (em breve)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full" disabled>
-                Em Breve
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <Mail className="mb-2 h-8 w-8 text-primary" />
+                <CardTitle>Contacto por Email</CardTitle>
+                <CardDescription>
+                  Envia-nos um email e responderemos em 24h
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline" className="w-full">
+                  <a href="mailto:support@pretosmusic.com">
+                    support@pretosmusic.com
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <MessageCircle className="mb-2 h-8 w-8 text-primary" />
+                <CardTitle>Suporte em Tempo Real</CardTitle>
+                <CardDescription>
+                  Chat com a nossa equipa (em breve)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full" disabled>
+                  Em Breve
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 

@@ -2,9 +2,8 @@
 import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig = {
-  // Enable standalone output for Electron
-  output: 'standalone',
-  
+  // Vercel deployment (no standalone needed)
+
   // Optimize for Electron
   images: {
     unoptimized: false,
@@ -23,17 +22,17 @@ const nextConfig = {
       },
     ],
   },
-  
+
   // Disable ESLint during build for Electron (temporary)
   eslint: {
     ignoreDuringBuilds: true,
   },
-  
+
   // Disable TypeScript errors during build (temporary)
   typescript: {
     ignoreBuildErrors: true,
   },
-  
+
   // Build ID:
   // - Vercel: usa SHA do commit (determinístico, melhora cache)
   // - Local/Electron: mantém o comportamento anterior (sempre único)
@@ -41,12 +40,12 @@ const nextConfig = {
     if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA;
     return 'electron-build-' + Date.now();
   },
-  
+
   // Enable experimental features if needed
   experimental: {
     // serverActions: true,
   },
-  
+
   // Webpack configuration for Electron
   webpack: (config, { isServer }) => {
     // Fix for electron
@@ -58,10 +57,10 @@ const nextConfig = {
         tls: false,
       };
     }
-    
+
     return config;
   },
-  
+
   // Suppress warnings about missing _document (App Router doesn't need it)
   onDemandEntries: {
     maxInactiveAge: 25 * 1000,
@@ -78,7 +77,7 @@ const sentryOptions = {
   silent: true,
   org: 'pretos-media-group',
   project: 'javascript-nextjs',
-  
+
   // Only upload source maps in production
   widenClientFileUpload: true,
   hideSourceMaps: true,

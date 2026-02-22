@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getSupabaseClient } from 'shared-logic';
-import { CreateStaffInviteRequest } from 'shared-logic';
 import { randomBytes } from 'crypto';
+
+type CreateStaffInviteRequest = {
+  email: string;
+  name: string;
+  role: string;
+  split_type: 'percentage' | 'fixed';
+  split_value: number;
+};
+
 
 export async function POST(
   req: NextRequest,

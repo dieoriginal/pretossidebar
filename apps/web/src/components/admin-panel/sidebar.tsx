@@ -11,13 +11,78 @@ import { usePathname } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getSidebarItems, getSidebarItemsGrouped } from "@/lib/processes-config";
 import { AddProcessDialog } from "@/components/process-manager/AddProcessDialog";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { MenuIcon } from "lucide-react";
 
 // Use static import to avoid dev chunk loading timeouts
+
+function SidebarContent({ getOpenState, groupedItems, pathname }: { getOpenState: () => boolean; groupedItems: Record<string, any[]>; pathname: string | null }) {
+  return (
+    <TooltipProvider>
+      <nav className="mt-2 space-y-6" role="navigation" aria-label="Admin sidebar">
+        {Object.entries(groupedItems).map(([groupName, groupItems]) => (
+          <div key={groupName} className="space-y-2">
+            {getOpenState() && (
+              <div className="px-3 py-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {groupName}
+                </span>
+              </div>
+            )}
+            <div className="space-y-1">
+              {groupItems.map(({ label, href, section, icon: Icon }) => {
+                const active = pathname?.startsWith(href);
+                const content = (
+                  <Link
+                    href={href}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-md px-3 py-2 transition-all",
+                      active ? "bg-primary/10 text-primary border border-primary/20 shadow-sm" : "hover:bg-muted/50 border border-transparent hover:border-border",
+                      !getOpenState() ? "justify-center" : ""
+                    )}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")}/>
+                    <div className={cn(
+                      "flex flex-col min-w-0 flex-1",
+                      !getOpenState() ? "hidden" : ""
+                    )}>
+                      <span className="text-sm font-medium leading-tight truncate">{label}</span>
+                      <span className="text-[10px] uppercase tracking-wider opacity-60 truncate">{section}</span>
+                    </div>
+                  </Link>
+                );
+                return (
+                  <div key={href}>
+                    {getOpenState() ? (
+                      content
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          {content}
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <div className="text-sm font-medium">{label}</div>
+                          <div className="text-xs text-muted-foreground">{section}</div>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+    </TooltipProvider>
+  );
+}
 
 export function Sidebar() {
   const sidebar = useStore(useSidebar, (x) => x);
   const pathname = usePathname();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Listen for custom process changes
   useEffect(() => {
@@ -35,6 +100,11 @@ export function Sidebar() {
     };
   }, []);
 
+  // Close mobile sheet on navigation
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   const items = useMemo(() => getSidebarItems(), [refreshKey]);
   const groupedItems = useMemo(() => getSidebarItemsGrouped(), [refreshKey]);
 
@@ -42,88 +112,60 @@ export function Sidebar() {
   const { isOpen, toggleOpen, getOpenState, setIsHover, settings } = sidebar;
 
   return (
-    <aside
-      className={cn(
-        "fixed top-0 left-0 z-20 h-screen -translate-x-full lg:translate-x-0 transition-[width] ease-in-out duration-300 bg-background border-r",
-        !getOpenState() ? "w-[90px]" : "w-96",
-        settings.disabled && "hidden"
-      )}
-    >
-      <SidebarToggle isOpen={isOpen} setIsOpen={toggleOpen} />
-      <div
-        onMouseEnter={() => setIsHover(true)}
-        onMouseLeave={() => setIsHover(false)}
-        className="relative h-full flex flex-col px-3 py-4 overflow-y-auto shadow-md dark:shadow-zinc-800"
-      >
-        <TooltipProvider>
-          <nav className="mt-2 space-y-6" role="navigation" aria-label="Admin sidebar">
-            {Object.entries(groupedItems).map(([groupName, groupItems]) => (
-              <div key={groupName} className="space-y-2">
-                {getOpenState() && (
-                  <div className="px-3 py-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {groupName}
-                    </span>
-                  </div>
-                )}
-                <div className="space-y-1">
-                  {groupItems.map(({ label, href, section, icon: Icon }) => {
-                    const active = pathname?.startsWith(href);
-                    const content = (
-                      <Link
-                        href={href}
-                        className={cn(
-                          "group flex items-center gap-3 rounded-md px-3 py-2 transition-all",
-                          active ? "bg-primary/10 text-primary border border-primary/20 shadow-sm" : "hover:bg-muted/50 border border-transparent hover:border-border",
-                          !getOpenState() ? "justify-center" : ""
-                        )}
-                        aria-current={active ? "page" : undefined}
-                      >
-                        <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")}/>
-                        <div className={cn(
-                          "flex flex-col min-w-0 flex-1",
-                          !getOpenState() ? "hidden" : ""
-                        )}>
-                          <span className="text-sm font-medium leading-tight truncate">{label}</span>
-                          <span className="text-[10px] uppercase tracking-wider opacity-60 truncate">{section}</span>
-                        </div>
-                      </Link>
-                    );
-                    return (
-                      <div key={href}>
-                        {getOpenState() ? (
-                          content
-                        ) : (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              {content}
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              <div className="text-sm font-medium">{label}</div>
-                              <div className="text-xs text-muted-foreground">{section}</div>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+    <>
+      {/* Mobile: hamburger button + Sheet drawer */}
+      <div className="lg:hidden">
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="fixed top-3 left-3 z-50 shadow-lg bg-background/95 backdrop-blur-sm"
+              aria-label="Abrir menu"
+            >
+              <MenuIcon className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-80 p-0 overflow-y-auto">
+            <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
+            <div className="px-3 py-4">
+              <SidebarContent getOpenState={() => true} groupedItems={groupedItems} pathname={pathname} />
+              <div className="mt-6 pt-4 border-t">
+                <AddProcessDialog />
               </div>
-            ))}
-          </nav>
-        </TooltipProvider>
-
-        {/* Add New Process Button */}
-        <div className={cn(
-          "mt-auto pt-4 border-t",
-          !getOpenState() && "flex justify-center"
-        )}>
-          <AddProcessDialog />
-        </div>
-
-        {/* <Menu isOpen={getOpenState()} /> */}
-        
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
-    </aside>
+
+      {/* Desktop: original sidebar */}
+      <aside
+        className={cn(
+          "fixed top-0 left-0 z-20 h-screen -translate-x-full lg:translate-x-0 transition-[width] ease-in-out duration-300 bg-background border-r hidden lg:block",
+          !getOpenState() ? "w-[90px]" : "w-96",
+          settings.disabled && "hidden"
+        )}
+      >
+        <SidebarToggle isOpen={isOpen} setIsOpen={toggleOpen} />
+        <div
+          onMouseEnter={() => setIsHover(true)}
+          onMouseLeave={() => setIsHover(false)}
+          className="relative h-full flex flex-col px-3 py-4 overflow-y-auto shadow-md dark:shadow-zinc-800"
+        >
+          <SidebarContent getOpenState={getOpenState} groupedItems={groupedItems} pathname={pathname} />
+
+          {/* Add New Process Button */}
+          <div className={cn(
+            "mt-auto pt-4 border-t",
+            !getOpenState() && "flex justify-center"
+          )}>
+            <AddProcessDialog />
+          </div>
+
+          {/* <Menu isOpen={getOpenState()} /> */}
+          
+        </div>
+      </aside>
+    </>
   );
 }

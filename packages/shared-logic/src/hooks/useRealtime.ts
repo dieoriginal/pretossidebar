@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Hook compartilhado para real-time subscriptions
  * Funciona tanto no web quanto no mobile
@@ -24,7 +26,7 @@ export function useRealtime(options: RealtimeOptions) {
 
   useEffect(() => {
     const channelName = `${table}-changes-${Date.now()}`;
-    
+
     const channel = supabase
       .channel(channelName)
       .on(

@@ -8,9 +8,8 @@ import { useEffect } from 'react';
 import { ProjectProvider } from "@/components/providers/project-provider";
 import { ToastLiteProvider } from "@/components/ui/toast-lite";
 import { initSentry } from "@/lib/sentry";
-import { FloatingNavbar } from "@/components/global/floating-navbar";
-import { FloatingFooter } from "@/components/global/floating-footer";
-import { ViewportSelector } from "@/components/global/viewport-selector";
+import { ZoomControls } from "@/components/ZoomControls";
+import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
 
 // Initialize Sentry
 if (typeof window !== 'undefined') {
@@ -40,14 +39,13 @@ export default function RootLayout({
 
   const content = (
     <html lang="pt" suppressHydrationWarning>
-      <body className={`${GeistSans.className} app-zoom-80`}>
+      <body className={GeistSans.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <ProjectProvider>
             <ToastLiteProvider>
-              <FloatingNavbar />
               {children}
-              <FloatingFooter />
-              <ViewportSelector />
+              <GlobalAudioPlayer />
+              <ZoomControls />
             </ToastLiteProvider>
           </ProjectProvider>
         </ThemeProvider>

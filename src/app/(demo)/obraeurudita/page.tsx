@@ -1314,7 +1314,7 @@ const exportStoryboard = async (strophes: Strophe[], songInfo: SongInfo) => {
           reader.onload = () => resolve(reader.result as string);
           reader.readAsDataURL(verse.media as File);
         });
-        
+
         checkPageBreak(80);
         doc.addImage(imgData, 'JPEG', margin, yPosition, 120, 80);
         yPosition += 85;
@@ -1325,13 +1325,13 @@ const exportStoryboard = async (strophes: Strophe[], songInfo: SongInfo) => {
   };
 
   const versesFlat = strophes.flatMap(strophe => strophe.verses);
-  
+
   for (let index = 0; index < versesFlat.length; index++) {
     const verse = versesFlat[index];
     if (verse.cameraSettings) {
       // Add scene header
       addSectionHeader(`CENA ${index + 1}`, 16);
-      
+
       // Add verse text
       checkPageBreak(lineHeight);
       doc.setFontSize(12);
@@ -1349,7 +1349,7 @@ const exportStoryboard = async (strophes: Strophe[], songInfo: SongInfo) => {
 
       // Add musical context information
       addSectionHeader('Contexto Musical', 12);
-      
+
       // Helper function for right-aligned info rows
       const addRightAlignedInfoRow = (label: string, value: string) => {
         checkPageBreak(lineHeight);
@@ -1361,7 +1361,7 @@ const exportStoryboard = async (strophes: Strophe[], songInfo: SongInfo) => {
         doc.text(value, pageWidth - margin - doc.getTextWidth(value), yPosition, { align: 'right' });
         yPosition += lineHeight;
       };
-      
+
       addRightAlignedInfoRow('Artista Musical', songInfo.artist || 'Artista não definido');
       addRightAlignedInfoRow('Título da Música', songInfo.title || 'Título não definido');
       addRightAlignedInfoRow('Produtor de Música', songInfo.producer || 'Produtor não definido');
@@ -1371,55 +1371,55 @@ const exportStoryboard = async (strophes: Strophe[], songInfo: SongInfo) => {
 
       // Add detailed cinematography information
       addSectionHeader('Configurações Profissionais', 12);
-      
+
       // Camera Settings
       addInfoRow('Tipo de Plano', shotTypeOptions.find(opt => opt.value === verse.cameraSettings?.shotType)?.label || 'Não definido');
       addInfoRow('Movimento de Câmera', verse.cameraSettings.movement.toUpperCase());
       addInfoRow('Cobertura e Ambiente', verse.cameraSettings.location.toUpperCase());
-      
+
       // Technical Settings
       addSectionHeader('Configurações Técnicas', 12);
       addInfoRow('Resolução', verse.cameraSettings.resolution.toUpperCase());
       addInfoRow('Estabilização', verse.cameraSettings.stabilization.toUpperCase());
-      
+
       // Professional Details
       addSectionHeader('Detalhes Profissionais', 12);
       addInfoRow('ISO', '100');
       addInfoRow('Velocidade do Obturador', '1/60');
       addInfoRow('Filtros ND', '0.3 (1 stop)');
       addInfoRow('INT/EXT', 'Interior');
-      
+
       // Cast and Characters
       addSectionHeader('Elenco e Personagens', 12);
       addInfoRow('Número de Personagens', '2');
       addInfoRow('Gênero', 'Misto');
       addInfoRow('Idades', '25-35 anos');
-      
+
       // Props and Wardrobe
       addSectionHeader('Adereços e Figurinos', 12);
       addInfoRow('Props', 'Lista de adereços específicos');
       addInfoRow('Figurinos', 'Estilo contemporâneo');
-      
+
       // Style and Rhythm
       addSectionHeader('Ritmo e Estilo', 12);
       addInfoRow('Estilo', 'Slow motion (60-120 fps)');
       addInfoRow('Tipo de Cena', 'Diálogo (master, over-the-shoulder)');
       addInfoRow('Objetivo em 3 Palavras', 'Amor, Paixão, Dor');
       addInfoRow('Tags de Destaque', '#HighContrast #SlowMotion');
-      
+
       // Special Effects
       addSectionHeader('Efeitos Especiais', 12);
       addInfoRow('Efeitos', 'Levitação');
-      
+
       // Location Details
       addSectionHeader('Localização', 12);
       addInfoRow('Local', verse.cameraSettings.location.toUpperCase());
       addInfoRow('Versos Relacionados', verseText.substring(0, 50) + '...');
       addInfoRow('Descrição da Cena', 'Cena detalhada com foco na narrativa visual');
-      
+
       // Add spacing between scenes
       yPosition += sectionSpacing;
-      
+
       // Check if we need a new page
       if (yPosition > pageHeight - margin - 100) {
         doc.addPage();
@@ -1431,26 +1431,26 @@ const exportStoryboard = async (strophes: Strophe[], songInfo: SongInfo) => {
   // Add summary page at the end
   doc.addPage();
   yPosition = margin;
-  
+
   addSectionHeader('RESUMO DO PROJETO CINEMATOGRÁFICO', 18);
   yPosition += 20;
-  
+
   const totalScenes = versesFlat.filter(v => v.cameraSettings).length;
   const totalVerses = versesFlat.length;
-  
+
   addInfoRow('Total de Cenas', totalScenes.toString());
   addInfoRow('Total de Versos', totalVerses.toString());
   addInfoRow('Formato', '16:9 Widescreen');
   addInfoRow('Resolução', '4K UHD');
   addInfoRow('Codec', 'ProRes 422 HQ');
-  
+
   yPosition += 20;
   addSectionHeader('EQUIPAMENTOS PRINCIPAIS', 14);
   addInfoRow('Câmera', 'Sony FX3');
   addInfoRow('Lente', 'Sony 24-70mm f/2.8 GM');
   addInfoRow('Estabilização', 'DJI RS 3 Pro');
   addInfoRow('Iluminação', 'Aputure 600D Pro');
-  
+
   yPosition += 20;
   addSectionHeader('EQUIPE TÉCNICA', 14);
   addInfoRow('Diretor de Fotografia', 'Nome do DOP');
@@ -1644,27 +1644,28 @@ const MultiStepper: React.FC<MultiStepperProps> = ({ steps, currentStep, onStepC
           style={{ width: `${progressPercentage}%` }}
         />
       </div>
-      
+
       <div className="flex items-center justify-between relative">
         <div className="absolute left-[30%] top-0 h-full w-px bg-gray-300 dark:bg-gray-600" />
         <div className="absolute left-[70%] top-0 h-full w-px bg-gray-300 dark:bg-gray-600" />
-        
+
         {steps.map((step, index) => (
           <div key={step.name} className="flex flex-col items-center flex-1 min-w-[80px]">
             <div className="flex items-center w-full">
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => onStepClick && onStepClick(index)}
-                className="flex items-center w-full focus:outline-none"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onStepClick && onStepClick(index); } }}
+                className="flex items-center w-full focus:outline-none cursor-pointer"
               >
                 <Tooltip>
-                  <TooltipTrigger>
+                  <TooltipTrigger asChild>
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center border text-sm font-medium transition-colors duration-300 ${
-                        index <= currentStep
+                      className={`w-8 h-8 rounded-full flex items-center justify-center border text-sm font-medium transition-colors duration-300 ${index <= currentStep
                           ? "bg-primary text-white border-primary"
                           : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-                      }`}
+                        }`}
                     >
                       {index + 1}
                     </div>
@@ -1673,12 +1674,11 @@ const MultiStepper: React.FC<MultiStepperProps> = ({ steps, currentStep, onStepC
                     <p>{step.description}</p>
                   </TooltipContent>
                 </Tooltip>
-              </button>
+              </div>
               {index !== steps.length - 1 && (
                 <div
-                  className={`flex-1 h-1 ${
-                    index < currentStep ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
-                  } mx-2`}
+                  className={`flex-1 h-1 ${index < currentStep ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
+                    } mx-2`}
                 ></div>
               )}
             </div>
@@ -1697,7 +1697,7 @@ const MultiStepper: React.FC<MultiStepperProps> = ({ steps, currentStep, onStepC
             <p>Definir base sonora, conceito e letras</p>
           </TooltipContent>
         </Tooltip>
-  <Tooltip>
+        <Tooltip>
           <TooltipTrigger>
             <Badge variant="outline" className="bg-green-100 dark:bg-green-900">
               Mês 2 - Produção
@@ -1744,7 +1744,7 @@ function DraggableReferenceSidebar() {
   // Load saved position and state from localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -1786,7 +1786,7 @@ function DraggableReferenceSidebar() {
   // Save position and state to localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     // Only save if position is valid
     if (position.x > 0 && position.y > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
@@ -1814,9 +1814,9 @@ function DraggableReferenceSidebar() {
     if ((e.target as HTMLElement).closest('.window-controls')) {
       return;
     }
-    
+
     if (!containerRef.current) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     // Calculate offset from top-left corner
     setDragOffset({
@@ -1863,7 +1863,7 @@ function DraggableReferenceSidebar() {
 
   const handleMouseEnter = () => {
     if (!autoHoverEnabled || isFullscreen) return;
-    
+
     // Clear any pending timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -1909,7 +1909,7 @@ function DraggableReferenceSidebar() {
 
       const containerWidth = containerRef.current.offsetWidth;
       const containerHeight = containerRef.current.offsetHeight;
-      
+
       // Calculate new position (top-left corner)
       let newX = e.clientX - dragOffset.x;
       let newY = e.clientY - dragOffset.y;
@@ -1940,26 +1940,26 @@ function DraggableReferenceSidebar() {
     if (typeof window === 'undefined') {
       return { width: 420, height: 600 };
     }
-    
+
     if (isMinimized) {
       return { width: 420, height: 40 }; // Just header height
     }
     if (isFullscreen) {
-      return { 
-        width: window.innerWidth, 
+      return {
+        width: window.innerWidth,
         height: window.innerHeight,
         left: 0,
         top: 0
       };
     }
-    return { 
-      width: savedSize.width || 420, 
+    return {
+      width: savedSize.width || 420,
       height: savedSize.height || (window.innerHeight - 89)
     };
   };
 
   const dimensions = getDimensions();
-  const displayPosition = isFullscreen 
+  const displayPosition = isFullscreen
     ? { x: 0, y: 0 }
     : position;
 
@@ -1997,7 +1997,7 @@ function DraggableReferenceSidebar() {
             <GripVertical className="h-4 w-4 opacity-60 hover:opacity-100 transition-opacity shrink-0" />
             <span className="text-xs font-medium text-muted-foreground truncate">Referências</span>
           </div>
-          
+
           {/* Window Controls */}
           <div className="flex items-center gap-1 window-controls shrink-0">
             <Tooltip>
@@ -2015,7 +2015,7 @@ function DraggableReferenceSidebar() {
                 {autoHoverEnabled ? "Desativar auto-minimizar/maximizar no hover" : "Ativar auto-minimizar/maximizar no hover"}
               </TooltipContent>
             </Tooltip>
-            
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -2034,7 +2034,7 @@ function DraggableReferenceSidebar() {
               </TooltipTrigger>
               <TooltipContent>{isMinimized ? "Maximizar" : "Minimizar"}</TooltipContent>
             </Tooltip>
-            
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -2053,7 +2053,7 @@ function DraggableReferenceSidebar() {
               </TooltipTrigger>
               <TooltipContent>{isFullscreen ? "Restaurar" : "Tela cheia"}</TooltipContent>
             </Tooltip>
-            
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -2070,7 +2070,7 @@ function DraggableReferenceSidebar() {
             </Tooltip>
           </div>
         </div>
-        
+
         {/* Content */}
         {!isMinimized && (
           <div className="flex-1 min-h-0 overflow-hidden">
@@ -2118,7 +2118,7 @@ export function ContentLayout({
     { name: "Contratualização", link: "/contratualizacao", timeframe: "Mês 3", description: "Fechar contratos com artistas, equipe, distribuidores e plataformas" },
     { name: "Direitos Autorais", link: "/direitosautorais", timeframe: "Mês 3", description: "Registrar obras, liberar samples e licenciar sincronizações" },
     { name: "Lançamento", link: "/lancamento", timeframe: "Mês 3", description: "Implementar distribuição digital, PR, marketing e monitorar resultados" },
-    ];
+  ];
 
   const defaultStepComponents: Record<number, React.ComponentType<any>> = {
     0: MaqueteStep,
@@ -2136,7 +2136,7 @@ export function ContentLayout({
   const steps = stepsOverride ?? defaultSteps;
   const stepComponents = stepComponentsOverride ?? defaultStepComponents;
 
- 
+
 
   const ActiveStep = stepComponents[currentStep] ?? (() => null);
 
@@ -2148,93 +2148,93 @@ export function ContentLayout({
   return (
     <LayoutDepthContext.Provider value={depth + 1}>
       <TooltipProvider>
-      <div className="w-full overflow-hidden transition-all duration-300">
-        <Navbar title={title} />
-        {/* Right reference sidebar with tabs - Draggable */}
-        <DraggableReferenceSidebar />
-        
-        <AdminPanelLayout>
-          <div className="w-full pt-8 pb-8 px-4 mx-auto max-w-[1800px] xl:pr-[440px]">
-            <div className="p-4 items-center w-full">
-              <div className="w-full">
-                {showStepper && (
-                  <>
-                    <Card className="w-full mb-4">
-                      <CardHeader className="items-center">
-                        <div className="flex items-center gap-4 w-full">
-                          <MultiStepper
-                            steps={steps}
-                            currentStep={currentStep}
-                            onStepClick={handleStepClick}
-                          />
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="icon" className="w-8 h-8">
-                                <span className="text-sm">i</span>
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-[800px]">
-                              <DialogHeader>
-                                <DialogTitle>Ciclo Trimestral de Execução</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <h3 className="font-semibold mb-2">Mês 1 – Pré-Produção</h3>
-                                  <ol className="list-decimal pl-6 space-y-2">
-                                    <li><strong>maquete</strong> - Criar arranjos e demos para definir a base sonora.</li>
-                                    <li><strong>Contextualização</strong> - Definir conceito, moodboard, roteiro e tratamento.</li>
-                                    <li><strong>Versificação</strong> - Finalizar letras e estrutura poética.</li>
-                                  </ol>
-                                </div>
+        <div className="w-full overflow-hidden transition-all duration-300">
+          <Navbar title={title} />
+          {/* Right reference sidebar with tabs - Draggable */}
+          <DraggableReferenceSidebar />
 
-                                <div>
-                                  <h3 className="font-semibold mb-2">Mês 2 – Produção</h3>
-                                  <ol className="list-decimal pl-6 space-y-2" start={4}>
-                                    <li><strong>Gravação</strong> - Agendar estúdio e gravar todas as faixas.</li>
-                                    <li><strong>Vestuário</strong> - Produzir e provar figurinos para vídeo e material de imprensa.</li>
-                                    <li><strong>Orçamentalização</strong> - Distribuir verba entre estúdio, equipe, figurino e reserva.</li>
-                                    <li><strong>Filmagens</strong> - Executar gravação de vídeo e bastidores.</li>
-                                  </ol>
-                                </div>
+          <AdminPanelLayout>
+            <div className="w-full pt-8 pb-8 px-4 mx-auto max-w-[1800px] xl:pr-[440px]">
+              <div className="p-4 items-center w-full">
+                <div className="w-full">
+                  {showStepper && (
+                    <>
+                      <Card className="w-full mb-4">
+                        <CardHeader className="items-center">
+                          <div className="flex items-center gap-4 w-full">
+                            <MultiStepper
+                              steps={steps}
+                              currentStep={currentStep}
+                              onStepClick={handleStepClick}
+                            />
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="icon" className="w-8 h-8">
+                                  <span className="text-sm">i</span>
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-[800px]">
+                                <DialogHeader>
+                                  <DialogTitle>Ciclo Trimestral de Execução</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Mês 1 – Pré-Produção</h3>
+                                    <ol className="list-decimal pl-6 space-y-2">
+                                      <li><strong>maquete</strong> - Criar arranjos e demos para definir a base sonora.</li>
+                                      <li><strong>Contextualização</strong> - Definir conceito, moodboard, roteiro e tratamento.</li>
+                                      <li><strong>Versificação</strong> - Finalizar letras e estrutura poética.</li>
+                                    </ol>
+                                  </div>
 
-                                <div>
-                                  <h3 className="font-semibold mb-2">Mês 3 – Pós-Produção & Lançamento</h3>
-                                  <ol className="list-decimal pl-6 space-y-2" start={8}>
-                                    <li><strong>Contratualização</strong> - Fechar contratos com artistas, equipe, distribuidores e plataformas.</li>
-                                    <li><strong>Direitos Autorais</strong> - Registrar obras, liberar samples e licenciar sincronizações.</li>
-                                    <li><strong>Lançamento</strong> - Implementar distribuição digital, PR, marketing e monitorar resultados.</li>
-                                  </ol>
-                                </div>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Mês 2 – Produção</h3>
+                                    <ol className="list-decimal pl-6 space-y-2" start={4}>
+                                      <li><strong>Gravação</strong> - Agendar estúdio e gravar todas as faixas.</li>
+                                      <li><strong>Vestuário</strong> - Produzir e provar figurinos para vídeo e material de imprensa.</li>
+                                      <li><strong>Orçamentalização</strong> - Distribuir verba entre estúdio, equipe, figurino e reserva.</li>
+                                      <li><strong>Filmagens</strong> - Executar gravação de vídeo e bastidores.</li>
+                                    </ol>
+                                  </div>
 
-                                <div>
-                                  <h3 className="font-semibold mb-2">Revisão e Ajustes</h3>
-                                  <ul className="list-disc pl-6 space-y-2">
-                                    <li>Ao final do trimestre, avaliar KPIs (streams, views, engajamento) e lições aprendidas.</li>
-                                    <li>Ajustar o plano do próximo trimestre com base nos resultados e feedback.</li>
-                                  </ul>
-                                  <p className="mt-2">
-                                    Repita este ciclo a cada três meses para manter ritmo, controle orçamentário e capacidade de adaptação rápida.
-                                  </p>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="py-0" />
-                    </Card>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Mês 3 – Pós-Produção & Lançamento</h3>
+                                    <ol className="list-decimal pl-6 space-y-2" start={8}>
+                                      <li><strong>Contratualização</strong> - Fechar contratos com artistas, equipe, distribuidores e plataformas.</li>
+                                      <li><strong>Direitos Autorais</strong> - Registrar obras, liberar samples e licenciar sincronizações.</li>
+                                      <li><strong>Lançamento</strong> - Implementar distribuição digital, PR, marketing e monitorar resultados.</li>
+                                    </ol>
+                                  </div>
 
-                    <ActiveStep />
-                  </>
-                )}
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Revisão e Ajustes</h3>
+                                    <ul className="list-disc pl-6 space-y-2">
+                                      <li>Ao final do trimestre, avaliar KPIs (streams, views, engajamento) e lições aprendidas.</li>
+                                      <li>Ajustar o plano do próximo trimestre com base nos resultados e feedback.</li>
+                                    </ul>
+                                    <p className="mt-2">
+                                      Repita este ciclo a cada três meses para manter ritmo, controle orçamentário e capacidade de adaptação rápida.
+                                    </p>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="py-0" />
+                      </Card>
+
+                      <ActiveStep />
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {children}
-          </div>
-        </AdminPanelLayout>
-      </div>
-    </TooltipProvider>
+              {children}
+            </div>
+          </AdminPanelLayout>
+        </div>
+      </TooltipProvider>
     </LayoutDepthContext.Provider>
   );
 }
@@ -2383,73 +2383,73 @@ function MaqueteStep() {
         <SynopsisCRUD />
 
         <Card className="mt-6">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-2">
-            <CardTitle>Forma poética por estrofe</CardTitle>
-            <Button size="sm" onClick={addStrophe}>Adicionar estrofe</Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {strophes.length === 0 && (
-            <div className="text-sm text-muted-foreground">Ainda não há estrofes neste projeto.</div>
-          )}
-          {strophes.map((s: any, idx: number) => {
-            const resources = s.poeticForm ? POETIC_FORM_VIDEOS[s.poeticForm] : undefined;
-            const firstUrl = resources?.urls?.[0];
-            return (
-              <div key={s.id} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                <div className="text-sm font-medium">Estrofe {idx + 1}</div>
-                <div className="md:col-span-2 flex items-center gap-2">
-                  <Select value={s.poeticForm || ""} onValueChange={(val: string) => setStropheForm(s.id, val)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolhe a forma poética" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {POETIC_FORMS.map((f) => (
-                        <SelectItem key={f} value={f}>
-                          {f}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {firstUrl ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <a
-                          href={firstUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Ver vídeo recomendado para ${s.poeticForm}`}
-                        >
-                          <Button variant="outline" size="icon" className="shrink-0">
-                            <Video className="h-4 w-4" />
-                          </Button>
-                        </a>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Ver vídeo recomendado ({s.poeticForm})</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : s.poeticForm ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <Button variant="outline" size="icon" className="shrink-0" disabled>
-                            <Video className="h-4 w-4" />
-                          </Button>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Sem vídeo específico — pesquisar no YouTube</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : null}
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Forma poética por estrofe</CardTitle>
+              <Button size="sm" onClick={addStrophe}>Adicionar estrofe</Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {strophes.length === 0 && (
+              <div className="text-sm text-muted-foreground">Ainda não há estrofes neste projeto.</div>
+            )}
+            {strophes.map((s: any, idx: number) => {
+              const resources = s.poeticForm ? POETIC_FORM_VIDEOS[s.poeticForm] : undefined;
+              const firstUrl = resources?.urls?.[0];
+              return (
+                <div key={s.id} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                  <div className="text-sm font-medium">Estrofe {idx + 1}</div>
+                  <div className="md:col-span-2 flex items-center gap-2">
+                    <Select value={s.poeticForm || ""} onValueChange={(val: string) => setStropheForm(s.id, val)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Escolhe a forma poética" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {POETIC_FORMS.map((f) => (
+                          <SelectItem key={f} value={f}>
+                            {f}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {firstUrl ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a
+                            href={firstUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Ver vídeo recomendado para ${s.poeticForm}`}
+                          >
+                            <Button variant="outline" size="icon" className="shrink-0">
+                              <Video className="h-4 w-4" />
+                            </Button>
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Ver vídeo recomendado ({s.poeticForm})</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : s.poeticForm ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button variant="outline" size="icon" className="shrink-0" disabled>
+                              <Video className="h-4 w-4" />
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Sem vídeo específico — pesquisar no YouTube</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
+              );
+            })}
+          </CardContent>
+        </Card>
       </div>
     </ContentLayout>
   );
@@ -2635,7 +2635,7 @@ const Dashboard = () => {
     )) {
       setSongInfo(project.songInfo as unknown as SongInfo);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Mirror changes to the global store (debounced save happens in the store itself)
@@ -2883,8 +2883,8 @@ const Dashboard = () => {
       const toSave = { ...current, strophes, songInfo, updatedAt: new Date().toISOString() };
       const { saveProjectToIndexedDB } = await import("@/lib/db");
       await saveProjectToIndexedDB(toSave);
-      
-  push({ msg: "Projeto salvo!", kind: "success" });
+
+      push({ msg: "Projeto salvo!", kind: "success" });
     } catch (error) {
       console.error("Erro ao salvar projeto:", error);
       push({ msg: "Erro ao salvar projeto.", kind: "error" });
@@ -3181,7 +3181,7 @@ const Dashboard = () => {
                     </div>
                   </DialogContent>
                 </Dialog>
-              
+
               </div>
 
               <div className="flex items-center justify-between">
@@ -3208,7 +3208,7 @@ const Dashboard = () => {
           </CardHeader>
         </Card>
 
-        
+
 
         {/* Existing Music Structure Card */}
         <Card className="w-full mb-6">
@@ -3311,7 +3311,7 @@ const Dashboard = () => {
                           </option>
                         ))}
                       </select>
-                            {/* Removed duplicate AdlibsDialog at strophe level to avoid confusion; adlibs are set per-verse now */}
+                      {/* Removed duplicate AdlibsDialog at strophe level to avoid confusion; adlibs are set per-verse now */}
 
                       {/* Three Act Structure Select */}
                       <select
@@ -3397,15 +3397,15 @@ const Dashboard = () => {
                 <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded">
                   <p className="text-sm font-semibold">
                     {strophe.architecture === "Episódios" &&
-                    strophe.architectureDesc
+                      strophe.architectureDesc
                       ? dramArqOptions
-                          .find((opt) => opt.value === "Episódios")
-                          ?.subtypes?.find(
-                            (sub) => sub.value === strophe.architectureDesc,
-                          )?.instruction
+                        .find((opt) => opt.value === "Episódios")
+                        ?.subtypes?.find(
+                          (sub) => sub.value === strophe.architectureDesc,
+                        )?.instruction
                       : dramArqOptions.find(
-                          (opt) => opt.value === strophe.architecture,
-                        )?.instruction}
+                        (opt) => opt.value === strophe.architecture,
+                      )?.instruction}
                   </p>
                   {strophe.threeAct && (
                     <p className="text-sm font-semibold mt-2">
@@ -3623,7 +3623,7 @@ const Dashboard = () => {
                       <option value="raw">RAW</option>
                     </select>
                   </div>
-                 
+
                   <div>
                     <Label>Frame Rate Base</Label>
                     <select className="w-full p-2 border rounded">
@@ -4162,8 +4162,8 @@ const Dashboard = () => {
                                     ].cameraSettings!.relatedVerses =
                                       relatedVerses.includes(vIndex + 1)
                                         ? relatedVerses.filter(
-                                            (v) => v !== vIndex + 1,
-                                          )
+                                          (v) => v !== vIndex + 1,
+                                        )
                                         : [...relatedVerses, vIndex + 1];
 
                                     setStrophes(newStrophes);
@@ -4179,7 +4179,7 @@ const Dashboard = () => {
 
                         <div>
                           <Label>
-                             da Cena</Label>
+                            da Cena</Label>
                           <Input
                             placeholder="Descreva brevemente a cena"
                             value={verse.cameraSettings?.sceneLabel || ""}
@@ -4268,8 +4268,8 @@ const Dashboard = () => {
                 variant="secondary"
                 className="gap-2"
                 onClick={() =>
-                  (window.location.href =
-                    "http://localhost:3000/cinematografia")
+                (window.location.href =
+                  "http://localhost:3000/cinematografia")
                 }
               >
                 <Video className="h-4 w-4" />
@@ -4406,8 +4406,8 @@ const Dashboard = () => {
                                     >
                                       {syllable}
                                       {sIdx <
-                                      detail.syllable_breakdown.split("-")
-                                        .length -
+                                        detail.syllable_breakdown.split("-")
+                                          .length -
                                         1
                                         ? "-"
                                         : ""}

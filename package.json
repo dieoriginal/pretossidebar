@@ -9,13 +9,11 @@
   "scripts": {
     "dev": "npm run dev:web",
     "dev:web": "cd apps/web && npm run dev",
-    "dev:mobile": "cd apps/mobile && npm run start",
     "build": "cd apps/web && npm run build",
-    "build:mobile": "cd apps/mobile && npm run build",
     "lint": "cd apps/web && npm run lint",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules && rm -rf apps/*/.next apps/*/dist",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "install:all": "npm install && cd apps/web && npm install && cd ../mobile && npm install && cd ../../packages/shared-logic && npm install"
+    "install:all": "npm install && cd apps/web && npm install && cd ../../packages/shared-logic && npm install"
   },
   "devDependencies": {
     "prettier": "^3.1.0",

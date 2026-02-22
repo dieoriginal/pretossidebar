@@ -1,203 +1,224 @@
 @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
+@tailwind components;
+@tailwind utilities;
 
-  @layer base {
-    :root {
-      --background: 0 0% 100%;
-      --foreground: 240 10% 3.9%;
-
-      --card: 0 0% 100%;
-      --card-foreground: 240 10% 3.9%;
-
-      --popover: 0 0% 100%;
-      --popover-foreground: 240 10% 3.9%;
-
-      --primary: 240 5.9% 10%;
-      --primary-foreground: 0 0% 98%;
-
-      --secondary: 240 4.8% 95.9%;
-      --secondary-foreground: 240 5.9% 10%;
-
-      --muted: 240 4.8% 95.9%;
-      --muted-foreground: 240 3.8% 46.1%;
-
-      --accent: 240 4.8% 95.9%;
-      --accent-foreground: 240 5.9% 10%;
-
-      --destructive: 0 84.2% 60.2%;
-      --destructive-foreground: 0 0% 98%;
-
-      --border: 240 5.9% 90%;
-      --input: 240 5.9% 90%;
-      --ring: 240 10% 3.9%;
-
-      --radius: 0.5rem;
-
-      --sidebar-background: 0 0% 98%;
-      --sidebar-foreground: 240 5.3% 26.1%;
-      --sidebar-primary: 240 5.9% 10%;
-      --sidebar-primary-foreground: 0 0% 98%;
-      --sidebar-accent: 240 4.8% 95.9%;
-      --sidebar-accent-foreground: 240 5.9% 10%;
-      --sidebar-border: 220 13% 91%;
-      --sidebar-ring: 217.2 91.2% 59.8%;
-    }
-
-    .dark {
-      --background: 240 10% 3.9%;
-      --foreground: 0 0% 98%;
-
-      --card: 240 10% 3.9%;
-      --card-foreground: 0 0% 98%;
-
-      --popover: 240 10% 3.9%;
-      --popover-foreground: 0 0% 98%;
-
-      --primary: 0 0% 98%;
-      --primary-foreground: 240 5.9% 10%;
-
-      --secondary: 240 3.7% 15.9%;
-      --secondary-foreground: 0 0% 98%;
-
-      --muted: 240 3.7% 15.9%;
-      --muted-foreground: 240 5% 64.9%;
-
-      --accent: 240 3.7% 15.9%;
-      --accent-foreground: 0 0% 98%;
-
-      --destructive: 0 62.8% 30.6%;
-      --destructive-foreground: 0 0% 98%;
-
-      --border: 240 3.7% 15.9%;
-      --input: 240 3.7% 15.9%;
-      --ring: 240 4.9% 83.9%;
-
-      --sidebar-background: 240 5.9% 10%;
-      --sidebar-foreground: 240 4.8% 95.9%;
-      --sidebar-primary: 224.3 76.3% 48%;
-      --sidebar-primary-foreground: 0 0% 100%;
-      --sidebar-accent: 240 3.7% 15.9%;
-      --sidebar-accent-foreground: 240 4.8% 95.9%;
-      --sidebar-border: 240 3.7% 15.9%;
-      --sidebar-ring: 217.2 91.2% 59.8%;
-    }
-  }
-
-  @layer base {
-    * {
-      border-color: hsl(var(--border));
-    }
-    body {
-      @apply bg-background text-foreground;
-    }
-    /* Global 80% zoom for the entire app, as requested */
-    .app-zoom-80 {
-      zoom: 0.8;
-    }
-  }
-
-  @layer utilities {
-    /* Custom slider styles for audio player */
-    input[type="range"].slider {
-      -webkit-appearance: none;
-      appearance: none;
-    }
-    
-    input[type="range"].slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: hsl(var(--primary));
-      cursor: pointer;
-      border: 2px solid hsl(var(--background));
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      transition: all 0.2s ease;
-    }
-    
-    input[type="range"].slider::-webkit-slider-thumb:hover {
-      transform: scale(1.1);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    }
-    
-    input[type="range"].slider::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: hsl(var(--primary));
-      cursor: pointer;
-      border: 2px solid hsl(var(--background));
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      transition: all 0.2s ease;
-    }
-    
-    input[type="range"].slider::-moz-range-thumb:hover {
-      transform: scale(1.1);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    }
-    
-    input[type="range"]:not(.slider)::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: hsl(var(--primary));
-      cursor: pointer;
-      border: 2px solid hsl(var(--background));
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    }
-    
-    input[type="range"]:not(.slider)::-moz-range-thumb {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: hsl(var(--primary));
-      cursor: pointer;
-      border: 2px solid hsl(var(--background));
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    }
-  }
-
-  /* Viewport Selector Styles */
+@layer base {
   :root {
-    --viewport-width: 100%;
-    --viewport-height: 100vh;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  .viewport-active {
-    overflow-x: hidden;
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
   }
 
-  .viewport-active body {
-    transition: max-width 0.3s ease;
+  body {
+    @apply bg-background text-foreground;
   }
 
-  /* Garantir que nenhum componente atravessa a navbar */
-  /* A MainNavbar tem h-14 (56px) e z-[50] */
-  header[class*="sticky"][class*="top-0"] {
-    z-index: 50 !important;
+  /* Dynamic app zoom — controlled by ZoomControls component */
+  body {
+    zoom: var(--app-zoom, 1);
+    transition: zoom 0.2s ease;
   }
 
-  /* Garantir que elementos fixos respeitam o espaço da navbar */
-  [class*="fixed"][class*="top-"]:not(header):not([class*="z-[50]"]):not([class*="z-50"]) {
-    top: 3.5rem !important; /* 56px = h-14 */
+  @media (max-width: 767px) {
+    body {
+      zoom: var(--app-zoom, 0.85);
+    }
+  }
+}
+
+@layer utilities {
+
+  /* Hide scrollbar for horizontal scroll containers */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  /* Garantir que elementos com position absolute também respeitam */
-  [class*="absolute"][class*="top-0"]:not(header) {
-    top: 3.5rem !important;
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 
-  /* Garantir que o conteúdo principal sempre tem padding-top suficiente */
-  main:not([class*="pt-"]) {
-    padding-top: 3.5rem !important;
+  /* Custom slider styles for audio player */
+  input[type="range"].slider {
+    -webkit-appearance: none;
+    appearance: none;
   }
 
-  /* Exceção para elementos dentro de modais/dialogs que podem estar em top-0 */
-  [role="dialog"] [class*="top-0"],
-  [data-radix-portal] [class*="top-0"] {
-    top: 0 !important;
+  input[type="range"].slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+    border: 2px solid hsl(var(--background));
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
   }
+
+  input[type="range"].slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  input[type="range"].slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+    border: 2px solid hsl(var(--background));
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+  }
+
+  input[type="range"].slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  input[type="range"]:not(.slider)::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+    border: 2px solid hsl(var(--background));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  input[type="range"]:not(.slider)::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+    border: 2px solid hsl(var(--background));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Viewport Selector Styles */
+:root {
+  --viewport-width: 100%;
+  --viewport-height: 100vh;
+}
+
+.viewport-active {
+  overflow-x: hidden;
+}
+
+.viewport-active body {
+  transition: max-width 0.3s ease;
+}
+
+/* Garantir que nenhum componente atravessa a navbar */
+/* A MainNavbar tem h-14 (56px) e z-[50] */
+header[class*="sticky"][class*="top-0"] {
+  z-index: 50 !important;
+}
+
+/* Garantir que elementos fixos respeitam o espaço da navbar */
+[class*="fixed"][class*="top-"]:not(header):not([class*="z-[50]"]):not([class*="z-50"]) {
+  top: 3.5rem !important;
+  /* 56px = h-14 */
+}
+
+/* Garantir que elementos com position absolute também respeitam */
+[class*="absolute"][class*="top-0"]:not(header) {
+  top: 3.5rem !important;
+}
+
+/* Garantir que o conteúdo principal sempre tem padding-top suficiente */
+main:not([class*="pt-"]) {
+  padding-top: 3.5rem !important;
+}
+
+/* Exceção para elementos dentro de modais/dialogs que podem estar em top-0 */
+[role="dialog"] [class*="top-0"],
+[data-radix-portal] [class*="top-0"] {
+  top: 0 !important;
+}
