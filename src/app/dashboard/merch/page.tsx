@@ -109,6 +109,8 @@ import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import RhymeItEmbed from "@/components/RhymeItEmbed";
+import ReferenceTabs from "@/components/ReferenceTabs";
+import { PanelRight, PanelRightClose } from "lucide-react";
 
 import NarratologiaTab from "@/components/narratologia-tab";
 
@@ -1416,7 +1418,7 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
  
         
         <AdminPanelLayout>
-          <div className="w-full pt-8 pb-8 px-4 mx-auto max-w-[1800px] xl:pr-[440px]">
+          <div className="w-full pt-8 pb-8 px-4 mx-auto max-w-[1800px]">
             <div className="p-4 items-center w-full">
               
             </div>
@@ -1594,6 +1596,7 @@ const Dashboard = () => {
   const router = useRouter();
   const { settings } = useSidebar();
   const [activeTab, setActiveTab] = useState("produtos");
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [products, setProducts] = useState<Product[]>(sampleProducts);
   const [orders, setOrders] = useState<Order[]>(sampleOrders);
   const [salesData, setSalesData] = useState<SalesData[]>(sampleSalesData);
@@ -1661,7 +1664,51 @@ const Dashboard = () => {
 
   return (
     <ContentLayout title="Merchandise Diepretty">
-      <div className="w-full mx-auto max-w-[1800px] px-4">
+      {/* Right Sidebar - Reference Tools */}
+      <aside
+        className={cn(
+          "fixed top-[89px] right-0 z-30 h-[calc(100vh-89px)] bg-background border-l shadow-lg transition-all duration-300 ease-in-out",
+          isRightSidebarOpen ? "w-[420px] translate-x-0" : "w-0 translate-x-full"
+        )}
+      >
+        {isRightSidebarOpen && (
+          <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/50">
+              <h3 className="font-semibold text-sm">Ferramentas de Referência</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsRightSidebarOpen(false)}
+                className="h-8 w-8 p-0"
+              >
+                <PanelRightClose className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden p-2">
+              <ReferenceTabs />
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* Toggle Button (when sidebar is closed) */}
+      {!isRightSidebarOpen && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsRightSidebarOpen(true)}
+          className="fixed top-[100px] right-4 z-20 shadow-md gap-2"
+        >
+          <PanelRight className="h-4 w-4" />
+          <span className="hidden sm:inline">Ferramentas</span>
+        </Button>
+      )}
+
+      {/* Main Content - adjusted for sidebar */}
+      <div className={cn(
+        "w-full mx-auto px-4 transition-all duration-300",
+        isRightSidebarOpen ? "max-w-[calc(100%-440px)] pr-4" : "max-w-[1800px]"
+      )}>
         {/* Header Card */}
         <Card className="w-full mb-6">
           <CardHeader>

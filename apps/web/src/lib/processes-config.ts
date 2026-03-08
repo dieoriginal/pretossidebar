@@ -27,7 +27,8 @@ import {
   Volume2,
   Guitar,
   Brain,
-  Repeat
+  Repeat,
+  ShoppingCart
 } from "lucide-react";
 import { getIconName, getIconByName } from "./icon-helper";
 
@@ -45,6 +46,7 @@ export type ProcessType =
   | "superstar"
   | "ideologies"
   | "habit-stacking"
+  | "grocery"
   | "custom"
   | "event"  // Legacy support - redirects to espetaculos-ao-vivo
   | "tour";  // Legacy support - redirects to espetaculos-ao-vivo
@@ -409,6 +411,31 @@ export const PROCESSES_CONFIG: ProcessConfig[] = [
       color: "emerald",
       category: "desenvolvimento",
       tags: ["hábitos", "produtividade", "atomic-habits", "desenvolvimento-pessoal"],
+      group: "Desenvolvimento Artístico",
+    },
+  },
+  // Grocery Shopping - Lista de compras com orçamento semanal
+  {
+    id: "grocery",
+    type: "grocery",
+    label: "Lista de Compras",
+    href: "/grocery",
+    section: "Desenvolvimento",
+    icon: ShoppingCart,
+    description: "Orçamento semanal de compras - Millionaire Next Door style",
+    enabled: true,
+    order: 24,
+    features: {
+      save: true,
+      export: true,
+      share: false,
+      templates: true,
+      analytics: true,
+    },
+    metadata: {
+      color: "green",
+      category: "desenvolvimento",
+      tags: ["compras", "orçamento", "disciplina", "finanças"],
       group: "Desenvolvimento Artístico",
     },
   },

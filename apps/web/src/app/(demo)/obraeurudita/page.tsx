@@ -73,20 +73,8 @@ import {
   Eye,
   Video,
   FileText,
-  GripVertical,
-  Minus,
-  Square,
-  Maximize2,
-  Minimize2,
-  Music,
-  Pin,
-  AudioLines,
-  Disc3,
-  ArrowLeftRight,
-  CirclePause,
-  Guitar,
-  CircleStop,
-  ChevronUp
+  Mic,
+  Download
 } from "lucide-react";
 // (Select imported above with full API)
 import { debounce } from "lodash";
@@ -97,6 +85,7 @@ import {
   getCurrentUserId,
 } from "@/lib/firebase";
 import { salvarProjeto, carregarProjeto } from "@/lib/storage";
+import { exportProjectDossier } from "@/lib/exportDossier";
 import { setCookie, getCookie } from "@/lib/cookies";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
@@ -106,6 +95,7 @@ import { useToastLite } from "@/components/ui/toast-lite";
 import { Navbar as ProfessionalNavbar } from "@/components/admin-panel/navbar";
 
 import NarratologiaTab from "@/components/narratologia-tab";
+import VerseAudioRecorder from "@/components/VerseAudioRecorder";
 
 import AccountStep from "@/steps/account";
 import ContratualizacaoStep from "@/steps/contratualizacao";
@@ -169,6 +159,7 @@ interface Verse {
   persona?: string;
   threeAct?: string;
   musicSection?: string; // New field
+  audioRecording?: string; // Base64 data URL of recorded flow audio
 }
 
 interface Strophe {
@@ -981,6 +972,15 @@ const SortableVerse = ({
         />
         <AdlibsDialog onPick={(phrase) => onVerseChange({ ...verse, adlib: phrase.toUpperCase() })} />
 
+        {/* Audio recording per verse — record the flow */}
+        <VerseAudioRecorder
+          verseId={verse.id}
+          audioDataUrl={verse.audioRecording}
+          onRecordingChange={(audioDataUrl) =>
+            onVerseChange({ ...verse, audioRecording: audioDataUrl })
+          }
+        />
+
         {/* Componentes de seleção sempre visíveis */}
         <div className="flex gap-2 flex-1 min-w-[200px]">
           <select
@@ -1501,65 +1501,54 @@ const adlibCategories = [
   },
 ];
 
-const musicStructureIcons: Record<string, React.ElementType> = {
-  introducao: Music,
-  verso: Pin,
-  "pre-refrao": AudioLines,
-  refrao: Disc3,
-  ponte: ArrowLeftRight,
-  break: CirclePause,
-  solo: Guitar,
-  outro: CircleStop,
-};
-
 const musicStructureOptions = [
   {
     value: "introducao",
-    label: "Introducao",
-    description: "Inicio maquete ou vocal, estabelece tom e atmosfera",
+    label: "🎼 Introdução",
+    description: "Início maquete ou vocal, estabelece tom e atmosfera",
     example: "Guitarra em 'Smoke on the Water'",
   },
   {
     value: "verso",
-    label: "Verso (estrofe)",
-    description: "Parte narrativa, apresenta ideias ou historia",
-    example: "'Once upon a time you dressed so fine...' - Bob Dylan",
+    label: "📌 Verso (estrofe)",
+    description: "Parte narrativa, apresenta ideias ou história",
+    example: "'Once upon a time you dressed so fine…' – Bob Dylan",
   },
   {
     value: "pre-refrao",
-    label: "Pre-refrao",
-    description: "Ponte curta antes do refrao, eleva tensao",
-    example: "'Oh, the misery...' - Imagine Dragons",
+    label: "🎶 Pré-refrão",
+    description: "Ponte curta antes do refrão, eleva tensão",
+    example: "'Oh, the misery…' – Imagine Dragons",
   },
   {
     value: "refrao",
-    label: "Refrao (coro)",
-    description: "Parte repetida e mais memoravel, geralmente com a mensagem",
-    example: "'We will, we will rock you...'",
+    label: "🎵 Refrão (coro)",
+    description: "Parte repetida e mais memorável, geralmente com a mensagem",
+    example: "'We will, we will rock you…'",
   },
   {
     value: "ponte",
-    label: "Ponte (bridge)",
-    description: "Seccao contrastante, nova progressao harmonica ou melodica",
-    example: "'Middle 8' em 'Something' - The Beatles",
+    label: "🌉 Ponte (bridge)",
+    description: "Secção contrastante, nova progressão harmónica ou melódica",
+    example: "'Middle 8' em 'Something' – The Beatles",
   },
   {
     value: "break",
-    label: "Break / Paragem",
-    description: "Queda brusca de som ou ritmo, efeito dramatico",
+    label: "⏸️ Break / Paragem",
+    description: "Queda brusca de som ou ritmo, efeito dramático",
     example: "'Drop' no EDM",
   },
   {
     value: "solo",
-    label: "Solo",
-    description: "Seccao maquete, normalmente improvisada",
+    label: "🎸 Solo",
+    description: "Secção maquete, normalmente improvisada",
     example: "Solo de guitarra em 'Hotel California'",
   },
   {
     value: "outro",
-    label: "Outro (conclusao)",
-    description: "Encerramento da musica",
-    example: "Fade out em 'Hey Jude' - The Beatles",
+    label: "🔚 Outro (conclusão)",
+    description: "Encerramento da música",
+    example: "Fade out em 'Hey Jude' – The Beatles",
   },
 ];
 
@@ -1587,19 +1576,16 @@ const SortableMusicStructureItem = ({
 
   const option = musicStructureOptions.find((opt) => opt.value === value);
 
-  const IconComp = option ? musicStructureIcons[option.value] : null;
-
   return (
     <div ref={setNodeRef} style={style} className="inline-block">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="default"
-            className="rounded-full px-3 py-1.5 whitespace-nowrap m-0.5 text-xs gap-1.5"
+            className="rounded-full px-4 py-2 whitespace-nowrap m-1"
             {...attributes}
             {...listeners}
           >
-            {IconComp && <IconComp className="h-3.5 w-3.5" />}
             {option?.label}
           </Button>
         </TooltipTrigger>
@@ -1686,8 +1672,8 @@ const MultiStepper: React.FC<MultiStepperProps> = ({ steps, currentStep, onStepC
                   <TooltipTrigger asChild>
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center border text-sm font-medium transition-colors duration-300 ${index <= currentStep
-                        ? "bg-primary text-white border-primary"
-                        : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                          ? "bg-primary text-white border-primary"
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
                         }`}
                     >
                       {index + 1}
@@ -1747,360 +1733,79 @@ const MultiStepper: React.FC<MultiStepperProps> = ({ steps, currentStep, onStepC
 
 const LayoutDepthContext = React.createContext(0);
 
-/* ------------------ Draggable Reference Sidebar ------------------ */
-function DraggableReferenceSidebar() {
-  const [position, setPosition] = useState({ x: 0, y: 89 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [autoHoverEnabled, setAutoHoverEnabled] = useState(false);
-  const [savedSize, setSavedSize] = useState({ width: 420, height: typeof window !== 'undefined' ? window.innerHeight - 89 : 600 });
-  const sidebarRef = useRef<HTMLElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+interface FixedReferenceSidebarProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
-  const STORAGE_KEY = "reference-sidebar-position";
-  const STATE_STORAGE_KEY = "reference-sidebar-state";
-  const AUTO_HOVER_KEY = "reference-sidebar-auto-hover";
+/* ------------------ Fixed Right Reference Sidebar ------------------ */
+function FixedReferenceSidebar({ isOpen, onOpenChange }: FixedReferenceSidebarProps) {
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Load saved position and state from localStorage
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const { x, y } = JSON.parse(saved);
-        // Validate saved position is within viewport
-        if (x >= 0 && x <= window.innerWidth && y >= 0 && y <= window.innerHeight) {
-          setPosition({ x, y });
-        } else {
-          setPosition({ x: window.innerWidth - 420, y: 89 });
-        }
-      } else {
-        // Default: right side, below navbar
-        setPosition({ x: window.innerWidth - 420, y: 89 });
-      }
-
-      // Load saved state
-      const savedState = localStorage.getItem(STATE_STORAGE_KEY);
-      if (savedState) {
-        const { minimized, fullscreen, size } = JSON.parse(savedState);
-        if (minimized !== undefined) setIsMinimized(minimized);
-        if (fullscreen !== undefined) setIsFullscreen(fullscreen);
-        if (size) setSavedSize(size);
-      }
-
-      // Load auto-hover setting
-      const savedAutoHover = localStorage.getItem(AUTO_HOVER_KEY);
-      if (savedAutoHover !== null) {
-        setAutoHoverEnabled(JSON.parse(savedAutoHover));
-      }
-    } catch (error) {
-      console.error("Erro ao carregar posição/estado da sidebar:", error);
-      // Fallback to default
-      if (typeof window !== "undefined") {
-        setPosition({ x: window.innerWidth - 420, y: 89 });
-      }
-    }
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1280);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Save position and state to localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // Mobile: render as a sheet/drawer
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenChange(true)}
+          className="fixed top-[100px] right-4 z-30 shadow-md gap-2"
+        >
+          <PanelsTopLeft className="h-4 w-4" />
+          <span>Referências</span>
+        </Button>
+        
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+          <SheetContent side="right" className="w-full sm:w-[420px] p-0">
+            <SheetHeader className="px-4 py-3 border-b">
+              <SheetTitle className="text-sm font-semibold">Ferramentas de Referência</SheetTitle>
+            </SheetHeader>
+            <div className="h-[calc(100vh-80px)] p-2">
+              <ReferenceTabs />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
 
-    // Only save if position is valid
-    if (position.x > 0 && position.y > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
-    }
-  }, [position]);
-
-  // Save state to localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify({
-      minimized: isMinimized,
-      fullscreen: isFullscreen,
-      size: savedSize
-    }));
-  }, [isMinimized, isFullscreen, savedSize]);
-
-  // Save auto-hover setting
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(AUTO_HOVER_KEY, JSON.stringify(autoHoverEnabled));
-  }, [autoHoverEnabled]);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Don't drag if clicking on window controls
-    if ((e.target as HTMLElement).closest('.window-controls')) {
-      return;
-    }
-
-    if (!containerRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    // Calculate offset from top-left corner
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-    setIsDragging(true);
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleMinimize = () => {
-    if (!isMinimized) {
-      // Save current size before minimizing
-      if (containerRef.current) {
-        setSavedSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight
-        });
-      }
-    }
-    setIsMinimized(!isMinimized);
-    setIsFullscreen(false);
-  };
-
-  const handleFullscreen = () => {
-    if (!isFullscreen) {
-      // Save current size before fullscreen
-      if (containerRef.current) {
-        setSavedSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight
-        });
-      }
-    }
-    setIsFullscreen(!isFullscreen);
-    setIsMinimized(false);
-  };
-
-  const handleClose = () => {
-    setIsMinimized(true);
-    setIsFullscreen(false);
-  };
-
-  const handleMouseEnter = () => {
-    if (!autoHoverEnabled || isFullscreen) return;
-
-    // Clear any pending timeout
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-
-    // If minimized, maximize on hover
-    if (isMinimized) {
-      setIsMinimized(false);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (!autoHoverEnabled || isFullscreen || isMinimized) return;
-
-    // Clear any pending timeout
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-
-    // Delay minimization slightly to avoid flickering
-    hoverTimeoutRef.current = setTimeout(() => {
-      if (!isFullscreen) {
-        setIsMinimized(true);
-      }
-    }, 300); // 300ms delay
-  };
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-
-      const containerWidth = containerRef.current.offsetWidth;
-      const containerHeight = containerRef.current.offsetHeight;
-
-      // Calculate new position (top-left corner)
-      let newX = e.clientX - dragOffset.x;
-      let newY = e.clientY - dragOffset.y;
-
-      // Keep within viewport bounds with padding
-      const padding = 8;
-      newX = Math.max(padding, Math.min(window.innerWidth - containerWidth - padding, newX));
-      newY = Math.max(padding, Math.min(window.innerHeight - containerHeight - padding, newY));
-
-      setPosition({ x: newX, y: newY });
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging, dragOffset]);
-
-  // Calculate dimensions based on state
-  const getDimensions = () => {
-    if (typeof window === 'undefined') {
-      return { width: 420, height: 600 };
-    }
-
-    if (isMinimized) {
-      return { width: 420, height: 40 }; // Just header height
-    }
-    if (isFullscreen) {
-      return {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        left: 0,
-        top: 0
-      };
-    }
-    return {
-      width: savedSize.width || 420,
-      height: savedSize.height || (window.innerHeight - 89)
-    };
-  };
-
-  const dimensions = getDimensions();
-  const displayPosition = isFullscreen
-    ? { x: 0, y: 0 }
-    : position;
-
+  // Desktop: fixed right sidebar
   return (
     <aside
-      ref={sidebarRef}
-      className="hidden xl:flex flex-col fixed border bg-background dark:bg-zinc-900 shadow-lg rounded-lg overflow-hidden"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        left: `${displayPosition.x}px`,
-        top: `${displayPosition.y}px`,
-        width: `${dimensions.width}px`,
-        height: `${dimensions.height}px`,
-        maxHeight: isFullscreen ? '100vh' : `${dimensions.height}px`,
-        cursor: isDragging ? "grabbing" : "default",
-        transition: isDragging ? 'none' : 'all 0.2s ease-in-out',
-        zIndex: 9998, // Always on top (just below FloatingNavbar which is 9999)
-      }}
+      className={cn(
+        "fixed top-[89px] right-0 z-30 h-[calc(100vh-89px)] bg-background border-l shadow-lg transition-all duration-300 ease-in-out",
+        isOpen ? "w-[420px] translate-x-0" : "w-0 translate-x-full"
+      )}
     >
-      <div
-        ref={containerRef}
-        className={cn(
-          "h-full flex flex-col transition-all",
-          isDragging && "shadow-2xl scale-[1.01]"
-        )}
-      >
-        {/* Header with Window Controls */}
-        <div
-          onMouseDown={handleMouseDown}
-          className="cursor-grab active:cursor-grabbing px-4 py-2 border-b bg-muted/50 hover:bg-muted transition-colors flex items-center justify-between shrink-0"
-          title="Arrastar sidebar"
-        >
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <GripVertical className="h-4 w-4 opacity-60 hover:opacity-100 transition-opacity shrink-0" />
-            <span className="text-xs font-medium text-muted-foreground truncate">Referências</span>
+      {isOpen && (
+        <div className="h-full flex flex-col">
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/50">
+            <h3 className="font-semibold text-sm">Ferramentas de Referência</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-
-          {/* Window Controls */}
-          <div className="flex items-center gap-1 window-controls shrink-0">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 px-1">
-                  <Switch
-                    checked={autoHoverEnabled}
-                    onCheckedChange={setAutoHoverEnabled}
-                    className="h-4 w-8"
-                  />
-                  <span className="text-[10px] text-muted-foreground">Auto</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                {autoHoverEnabled ? "Desativar auto-minimizar/maximizar no hover" : "Ativar auto-minimizar/maximizar no hover"}
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 hover:bg-muted"
-                  onClick={handleMinimize}
-                  title={isMinimized ? "Maximizar" : "Minimizar"}
-                >
-                  {isMinimized ? (
-                    <Maximize2 className="h-3 w-3" />
-                  ) : (
-                    <Minus className="h-3 w-3" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isMinimized ? "Maximizar" : "Minimizar"}</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 hover:bg-muted"
-                  onClick={handleFullscreen}
-                  title={isFullscreen ? "Restaurar" : "Tela cheia"}
-                >
-                  {isFullscreen ? (
-                    <Minimize2 className="h-3 w-3" />
-                  ) : (
-                    <Square className="h-3 w-3" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isFullscreen ? "Restaurar" : "Tela cheia"}</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive"
-                  onClick={handleClose}
-                  title="Fechar"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Fechar</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-
-        {/* Content */}
-        {!isMinimized && (
-          <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-hidden p-2">
             <ReferenceTabs />
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </aside>
   );
 }
@@ -2117,6 +1822,7 @@ export function ContentLayout({
   const { settings, setSettings } = sidebar;
   // Stepper sync with global store must be declared before any early return
   const [currentStep, setCurrentStep] = useState(0);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const projectStore = useProject();
   useEffect(() => {
     if (projectStore.project && typeof (projectStore.project as any)?.[stepKey] === "number") {
@@ -2173,20 +1879,38 @@ export function ContentLayout({
       <TooltipProvider>
         <div className="w-full overflow-hidden transition-all duration-300">
           <Navbar title={title} />
-          {/* Right reference sidebar with tabs - Draggable (hidden on mobile) */}
-          <div className="hidden xl:block">
-            <DraggableReferenceSidebar />
-          </div>
+          {/* Right reference sidebar with tabs - Fixed */}
+          <FixedReferenceSidebar isOpen={isRightSidebarOpen} onOpenChange={setIsRightSidebarOpen} />
+          
+          {/* Toggle button when sidebar is closed (desktop only) */}
+          {!isRightSidebarOpen && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRightSidebarOpen(true)}
+              className="fixed top-[100px] right-4 z-20 shadow-md gap-2 hidden xl:flex"
+            >
+              <PanelsTopLeft className="h-4 w-4" />
+              <span>Referências</span>
+            </Button>
+          )}
 
           <AdminPanelLayout>
-            <div className="w-full pt-4 sm:pt-8 pb-8 px-2 sm:px-4 mx-auto max-w-[1800px] xl:pr-[440px]">
+            <div className={cn(
+              "w-full pt-8 pb-8 px-4 transition-all duration-300",
+              isRightSidebarOpen ? "pr-[440px]" : ""
+            )}>
+              <div className={cn(
+                "mx-auto transition-all duration-300",
+                isRightSidebarOpen ? "max-w-full" : "max-w-[1800px]"
+              )}>
               <div className="p-4 items-center w-full">
                 <div className="w-full">
                   {showStepper && (
                     <>
                       <Card className="w-full mb-4">
-                        <CardHeader className="items-center px-2 sm:px-6">
-                          <div className="flex items-center gap-4 w-full overflow-x-auto scrollbar-hide">
+                        <CardHeader className="items-center">
+                          <div className="flex items-center gap-4 w-full">
                             <MultiStepper
                               steps={steps}
                               currentStep={currentStep}
@@ -2256,6 +1980,7 @@ export function ContentLayout({
               </div>
 
               {children}
+              </div>
             </div>
           </AdminPanelLayout>
         </div>
@@ -2401,103 +2126,80 @@ function MaqueteStep() {
 
   return (
     <ContentLayout title="Maquete">
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-end gap-2">
           <FeaturingManager />
         </div>
-        {/* Sinopse — collapsible wrapper */}
-        <Collapsible defaultOpen>
-          <div className="border rounded-lg overflow-hidden">
-            <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between px-4 py-3 bg-card cursor-pointer hover:bg-muted/30 transition-colors">
-                <span className="text-sm font-semibold">Sinopse do Single</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SynopsisCRUD />
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+        <SynopsisCRUD />
 
-        {/* Forma poética — collapsible, starts collapsed */}
-        <Collapsible defaultOpen={false}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer py-3 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-sm font-semibold">Forma poética por estrofe</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" onClick={(e) => { e.stopPropagation(); addStrophe(); }}>Adicionar estrofe</Button>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Forma poética por estrofe</CardTitle>
+              <Button size="sm" onClick={addStrophe}>Adicionar estrofe</Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {strophes.length === 0 && (
+              <div className="text-sm text-muted-foreground">Ainda não há estrofes neste projeto.</div>
+            )}
+            {strophes.map((s: any, idx: number) => {
+              const resources = s.poeticForm ? POETIC_FORM_VIDEOS[s.poeticForm] : undefined;
+              const firstUrl = resources?.urls?.[0];
+              return (
+                <div key={s.id} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                  <div className="text-sm font-medium">Estrofe {idx + 1}</div>
+                  <div className="md:col-span-2 flex items-center gap-2">
+                    <Select value={s.poeticForm || ""} onValueChange={(val: string) => setStropheForm(s.id, val)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Escolhe a forma poética" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {POETIC_FORMS.map((f) => (
+                          <SelectItem key={f} value={f}>
+                            {f}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {firstUrl ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a
+                            href={firstUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Ver vídeo recomendado para ${s.poeticForm}`}
+                          >
+                            <Button variant="outline" size="icon" className="shrink-0">
+                              <Video className="h-4 w-4" />
+                            </Button>
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Ver vídeo recomendado ({s.poeticForm})</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : s.poeticForm ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button variant="outline" size="icon" className="shrink-0" disabled>
+                              <Video className="h-4 w-4" />
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Sem vídeo específico — pesquisar no YouTube</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
                   </div>
                 </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4">
-                {strophes.length === 0 && (
-                  <div className="text-sm text-muted-foreground">Ainda não há estrofes neste projeto.</div>
-                )}
-                {strophes.map((s: any, idx: number) => {
-                  const resources = s.poeticForm ? POETIC_FORM_VIDEOS[s.poeticForm] : undefined;
-                  const firstUrl = resources?.urls?.[0];
-                  return (
-                    <div key={s.id} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                      <div className="text-sm font-medium">Estrofe {idx + 1}</div>
-                      <div className="md:col-span-2 flex items-center gap-2">
-                        <Select value={s.poeticForm || ""} onValueChange={(val: string) => setStropheForm(s.id, val)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Escolhe a forma poética" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {POETIC_FORMS.map((f) => (
-                              <SelectItem key={f} value={f}>
-                                {f}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {firstUrl ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <a
-                                href={firstUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={`Ver vídeo recomendado para ${s.poeticForm}`}
-                              >
-                                <Button variant="outline" size="icon" className="shrink-0">
-                                  <Video className="h-4 w-4" />
-                                </Button>
-                              </a>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Ver vídeo recomendado ({s.poeticForm})</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : s.poeticForm ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span>
-                                <Button variant="outline" size="icon" className="shrink-0" disabled>
-                                  <Video className="h-4 w-4" />
-                                </Button>
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Sem vídeo específico — pesquisar no YouTube</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+              );
+            })}
+          </CardContent>
+        </Card>
       </div>
     </ContentLayout>
   );
@@ -2615,7 +2317,7 @@ function MenuComponent({ isOpen }: MenuProps) {
 // Rimas Sidebar component (local component for rhymes helper - not currently used)
 // Removed to avoid conflict with imported Sidebar component
 
-// Admin Panel Layout — matches AppShell sidebar margins
+// Admin Panel Layout
 function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const sidebarStore = useSidebar();
   if (!sidebarStore) return null;
@@ -2623,9 +2325,9 @@ function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar />
-      <main className={cn("min-h-[calc(100vh_-_56px)] bg-background transition-[margin-left] ease-in-out duration-300", !settings.disabled && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-96"))}>{children}</main>
-      <footer className={cn("border-t py-4 px-6 text-center transition-[margin-left] ease-in-out duration-300", !settings.disabled && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-96"))}>
-        <p className="text-xs text-muted-foreground">© PRETOS MUSIC 2025</p>
+      <main className={cn("min-h-[calc(100vh_-_56px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300", !settings.disabled && (!getOpenState() ? "lg:ml-[70px]" : "lg:ml-64"))}>{children}</main>
+      <footer className={cn("transition-[margin-left] ease-in-out duration-300", !settings.disabled && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-72"))}>
+        <Footer />
       </footer>
     </>
   );
@@ -2983,370 +2685,346 @@ const Dashboard = () => {
   return (
     <ContentLayout title="Versificação">
       <div className="w-full mx-auto max-w-[1800px] px-4">
-        {/* Collapsible Artist/Producer Card */}
-        <Collapsible defaultOpen>
-          <Card className="w-full mb-4">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer py-3 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Informacao da Musica</h3>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardHeader className="pt-0">
-                <div className="flex flex-col gap-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        placeholder="ARTISTA PRINCIPAL"
-                        value={songInfo.artist || ""}
-                        onChange={(e) =>
-                          setSongInfo((prev) => ({
-                            ...prev,
-                            artist: e.target.value.toUpperCase(),
-                          }))
-                        }
-                        className="text-xl font-bold uppercase border border-gray-300 flex-1"
-                      />
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-10">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Sugestões de Artistas</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-2">
-                            {artistNames.map((name, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  className="w-full justify-start"
-                                  onClick={() =>
-                                    setSongInfo((prev) => ({
-                                      ...prev,
-                                      artist: name.toUpperCase(),
-                                    }))
-                                  }
-                                >
-                                  {name}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={() =>
-                                    setArtistNames((prev) =>
-                                      prev.filter((_, i) => i !== index),
-                                    )
-                                  }
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                          <Input
-                            placeholder="Adicionar novo artista"
-                            className="mt-2"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                const target = e.target as HTMLInputElement;
-                                if (target.value.trim()) {
-                                  setArtistNames((prev) => [...prev, target.value]);
-                                  target.value = "";
-                                }
+        {/* Existing Artist/Producer Card */}
+        <Card className="w-full mb-6">
+          <CardHeader>
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="ARTISTA PRINCIPAL"
+                    value={songInfo.artist || ""}
+                    onChange={(e) =>
+                      setSongInfo((prev) => ({
+                        ...prev,
+                        artist: e.target.value.toUpperCase(),
+                      }))
+                    }
+                    className="text-xl font-bold uppercase border border-gray-300 flex-1"
+                  />
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-10">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Sugestões de Artistas</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-2">
+                        {artistNames.map((name, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start"
+                              onClick={() =>
+                                setSongInfo((prev) => ({
+                                  ...prev,
+                                  artist: name.toUpperCase(),
+                                }))
                               }
-                            }}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Input
-                        placeholder="PRODUTOR MUSICAL"
-                        value={songInfo.producer}
-                        onChange={(e) =>
-                          setSongInfo((prev) => ({
-                            ...prev,
-                            producer: e.target.value.toUpperCase(),
-                          }))
-                        }
-                        className="text-sm flex-1"
-                      />
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-10">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Sugestões de Produtores</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-2">
-                            {producerNames.map((name, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  className="w-full justify-start"
-                                  onClick={() =>
-                                    setSongInfo((prev) => ({
-                                      ...prev,
-                                      producer: name.toUpperCase(),
-                                    }))
-                                  }
-                                >
-                                  {name}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={() =>
-                                    setProducerNames((prev) =>
-                                      prev.filter((_, i) => i !== index),
-                                    )
-                                  }
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                          <Input
-                            placeholder="Adicionar novo produtor"
-                            className="mt-2"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                const target = e.target as HTMLInputElement;
-                                if (target.value.trim()) {
-                                  setProducerNames((prev) => [
-                                    ...prev,
-                                    target.value,
-                                  ]);
-                                  target.value = "";
-                                }
+                            >
+                              {name}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() =>
+                                setArtistNames((prev) =>
+                                  prev.filter((_, i) => i !== index),
+                                )
                               }
-                            }}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                    <Input
-                      placeholder="TÍTULO DA MÚSICA"
-                      value={songInfo.title}
-                      onChange={(e) =>
-                        setSongInfo((prev) => ({
-                          ...prev,
-                          title: e.target.value.toUpperCase(),
-                        }))
-                      }
-                      className="text-xl font-bold uppercase border border-gray-300"
-                    />
-                    <div className="flex items-center gap-2 mt-2">
-                      <TitleSuggestionsDialog />
-                      <HitFrameworkDialog />
-                    </div>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="ml-2">
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Sugestões de Títulos</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <h3 className="font-bold mb-2">Nomes de Faixas</h3>
-                            <div className="space-y-2">
-                              {trackNames.map((name, index) => (
-                                <Button
-                                  key={index}
-                                  variant="outline"
-                                  className="w-full justify-start"
-                                  onClick={() =>
-                                    setSongInfo((prev) => ({
-                                      ...prev,
-                                      title: name.toUpperCase(),
-                                    }))
-                                  }
-                                >
-                                  {name}
-                                </Button>
-                              ))}
-                            </div>
-                            <Input
-                              placeholder="Adicionar novo nome"
-                              className="mt-2"
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  const target = e.target as HTMLInputElement;
-                                  if (target.value.trim()) {
-                                    setTrackNames((prev) => [
-                                      ...prev,
-                                      target.value,
-                                    ]);
-                                    target.value = "";
-                                  }
-                                }
-                              }}
-                            />
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <div>
-                            <h3 className="font-bold mb-2">Nomes de Projetos</h3>
-                            <div className="space-y-2">
-                              {projectNames.map((name, index) => (
-                                <Button
-                                  key={index}
-                                  variant="outline"
-                                  className="w-full justify-start"
-                                  onClick={() =>
-                                    setSongInfo((prev) => ({
-                                      ...prev,
-                                      title: name.toUpperCase(),
-                                    }))
-                                  }
-                                >
-                                  {name}
-                                </Button>
-                              ))}
-                            </div>
-                            <Input
-                              placeholder="Adicionar novo nome"
-                              className="mt-2"
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  const target = e.target as HTMLInputElement;
-                                  if (target.value.trim()) {
-                                    setProjectNames((prev) => [
-                                      ...prev,
-                                      target.value,
-                                    ]);
-                                    target.value = "";
-                                  }
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList>
-                        <TabsTrigger value="narratologia">Narratologia</TabsTrigger>
-                        <TabsTrigger value="versos">Versificação</TabsTrigger>
-                        <TabsTrigger value="cinematografia">
-                          Cinematografia
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="modo-nietzsche">Modo Nietzsche</Label>
-                      <Switch
-                        id="modo-nietzsche"
-                        checked={modoNietzsche}
-                        onCheckedChange={handleNietzscheModeChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-
-
-        {/* Collapsible Music Structure Card */}
-        <Collapsible defaultOpen>
-          <Card className="w-full mb-4">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer py-3 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Estrutura Musical</h3>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardHeader className="pt-0">
-                <div className="flex flex-col gap-3">
-
-                  {/* Selected Sections */}
-                  <DndContext
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={musicStructure}
-                      strategy={horizontalListSortingStrategy}
-                    >
-                      <div className="flex flex-wrap gap-2 p-2 border rounded">
-                        {musicStructure.map((value, index) => (
-                          <SortableMusicStructureItem
-                            key={value}
-                            id={value}
-                            value={value}
-                          />
                         ))}
-                        {musicStructure.length === 0 && (
-                          <p className="text-gray-500">Adicione seções abaixo</p>
-                        )}
                       </div>
-                    </SortableContext>
-                  </DndContext>
-
-                  {/* Available Sections */}
-                  <div className="flex gap-2 overflow-x-auto p-2">
-                    {musicStructureOptions.map((option) => (
-                      <Tooltip key={option.value}>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={
-                              musicStructure.includes(option.value)
-                                ? "default"
-                                : "outline"
+                      <Input
+                        placeholder="Adicionar novo artista"
+                        className="mt-2"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const target = e.target as HTMLInputElement;
+                            if (target.value.trim()) {
+                              setArtistNames((prev) => [...prev, target.value]);
+                              target.value = "";
                             }
-                            onClick={() => {
-                              if (musicStructure.includes(option.value)) {
-                                handleRemoveMusicSection(option.value);
-                              } else {
-                                handleAddMusicSection(option.value);
-                              }
-                            }}
-                            className="rounded-full px-3 py-1.5 whitespace-nowrap text-xs gap-1.5"
-                          >
-                            {musicStructureIcons[option.value] && React.createElement(musicStructureIcons[option.value], { className: "h-3.5 w-3.5" })}
-                            {option.label}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="font-semibold">{option.description}</p>
-                          <p className="text-sm text-gray-600">
-                            Exemplo: {option.example}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
+                          }
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
                 </div>
-              </CardHeader>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="PRODUTOR MUSICAL"
+                    value={songInfo.producer}
+                    onChange={(e) =>
+                      setSongInfo((prev) => ({
+                        ...prev,
+                        producer: e.target.value.toUpperCase(),
+                      }))
+                    }
+                    className="text-sm flex-1"
+                  />
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-10">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Sugestões de Produtores</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-2">
+                        {producerNames.map((name, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start"
+                              onClick={() =>
+                                setSongInfo((prev) => ({
+                                  ...prev,
+                                  producer: name.toUpperCase(),
+                                }))
+                              }
+                            >
+                              {name}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() =>
+                                setProducerNames((prev) =>
+                                  prev.filter((_, i) => i !== index),
+                                )
+                              }
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Input
+                        placeholder="Adicionar novo produtor"
+                        className="mt-2"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const target = e.target as HTMLInputElement;
+                            if (target.value.trim()) {
+                              setProducerNames((prev) => [
+                                ...prev,
+                                target.value,
+                              ]);
+                              target.value = "";
+                            }
+                          }
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <Input
+                  placeholder="TÍTULO DA MÚSICA"
+                  value={songInfo.title}
+                  onChange={(e) =>
+                    setSongInfo((prev) => ({
+                      ...prev,
+                      title: e.target.value.toUpperCase(),
+                    }))
+                  }
+                  className="text-xl font-bold uppercase border border-gray-300"
+                />
+                <div className="flex items-center gap-2 mt-2">
+                  <TitleSuggestionsDialog />
+                  <HitFrameworkDialog />
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="ml-2">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Sugestões de Títulos</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="font-bold mb-2">Nomes de Faixas</h3>
+                        <div className="space-y-2">
+                          {trackNames.map((name, index) => (
+                            <Button
+                              key={index}
+                              variant="outline"
+                              className="w-full justify-start"
+                              onClick={() =>
+                                setSongInfo((prev) => ({
+                                  ...prev,
+                                  title: name.toUpperCase(),
+                                }))
+                              }
+                            >
+                              {name}
+                            </Button>
+                          ))}
+                        </div>
+                        <Input
+                          placeholder="Adicionar novo nome"
+                          className="mt-2"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const target = e.target as HTMLInputElement;
+                              if (target.value.trim()) {
+                                setTrackNames((prev) => [
+                                  ...prev,
+                                  target.value,
+                                ]);
+                                target.value = "";
+                              }
+                            }
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-bold mb-2">Nomes de Projetos</h3>
+                        <div className="space-y-2">
+                          {projectNames.map((name, index) => (
+                            <Button
+                              key={index}
+                              variant="outline"
+                              className="w-full justify-start"
+                              onClick={() =>
+                                setSongInfo((prev) => ({
+                                  ...prev,
+                                  title: name.toUpperCase(),
+                                }))
+                              }
+                            >
+                              {name}
+                            </Button>
+                          ))}
+                        </div>
+                        <Input
+                          placeholder="Adicionar novo nome"
+                          className="mt-2"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const target = e.target as HTMLInputElement;
+                              if (target.value.trim()) {
+                                setProjectNames((prev) => [
+                                  ...prev,
+                                  target.value,
+                                ]);
+                                target.value = "";
+                              }
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList>
+                    <TabsTrigger value="narratologia">Narratologia</TabsTrigger>
+                    <TabsTrigger value="versos">Versificação</TabsTrigger>
+                    <TabsTrigger value="cinematografia">
+                      Cinematografia
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="modo-nietzsche">Modo Nietzsche</Label>
+                  <Switch
+                    id="modo-nietzsche"
+                    checked={modoNietzsche}
+                    onCheckedChange={handleNietzscheModeChange}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+
+
+        {/* Existing Music Structure Card */}
+        <Card className="w-full mb-6">
+          <CardHeader>
+            <div className="flex flex-col gap-4">
+              <h3 className="text-xl font-bold">Estrutura Musical</h3>
+
+              {/* Selected Sections */}
+              <DndContext
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={musicStructure}
+                  strategy={horizontalListSortingStrategy}
+                >
+                  <div className="flex flex-wrap gap-2 p-2 border rounded">
+                    {musicStructure.map((value, index) => (
+                      <SortableMusicStructureItem
+                        key={value}
+                        id={value}
+                        value={value}
+                      />
+                    ))}
+                    {musicStructure.length === 0 && (
+                      <p className="text-gray-500">Adicione seções abaixo</p>
+                    )}
+                  </div>
+                </SortableContext>
+              </DndContext>
+
+              {/* Available Sections */}
+              <div className="flex gap-2 overflow-x-auto p-2">
+                {musicStructureOptions.map((option) => (
+                  <Tooltip key={option.value}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={
+                          musicStructure.includes(option.value)
+                            ? "default"
+                            : "outline"
+                        }
+                        onClick={() => {
+                          if (musicStructure.includes(option.value)) {
+                            handleRemoveMusicSection(option.value);
+                          } else {
+                            handleAddMusicSection(option.value);
+                          }
+                        }}
+                        className="rounded-full px-4 py-2 whitespace-nowrap"
+                      >
+                        {option.label}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="font-semibold">{option.description}</p>
+                      <p className="text-sm text-gray-600">
+                        Exemplo: {option.example}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
 
         {/* ---------- RENDERIZAÇÃO CONDICIONADA DAS ABAS ---------- */}
         {activeTab === "narratologia" && (
@@ -4364,6 +4042,23 @@ const Dashboard = () => {
               >
                 <Save className="mr-2" />
                 Salvar Projeto
+              </Button>
+
+              <Button
+                onClick={() => {
+                  const project = useProject.getState().project;
+                  exportProjectDossier(
+                    songInfo,
+                    strophes,
+                    project?.stepData,
+                    project?.currentStep ?? 0
+                  );
+                }}
+                variant="default"
+                className="gap-2 bg-purple-600 hover:bg-purple-700"
+              >
+                <Download className="h-4 w-4" />
+                Dossier Completo (PDF)
               </Button>
             </div>
 

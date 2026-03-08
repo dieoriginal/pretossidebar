@@ -73,11 +73,8 @@ import {
   Eye,
   Video,
   FileText,
-  GripVertical,
-  Minus,
-  Square,
-  Maximize2,
-  Minimize2
+  Mic,
+  Download
 } from "lucide-react";
 // (Select imported above with full API)
 import { debounce } from "lodash";
@@ -88,6 +85,7 @@ import {
   getCurrentUserId,
 } from "@/lib/firebase";
 import { salvarProjeto, carregarProjeto } from "@/lib/storage";
+import { exportProjectDossier } from "@/lib/exportDossier";
 import { setCookie, getCookie } from "@/lib/cookies";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
@@ -97,6 +95,7 @@ import { useToastLite } from "@/components/ui/toast-lite";
 import { Navbar as ProfessionalNavbar } from "@/components/admin-panel/navbar";
 
 import NarratologiaTab from "@/components/narratologia-tab";
+import VerseAudioRecorder from "@/components/VerseAudioRecorder";
 
 import AccountStep from "@/steps/account";
 import ContratualizacaoStep from "@/steps/contratualizacao";
@@ -160,6 +159,7 @@ interface Verse {
   persona?: string;
   threeAct?: string;
   musicSection?: string; // New field
+  audioRecording?: string; // Base64 data URL of recorded flow audio
 }
 
 interface Strophe {
@@ -972,6 +972,15 @@ const SortableVerse = ({
         />
         <AdlibsDialog onPick={(phrase) => onVerseChange({ ...verse, adlib: phrase.toUpperCase() })} />
 
+        {/* Audio recording per verse — record the flow */}
+        <VerseAudioRecorder
+          verseId={verse.id}
+          audioDataUrl={verse.audioRecording}
+          onRecordingChange={(audioDataUrl) =>
+            onVerseChange({ ...verse, audioRecording: audioDataUrl })
+          }
+        />
+
         {/* Componentes de seleção sempre visíveis */}
         <div className="flex gap-2 flex-1 min-w-[200px]">
           <select
@@ -1724,360 +1733,79 @@ const MultiStepper: React.FC<MultiStepperProps> = ({ steps, currentStep, onStepC
 
 const LayoutDepthContext = React.createContext(0);
 
-/* ------------------ Draggable Reference Sidebar ------------------ */
-function DraggableReferenceSidebar() {
-  const [position, setPosition] = useState({ x: 0, y: 89 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [autoHoverEnabled, setAutoHoverEnabled] = useState(false);
-  const [savedSize, setSavedSize] = useState({ width: 420, height: typeof window !== 'undefined' ? window.innerHeight - 89 : 600 });
-  const sidebarRef = useRef<HTMLElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+interface FixedReferenceSidebarProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
-  const STORAGE_KEY = "reference-sidebar-position";
-  const STATE_STORAGE_KEY = "reference-sidebar-state";
-  const AUTO_HOVER_KEY = "reference-sidebar-auto-hover";
+/* ------------------ Fixed Right Reference Sidebar ------------------ */
+function FixedReferenceSidebar({ isOpen, onOpenChange }: FixedReferenceSidebarProps) {
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Load saved position and state from localStorage
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const { x, y } = JSON.parse(saved);
-        // Validate saved position is within viewport
-        if (x >= 0 && x <= window.innerWidth && y >= 0 && y <= window.innerHeight) {
-          setPosition({ x, y });
-        } else {
-          setPosition({ x: window.innerWidth - 420, y: 89 });
-        }
-      } else {
-        // Default: right side, below navbar
-        setPosition({ x: window.innerWidth - 420, y: 89 });
-      }
-
-      // Load saved state
-      const savedState = localStorage.getItem(STATE_STORAGE_KEY);
-      if (savedState) {
-        const { minimized, fullscreen, size } = JSON.parse(savedState);
-        if (minimized !== undefined) setIsMinimized(minimized);
-        if (fullscreen !== undefined) setIsFullscreen(fullscreen);
-        if (size) setSavedSize(size);
-      }
-
-      // Load auto-hover setting
-      const savedAutoHover = localStorage.getItem(AUTO_HOVER_KEY);
-      if (savedAutoHover !== null) {
-        setAutoHoverEnabled(JSON.parse(savedAutoHover));
-      }
-    } catch (error) {
-      console.error("Erro ao carregar posição/estado da sidebar:", error);
-      // Fallback to default
-      if (typeof window !== "undefined") {
-        setPosition({ x: window.innerWidth - 420, y: 89 });
-      }
-    }
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1280);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Save position and state to localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // Mobile: render as a sheet/drawer
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenChange(true)}
+          className="fixed top-[100px] right-4 z-30 shadow-md gap-2"
+        >
+          <PanelsTopLeft className="h-4 w-4" />
+          <span>Referências</span>
+        </Button>
+        
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+          <SheetContent side="right" className="w-full sm:w-[420px] p-0">
+            <SheetHeader className="px-4 py-3 border-b">
+              <SheetTitle className="text-sm font-semibold">Ferramentas de Referência</SheetTitle>
+            </SheetHeader>
+            <div className="h-[calc(100vh-80px)] p-2">
+              <ReferenceTabs />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
 
-    // Only save if position is valid
-    if (position.x > 0 && position.y > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
-    }
-  }, [position]);
-
-  // Save state to localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify({
-      minimized: isMinimized,
-      fullscreen: isFullscreen,
-      size: savedSize
-    }));
-  }, [isMinimized, isFullscreen, savedSize]);
-
-  // Save auto-hover setting
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(AUTO_HOVER_KEY, JSON.stringify(autoHoverEnabled));
-  }, [autoHoverEnabled]);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Don't drag if clicking on window controls
-    if ((e.target as HTMLElement).closest('.window-controls')) {
-      return;
-    }
-
-    if (!containerRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    // Calculate offset from top-left corner
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-    setIsDragging(true);
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleMinimize = () => {
-    if (!isMinimized) {
-      // Save current size before minimizing
-      if (containerRef.current) {
-        setSavedSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight
-        });
-      }
-    }
-    setIsMinimized(!isMinimized);
-    setIsFullscreen(false);
-  };
-
-  const handleFullscreen = () => {
-    if (!isFullscreen) {
-      // Save current size before fullscreen
-      if (containerRef.current) {
-        setSavedSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight
-        });
-      }
-    }
-    setIsFullscreen(!isFullscreen);
-    setIsMinimized(false);
-  };
-
-  const handleClose = () => {
-    setIsMinimized(true);
-    setIsFullscreen(false);
-  };
-
-  const handleMouseEnter = () => {
-    if (!autoHoverEnabled || isFullscreen) return;
-
-    // Clear any pending timeout
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-
-    // If minimized, maximize on hover
-    if (isMinimized) {
-      setIsMinimized(false);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (!autoHoverEnabled || isFullscreen || isMinimized) return;
-
-    // Clear any pending timeout
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-
-    // Delay minimization slightly to avoid flickering
-    hoverTimeoutRef.current = setTimeout(() => {
-      if (!isFullscreen) {
-        setIsMinimized(true);
-      }
-    }, 300); // 300ms delay
-  };
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-
-      const containerWidth = containerRef.current.offsetWidth;
-      const containerHeight = containerRef.current.offsetHeight;
-
-      // Calculate new position (top-left corner)
-      let newX = e.clientX - dragOffset.x;
-      let newY = e.clientY - dragOffset.y;
-
-      // Keep within viewport bounds with padding
-      const padding = 8;
-      newX = Math.max(padding, Math.min(window.innerWidth - containerWidth - padding, newX));
-      newY = Math.max(padding, Math.min(window.innerHeight - containerHeight - padding, newY));
-
-      setPosition({ x: newX, y: newY });
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging, dragOffset]);
-
-  // Calculate dimensions based on state
-  const getDimensions = () => {
-    if (typeof window === 'undefined') {
-      return { width: 420, height: 600 };
-    }
-
-    if (isMinimized) {
-      return { width: 420, height: 40 }; // Just header height
-    }
-    if (isFullscreen) {
-      return {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        left: 0,
-        top: 0
-      };
-    }
-    return {
-      width: savedSize.width || 420,
-      height: savedSize.height || (window.innerHeight - 89)
-    };
-  };
-
-  const dimensions = getDimensions();
-  const displayPosition = isFullscreen
-    ? { x: 0, y: 0 }
-    : position;
-
+  // Desktop: fixed right sidebar
   return (
     <aside
-      ref={sidebarRef}
-      className="hidden xl:flex flex-col fixed border bg-background dark:bg-zinc-900 shadow-lg rounded-lg overflow-hidden"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        left: `${displayPosition.x}px`,
-        top: `${displayPosition.y}px`,
-        width: `${dimensions.width}px`,
-        height: `${dimensions.height}px`,
-        maxHeight: isFullscreen ? '100vh' : `${dimensions.height}px`,
-        cursor: isDragging ? "grabbing" : "default",
-        transition: isDragging ? 'none' : 'all 0.2s ease-in-out',
-        zIndex: 9998, // Always on top (just below FloatingNavbar which is 9999)
-      }}
+      className={cn(
+        "fixed top-[89px] right-0 z-30 h-[calc(100vh-89px)] bg-background border-l shadow-lg transition-all duration-300 ease-in-out",
+        isOpen ? "w-[420px] translate-x-0" : "w-0 translate-x-full"
+      )}
     >
-      <div
-        ref={containerRef}
-        className={cn(
-          "h-full flex flex-col transition-all",
-          isDragging && "shadow-2xl scale-[1.01]"
-        )}
-      >
-        {/* Header with Window Controls */}
-        <div
-          onMouseDown={handleMouseDown}
-          className="cursor-grab active:cursor-grabbing px-4 py-2 border-b bg-muted/50 hover:bg-muted transition-colors flex items-center justify-between shrink-0"
-          title="Arrastar sidebar"
-        >
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <GripVertical className="h-4 w-4 opacity-60 hover:opacity-100 transition-opacity shrink-0" />
-            <span className="text-xs font-medium text-muted-foreground truncate">Referências</span>
+      {isOpen && (
+        <div className="h-full flex flex-col">
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/50">
+            <h3 className="font-semibold text-sm">Ferramentas de Referência</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-
-          {/* Window Controls */}
-          <div className="flex items-center gap-1 window-controls shrink-0">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 px-1">
-                  <Switch
-                    checked={autoHoverEnabled}
-                    onCheckedChange={setAutoHoverEnabled}
-                    className="h-4 w-8"
-                  />
-                  <span className="text-[10px] text-muted-foreground">Auto</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                {autoHoverEnabled ? "Desativar auto-minimizar/maximizar no hover" : "Ativar auto-minimizar/maximizar no hover"}
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 hover:bg-muted"
-                  onClick={handleMinimize}
-                  title={isMinimized ? "Maximizar" : "Minimizar"}
-                >
-                  {isMinimized ? (
-                    <Maximize2 className="h-3 w-3" />
-                  ) : (
-                    <Minus className="h-3 w-3" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isMinimized ? "Maximizar" : "Minimizar"}</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 hover:bg-muted"
-                  onClick={handleFullscreen}
-                  title={isFullscreen ? "Restaurar" : "Tela cheia"}
-                >
-                  {isFullscreen ? (
-                    <Minimize2 className="h-3 w-3" />
-                  ) : (
-                    <Square className="h-3 w-3" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isFullscreen ? "Restaurar" : "Tela cheia"}</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive"
-                  onClick={handleClose}
-                  title="Fechar"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Fechar</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-
-        {/* Content */}
-        {!isMinimized && (
-          <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-hidden p-2">
             <ReferenceTabs />
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </aside>
   );
 }
@@ -2094,6 +1822,7 @@ export function ContentLayout({
   const { settings, setSettings } = sidebar;
   // Stepper sync with global store must be declared before any early return
   const [currentStep, setCurrentStep] = useState(0);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const projectStore = useProject();
   useEffect(() => {
     if (projectStore.project && typeof (projectStore.project as any)?.[stepKey] === "number") {
@@ -2150,11 +1879,31 @@ export function ContentLayout({
       <TooltipProvider>
         <div className="w-full overflow-hidden transition-all duration-300">
           <Navbar title={title} />
-          {/* Right reference sidebar with tabs - Draggable */}
-          <DraggableReferenceSidebar />
+          {/* Right reference sidebar with tabs - Fixed */}
+          <FixedReferenceSidebar isOpen={isRightSidebarOpen} onOpenChange={setIsRightSidebarOpen} />
+          
+          {/* Toggle button when sidebar is closed (desktop only) */}
+          {!isRightSidebarOpen && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRightSidebarOpen(true)}
+              className="fixed top-[100px] right-4 z-20 shadow-md gap-2 hidden xl:flex"
+            >
+              <PanelsTopLeft className="h-4 w-4" />
+              <span>Referências</span>
+            </Button>
+          )}
 
           <AdminPanelLayout>
-            <div className="w-full pt-8 pb-8 px-4 mx-auto max-w-[1800px] xl:pr-[440px]">
+            <div className={cn(
+              "w-full pt-8 pb-8 px-4 transition-all duration-300",
+              isRightSidebarOpen ? "pr-[440px]" : ""
+            )}>
+              <div className={cn(
+                "mx-auto transition-all duration-300",
+                isRightSidebarOpen ? "max-w-full" : "max-w-[1800px]"
+              )}>
               <div className="p-4 items-center w-full">
                 <div className="w-full">
                   {showStepper && (
@@ -2231,6 +1980,7 @@ export function ContentLayout({
               </div>
 
               {children}
+              </div>
             </div>
           </AdminPanelLayout>
         </div>
@@ -4292,6 +4042,23 @@ const Dashboard = () => {
               >
                 <Save className="mr-2" />
                 Salvar Projeto
+              </Button>
+
+              <Button
+                onClick={() => {
+                  const project = useProject.getState().project;
+                  exportProjectDossier(
+                    songInfo,
+                    strophes,
+                    project?.stepData,
+                    project?.currentStep ?? 0
+                  );
+                }}
+                variant="default"
+                className="gap-2 bg-purple-600 hover:bg-purple-700"
+              >
+                <Download className="h-4 w-4" />
+                Dossier Completo (PDF)
               </Button>
             </div>
 

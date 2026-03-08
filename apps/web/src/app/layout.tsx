@@ -7,13 +7,13 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { useEffect } from 'react';
 import { ProjectProvider } from "@/components/providers/project-provider";
 import { ToastLiteProvider } from "@/components/ui/toast-lite";
-import { initSentry } from "@/lib/sentry";
+// import { initSentry } from "@/lib/sentry";
 import { ZoomControls } from "@/components/ZoomControls";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
 
 // Initialize Sentry
 if (typeof window !== 'undefined') {
-  initSentry();
+  // initSentry();
 }
 
 export default function RootLayout({
