@@ -2396,6 +2396,10 @@ const Dashboard = () => {
     enabled: !!clerkUserId,
   });
 
+  // Keep scheduleSync in a ref so effects below don't re-run when function identity changes
+  const scheduleSyncRef = useRef(scheduleSync);
+  useEffect(() => { scheduleSyncRef.current = scheduleSync; }, [scheduleSync]);
+
   // Hydrate local editor state from global store on mount (only if store has data)
   useEffect(() => {
     if (project?.strophes && project.strophes.length > 0) {
@@ -2409,16 +2413,18 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Mirror changes to the global store (debounced save happens in the store itself)
+  // Mirror changes to the global store and schedule cloud sync
   useEffect(() => {
     updateProject({ strophes });
-    scheduleSync({ strophes });
-  }, [strophes, updateProject, scheduleSync]);
+    scheduleSyncRef.current({ strophes });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [strophes, updateProject]);
 
   useEffect(() => {
     updateProject({ songInfo });
-    scheduleSync({ songInfo });
-  }, [songInfo, updateProject, scheduleSync]);
+    scheduleSyncRef.current({ songInfo });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [songInfo, updateProject]);
 
   const [producerNames, setProducerNames] = useState<string[]>([
     "Xando",

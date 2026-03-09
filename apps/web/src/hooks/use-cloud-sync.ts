@@ -291,33 +291,38 @@ export function useCloudSync(options: CloudSyncOptions = {}) {
     };
   }, []);
 
-  return {
-    /** Current sync status */
-    syncStatus: status,
-    /** @deprecated Use syncStatus instead */
-    status,
-    /** ISO timestamp of last successful sync */
-    lastSyncedAt: lastSynced,
-    /** @deprecated Use lastSyncedAt instead */
-    lastSynced,
-    /** Whether the device is online */
-    isOnline,
-    /** Schedule a debounced cloud sync. Pass data only — projectId comes from options. */
-    scheduleSync: (data: any, metadata?: any) =>
-      scheduleSync(configProjectId ?? currentProjectId.current, data, metadata),
-    /** Force an immediate save + snapshot. Pass data only — projectId comes from options. */
-    forceSave: (data?: any, metadata?: any) => {
-      if (data) return forceSave(configProjectId ?? currentProjectId.current, data, metadata);
-      if (pendingData.current) return forceSave(pendingData.current.projectId, pendingData.current.data, pendingData.current.metadata);
+  // Stable wrapped versions that read projectId from the ref — safe for useEffect deps
+  const scheduleSyncStable = useCallback(
+    (data: any, metadata?: any) =>
+      scheduleSync(currentProjectId.current, data, metadata),
+    [scheduleSync] // scheduleSync is already a stable useCallback
+  );
+
+  const forceSaveStable = useCallback(
+    (data?: any, metadata?: any) => {
+      if (data) return forceSave(currentProjectId.current, data, metadata);
+      if (pendingData.current)
+        return forceSave(
+          pendingData.current.projectId,
+          pendingData.current.data,
+          pendingData.current.metadata
+        );
       return Promise.resolve();
     },
-    /** Load a project from the cloud */
+    [forceSave] // forceSave is already a stable useCallback
+  );
+
+  return {
+    syncStatus: status,
+    status,
+    lastSyncedAt: lastSynced,
+    lastSynced,
+    isOnline,
+    scheduleSync: scheduleSyncStable,
+    forceSave: forceSaveStable,
     loadFromCloud,
-    /** List all user projects from the cloud */
     listProjects,
-    /** Low-level: pass explicit projectId */
     scheduleSyncRaw: scheduleSync,
-    /** Low-level: pass explicit projectId */
     forceSaveRaw: forceSave,
   };
 }
