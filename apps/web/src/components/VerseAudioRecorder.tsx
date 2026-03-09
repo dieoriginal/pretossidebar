@@ -2,18 +2,16 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Play, Pause, Trash2, Download } from "lucide-react";
+import { Mic, Square, Play, Pause, Trash2, Download, CloudOff, Cloud } from "lucide-react";
 
 interface VerseAudioRecorderProps {
-  /** Unique key to store this verse's recording (e.g. verse id) */
   verseId: string;
-  /** Existing audio data URL (loaded from persisted state) */
-  audioDataUrl?: string;
-  /** Called when a recording is saved or deleted */
-  onRecordingChange: (audioDataUrl: string | undefined) => void;
+  projectId: string;
+  audioRecording?: string;
+  onRecordingChange: (value: string | undefined) => void;
+  isSignedIn?: boolean;
 }
 
-/** Returns the best supported mime type for MediaRecorder */
 function getSupportedMimeType(): string {
   const types = [
     "audio/webm;codecs=opus",
@@ -23,22 +21,32 @@ function getSupportedMimeType(): string {
     "audio/wav",
   ];
   for (const type of types) {
-    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(type)) {
-      return type;
-    }
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(type)) return type;
   }
   return "audio/webm";
 }
 
+function isDataUrl(s?: string): boolean {
+  return !!s && s.startsWith("data:");
+}
+
+function isStorageKey(s?: string): boolean {
+  return !!s && !s.startsWith("data:") && !s.startsWith("http");
+}
+
 export default function VerseAudioRecorder({
   verseId,
-  audioDataUrl,
+  projectId,
+  audioRecording,
   onRecordingChange,
+  isSignedIn = false,
 }: VerseAudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [playbackUrl, setPlaybackUrl] = useState<string | undefined>();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -46,7 +54,7 @@ export default function VerseAudioRecorder({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
 
-  // Clean up on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -61,7 +69,7 @@ export default function VerseAudioRecorder({
     };
   }, []);
 
-  // When audioDataUrl changes externally, reset playback state
+  // Resolve playback URL whenever audioRecording changes
   useEffect(() => {
     setIsPlaying(false);
     setCurrentTime(0);
@@ -69,26 +77,57 @@ export default function VerseAudioRecorder({
       audioRef.current.pause();
       audioRef.current = null;
     }
-    // Calculate duration from dataUrl
-    if (audioDataUrl) {
-      const audio = new Audio(audioDataUrl);
-      audio.addEventListener("loadedmetadata", () => {
-        // Some browsers return Infinity for webm blobs — use workaround
-        if (audio.duration === Infinity) {
-          audio.currentTime = 1e101;
-          audio.addEventListener("timeupdate", function handler() {
-            audio.removeEventListener("timeupdate", handler);
-            setDuration(Math.round(audio.duration));
-            audio.currentTime = 0;
-          });
-        } else {
-          setDuration(Math.round(audio.duration));
-        }
-      });
-    } else {
+
+    if (!audioRecording) {
+      setPlaybackUrl(undefined);
       setDuration(0);
+      return;
     }
-  }, [audioDataUrl]);
+
+    if (isDataUrl(audioRecording)) {
+      setPlaybackUrl(audioRecording);
+      loadAudioDuration(audioRecording);
+    } else if (isStorageKey(audioRecording)) {
+      // Fetch presigned URL from our files API
+      fetch(`/api/files/${encodeURIComponent(audioRecording)}`)
+        .then((res) => {
+          if (res.redirected) {
+            setPlaybackUrl(res.url);
+            loadAudioDuration(res.url);
+          } else if (res.ok) {
+            return res.json().then((data: { url?: string }) => {
+              if (data.url) {
+                setPlaybackUrl(data.url);
+                loadAudioDuration(data.url);
+              }
+            });
+          }
+        })
+        .catch(() => {
+          // Fallback: try direct URL
+          setPlaybackUrl(`/api/files/${audioRecording}`);
+        });
+    } else {
+      setPlaybackUrl(audioRecording);
+      loadAudioDuration(audioRecording);
+    }
+  }, [audioRecording]);
+
+  function loadAudioDuration(url: string) {
+    const audio = new Audio(url);
+    audio.addEventListener("loadedmetadata", () => {
+      if (audio.duration === Infinity) {
+        audio.currentTime = 1e101;
+        audio.addEventListener("timeupdate", function handler() {
+          audio.removeEventListener("timeupdate", handler);
+          setDuration(Math.round(audio.duration));
+          audio.currentTime = 0;
+        });
+      } else {
+        setDuration(Math.round(audio.duration));
+      }
+    });
+  }
 
   const startRecording = useCallback(async () => {
     try {
@@ -100,44 +139,56 @@ export default function VerseAudioRecorder({
       startTimeRef.current = Date.now();
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
-      mediaRecorder.onstop = () => {
-        // Release microphone
+      mediaRecorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop());
-
         const recordingDuration = Date.now() - startTimeRef.current;
-        if (recordingDuration < 300) {
-          // Too short, ignore
-          return;
-        }
+        if (recordingDuration < 300) return; // Too short, discard
 
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        // Convert blob to data URL for persistence
+        setDuration(Math.round(recordingDuration / 1000));
+
+        // Try R2 upload if signed in
+        if (isSignedIn) {
+          setIsUploading(true);
+          try {
+            const formData = new FormData();
+            formData.append("file", audioBlob, `verse-${verseId}-flow.webm`);
+            formData.append("projectId", projectId);
+            formData.append("type", "audio");
+            const res = await fetch("/api/upload", { method: "POST", body: formData });
+            if (res.ok) {
+              const { storageKey } = await res.json();
+              onRecordingChange(storageKey);
+              setIsUploading(false);
+              return;
+            }
+          } catch (err) {
+            console.error("R2 upload failed, falling back to base64:", err);
+          }
+          setIsUploading(false);
+        }
+
+        // Fallback: convert to base64 data URL
         const reader = new FileReader();
         reader.onloadend = () => {
-          const dataUrl = reader.result as string;
-          onRecordingChange(dataUrl);
-          setDuration(Math.round(recordingDuration / 1000));
+          onRecordingChange(reader.result as string);
         };
         reader.readAsDataURL(audioBlob);
       };
 
       mediaRecorder.start();
       setIsRecording(true);
-
-      // Live timer
       timerRef.current = setInterval(() => {
         setDuration(Math.round((Date.now() - startTimeRef.current) / 1000));
       }, 200);
     } catch (err) {
       console.error("Microphone access denied:", err);
-      alert("Permissão do microfone necessária para gravar áudio.");
+      alert("Permiss\u00e3o do microfone necess\u00e1ria para gravar \u00e1udio.");
     }
-  }, [onRecordingChange]);
+  }, [onRecordingChange, isSignedIn, projectId, verseId]);
 
   const stopRecording = useCallback(() => {
     if (timerRef.current) {
@@ -151,30 +202,26 @@ export default function VerseAudioRecorder({
   }, []);
 
   const togglePlayback = useCallback(() => {
-    if (!audioDataUrl) return;
-
+    if (!playbackUrl) return;
     if (isPlaying && audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
-
-    const audio = new Audio(audioDataUrl);
+    const audio = new Audio(playbackUrl);
     audioRef.current = audio;
-
     audio.onended = () => {
       setIsPlaying(false);
       setCurrentTime(0);
       if (timerRef.current) clearInterval(timerRef.current);
     };
-
     audio.play();
     setIsPlaying(true);
     timerRef.current = setInterval(() => {
       setCurrentTime(Math.round(audio.currentTime));
     }, 200);
-  }, [audioDataUrl, isPlaying]);
+  }, [playbackUrl, isPlaying]);
 
   const deleteRecording = useCallback(() => {
     if (audioRef.current) {
@@ -184,18 +231,19 @@ export default function VerseAudioRecorder({
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
+    setPlaybackUrl(undefined);
     onRecordingChange(undefined);
   }, [onRecordingChange]);
 
   const downloadRecording = useCallback(() => {
-    if (!audioDataUrl) return;
+    if (!playbackUrl) return;
     const link = document.createElement("a");
-    link.href = audioDataUrl;
+    link.href = playbackUrl;
     link.download = `verse-${verseId}-flow.webm`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [audioDataUrl, verseId]);
+  }, [playbackUrl, verseId]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -203,8 +251,18 @@ export default function VerseAudioRecorder({
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  // No recording yet — show record button
-  if (!audioDataUrl && !isRecording) {
+  // --- Render ---
+
+  if (isUploading) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-blue-500">
+        <Cloud className="h-3.5 w-3.5 animate-pulse" />
+        A enviar para nuvem...
+      </div>
+    );
+  }
+
+  if (!audioRecording && !isRecording) {
     return (
       <Button
         type="button"
@@ -214,13 +272,11 @@ export default function VerseAudioRecorder({
         onClick={startRecording}
         title="Gravar flow do verso"
       >
-        <Mic className="h-3.5 w-3.5" />
-        Gravar Flow
+        <Mic className="h-3.5 w-3.5" /> Gravar Flow
       </Button>
     );
   }
 
-  // Currently recording
   if (isRecording) {
     return (
       <div className="flex items-center gap-2">
@@ -235,14 +291,12 @@ export default function VerseAudioRecorder({
           className="gap-1 h-7 text-xs"
           onClick={stopRecording}
         >
-          <Square className="h-3 w-3" />
-          Parar
+          <Square className="h-3 w-3" /> Parar
         </Button>
       </div>
     );
   }
 
-  // Has recording — show playback controls
   return (
     <div className="flex items-center gap-1.5">
       <Button
@@ -256,13 +310,19 @@ export default function VerseAudioRecorder({
         {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
         {isPlaying ? formatTime(currentTime) : formatTime(duration)}
       </Button>
+      {isStorageKey(audioRecording) && (
+        <Cloud className="h-3 w-3 text-green-500" title="Na nuvem" />
+      )}
+      {isDataUrl(audioRecording) && (
+        <CloudOff className="h-3 w-3 text-orange-400" title="Apenas local" />
+      )}
       <Button
         type="button"
         size="sm"
         variant="ghost"
         className="h-7 w-7 p-0 text-blue-500 hover:text-blue-700"
         onClick={downloadRecording}
-        title="Descarregar áudio"
+        title="Descarregar \u00e1udio"
       >
         <Download className="h-3.5 w-3.5" />
       </Button>
@@ -272,7 +332,7 @@ export default function VerseAudioRecorder({
         variant="ghost"
         className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
         onClick={deleteRecording}
-        title="Apagar gravação"
+        title="Apagar grava\u00e7\u00e3o"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </Button>

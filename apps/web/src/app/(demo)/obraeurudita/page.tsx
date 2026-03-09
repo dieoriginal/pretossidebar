@@ -96,6 +96,9 @@ import { Navbar as ProfessionalNavbar } from "@/components/admin-panel/navbar";
 
 import NarratologiaTab from "@/components/narratologia-tab";
 import VerseAudioRecorder from "@/components/VerseAudioRecorder";
+import { useCloudSync } from "@/hooks/use-cloud-sync";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 
 import AccountStep from "@/steps/account";
 import ContratualizacaoStep from "@/steps/contratualizacao";
@@ -846,6 +849,8 @@ const SortableVerse = ({
   onDragStart,
   modoNietzsche,
   musicStructure,
+  projectId,
+  isSignedIn,
 }: {
   verse: Verse;
   stropheIndex: number;
@@ -854,7 +859,9 @@ const SortableVerse = ({
   onRemove: () => void;
   onDragStart: (id: string) => void;
   modoNietzsche: boolean;
-  musicStructure: string[]; // Adicionando a prop musicStructure
+  musicStructure: string[];
+  projectId: string;
+  isSignedIn: boolean;
 }) => {
   const {
     attributes,
@@ -975,10 +982,12 @@ const SortableVerse = ({
         {/* Audio recording per verse — record the flow */}
         <VerseAudioRecorder
           verseId={verse.id}
-          audioDataUrl={verse.audioRecording}
-          onRecordingChange={(audioDataUrl) =>
-            onVerseChange({ ...verse, audioRecording: audioDataUrl })
+          projectId={projectId}
+          audioRecording={verse.audioRecording}
+          onRecordingChange={(val) =>
+            onVerseChange({ ...verse, audioRecording: val })
           }
+          isSignedIn={isSignedIn}
         />
 
         {/* Componentes de seleção sempre visíveis */}
@@ -2375,6 +2384,18 @@ const Dashboard = () => {
   const project = useProject((s) => s.project);
   const updateProject = useProject((s) => s.update);
 
+  // --- Clerk user & cloud sync ---
+  const { userId: clerkUserId, isSignedIn: isClerkSignedIn } = useCurrentUser();
+  const {
+    syncStatus,
+    lastSyncedAt,
+    scheduleSync,
+    forceSave,
+  } = useCloudSync({
+    projectId: project?.id ?? "draft",
+    enabled: !!clerkUserId,
+  });
+
   // Hydrate local editor state from global store on mount (only if store has data)
   useEffect(() => {
     if (project?.strophes && project.strophes.length > 0) {
@@ -2391,11 +2412,13 @@ const Dashboard = () => {
   // Mirror changes to the global store (debounced save happens in the store itself)
   useEffect(() => {
     updateProject({ strophes });
-  }, [strophes, updateProject]);
+    scheduleSync({ strophes });
+  }, [strophes, updateProject, scheduleSync]);
 
   useEffect(() => {
     updateProject({ songInfo });
-  }, [songInfo, updateProject]);
+    scheduleSync({ songInfo });
+  }, [songInfo, updateProject, scheduleSync]);
 
   const [producerNames, setProducerNames] = useState<string[]>([
     "Xando",
@@ -3209,7 +3232,9 @@ const Dashboard = () => {
                         }}
                         onDragStart={setDraggedVerseId}
                         modoNietzsche={modoNietzsche}
-                        musicStructure={musicStructure} // Passando a prop musicStructure
+                        musicStructure={musicStructure}
+                        projectId={project?.id ?? "draft"}
+                        isSignedIn={!!isClerkSignedIn}
                       />
                     ))}
                   </SortableContext>
@@ -4036,13 +4061,15 @@ const Dashboard = () => {
               )}
 
               <Button
-                onClick={handleSaveProject}
+                onClick={() => { handleSaveProject(); forceSave(); }}
                 variant="default"
                 className="bg-green-500 hover:bg-green-600"
               >
                 <Save className="mr-2" />
                 Salvar Projeto
               </Button>
+
+              <SyncStatusIndicator status={syncStatus} lastSynced={lastSyncedAt} />
 
               <Button
                 onClick={() => {

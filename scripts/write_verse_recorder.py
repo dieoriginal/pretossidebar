@@ -1,4 +1,14 @@
-"use client";
+#!/usr/bin/env python3
+"""Write the new VerseAudioRecorder.tsx with R2 support."""
+
+import os
+
+TARGET = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "apps", "web", "src", "components", "VerseAudioRecorder.tsx"
+)
+
+CONTENT = r'''"use client";
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -349,3 +359,9 @@ export default function VerseAudioRecorder({
     </div>
   );
 }
+'''
+
+with open(TARGET, 'w') as f:
+    f.write(CONTENT)
+
+print(f"Written {len(CONTENT)} bytes to {TARGET}")
