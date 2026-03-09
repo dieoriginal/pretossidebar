@@ -97,8 +97,10 @@ export function useCloudSync(options: CloudSyncOptions = {}) {
   const snapshotTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingData = useRef<{ projectId: string; data: any; metadata?: any } | null>(null);
   const lastSnapshotTime = useRef<number>(0);
-  // Ref so event-listener callbacks always call the latest flushToCloud without stale closure
-  const flushRef = useRef<typeof flushToCloud>(flushToCloud as any);
+  // Ref so event-listener callbacks always call the latest flushToCloud without stale closure.
+  // IMPORTANT: cannot reference flushToCloud here (TDZ — it is declared below).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const flushRef = useRef<(...args: any[]) => any>(() => {});
 
   // Track online/offline
   useEffect(() => {

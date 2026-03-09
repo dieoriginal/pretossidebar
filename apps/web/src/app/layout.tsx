@@ -21,7 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      signInFallbackRedirectUrl="/obraeurudita"
+      signUpFallbackRedirectUrl="/obraeurudita"
+    >
       <html lang="pt" suppressHydrationWarning>
         <body className={GeistSans.className}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

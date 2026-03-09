@@ -5,12 +5,24 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getPresignedUrl } from "@/lib/r2";
+
+const R2_CONFIGURED = !!(
+  process.env.R2_ACCOUNT_ID &&
+  process.env.R2_ACCESS_KEY_ID &&
+  process.env.R2_SECRET_ACCESS_KEY &&
+  process.env.R2_BUCKET_NAME
+);
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { key: string[] } }
 ) {
+  if (!R2_CONFIGURED) {
+    return NextResponse.json({ error: "R2 storage not configured", r2Disabled: true }, { status: 503 });
+  }
+
+  const { getPresignedUrl } = await import("@/lib/r2");
+
   try {
     const key = params.key.join("/");
 

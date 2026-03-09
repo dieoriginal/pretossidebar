@@ -18,7 +18,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 const accountId = process.env.R2_ACCOUNT_ID || "";
 const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
-const bucketName = process.env.R2_BUCKET_NAME || "agora-assets";
+const bucketName = process.env.R2_BUCKET_NAME || "agoraftmssot";
 
 if (!accountId || !accessKeyId || !secretAccessKey) {
   console.warn(
@@ -120,12 +120,12 @@ export async function existsInR2(key: string): Promise<boolean> {
  * If not, use getPresignedUrl() instead.
  */
 export function getPublicR2Url(key: string): string {
-  // If you have a custom domain for R2 public access:
-  const publicDomain = process.env.R2_PUBLIC_DOMAIN;
-  if (publicDomain) {
-    return `https://${publicDomain}/${key}`;
+  // R2_PUBLIC_URL is the full base URL: e.g. https://pub-xxx.r2.dev or https://assets.yourdomain.com
+  const publicUrl = process.env.R2_PUBLIC_URL || process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+  if (publicUrl) {
+    return `${publicUrl.replace(/\/$/, "")}/${key}`;
   }
-  // Otherwise fall back to presigned URLs (handled at API level)
+  // Fall back to presigned URLs (handled at API level)
   return "";
 }
 
