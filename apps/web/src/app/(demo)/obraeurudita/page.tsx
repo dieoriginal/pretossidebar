@@ -2400,6 +2400,12 @@ const Dashboard = () => {
   const scheduleSyncRef = useRef(scheduleSync);
   useEffect(() => { scheduleSyncRef.current = scheduleSync; }, [scheduleSync]);
 
+  // Refs to always have latest values for cross-effect access
+  const strophesRef = useRef(strophes);
+  const songInfoRef = useRef(songInfo);
+  useEffect(() => { strophesRef.current = strophes; }, [strophes]);
+  useEffect(() => { songInfoRef.current = songInfo; }, [songInfo]);
+
   // Hydrate local editor state from global store on mount (only if store has data)
   useEffect(() => {
     if (project?.strophes && project.strophes.length > 0) {
@@ -2416,13 +2422,19 @@ const Dashboard = () => {
   // Mirror changes to the global store and schedule cloud sync
   useEffect(() => {
     updateProject({ strophes });
-    scheduleSyncRef.current({ strophes });
+    scheduleSyncRef.current(
+      { strophes, songInfo: songInfoRef.current },
+      { title: songInfoRef.current.title, artist: songInfoRef.current.artist, producer: songInfoRef.current.producer, featuring: songInfoRef.current.featuring?.join(", ") }
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [strophes, updateProject]);
 
   useEffect(() => {
     updateProject({ songInfo });
-    scheduleSyncRef.current({ songInfo });
+    scheduleSyncRef.current(
+      { strophes: strophesRef.current, songInfo },
+      { title: songInfo.title, artist: songInfo.artist, producer: songInfo.producer, featuring: songInfo.featuring?.join(", ") }
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songInfo, updateProject]);
 

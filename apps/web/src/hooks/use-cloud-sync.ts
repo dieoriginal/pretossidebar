@@ -29,17 +29,37 @@ interface CloudSyncOptions {
   enabled?: boolean;
 }
 
-/** Compress project data for transport/storage */
+/** Compress project data for transport/storage (pako v2 → base64-encoded deflate) */
 function compressData(data: any): string {
   const json = JSON.stringify(data);
-  const compressed = deflate(json, { to: "string" });
-  return compressed;
+  const bytes = deflate(json); // pako v2 returns Uint8Array
+  // Encode as base64 so it's safe to embed in JSON and store as UTF-8 TEXT
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
-/** Decompress project data */
+/** Decompress project data (handles base64-encoded pako deflate) */
 export function decompressData(compressed: string): any {
-  const json = inflate(compressed, { to: "string" });
-  return JSON.parse(json);
+  try {
+    // Primary: base64 → Uint8Array → pako inflate → JSON
+    const binary = atob(compressed);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const json = inflate(bytes, { to: "string" });
+    return JSON.parse(json);
+  } catch {
+    // Legacy fallback: plain JSON string
+    try {
+      return JSON.parse(compressed);
+    } catch {
+      return {};
+    }
+  }
 }
 
 /** Get device info string */

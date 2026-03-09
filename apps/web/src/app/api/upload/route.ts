@@ -9,23 +9,38 @@
  * 
  * Returns: { storageKey, url }
  * 
- * GET /api/upload?action=presign&key=...&contentType=...
- *   Returns a presigned PUT URL for direct client upload.
+ * NOTE: R2 is currently disabled (env vars not configured).
+ * Returns 503 so clients fall back to base64 local storage.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { uploadToR2, generateStorageKey, getPresignedUrl, getPresignedUploadUrl } from "@/lib/r2";
-import { registerFile } from "@/lib/supabase-server";
 
-export async function POST(request: NextRequest) {
+const R2_CONFIGURED =
+  !!(process.env.R2_ACCOUNT_ID &&
+     process.env.R2_ACCESS_KEY_ID &&
+     process.env.R2_SECRET_ACCESS_KEY &&
+     process.env.R2_BUCKET_NAME);
+
+export async function POST(_request: NextRequest) {
+  if (!R2_CONFIGURED) {
+    return NextResponse.json(
+      { error: "R2 storage not configured — use base64 fallback", r2Disabled: true },
+      { status: 503 }
+    );
+  }
+
+  // Dynamic import so the module is only loaded when R2 is configured
+  const { auth } = await import("@clerk/nextjs/server");
+  const { uploadToR2, generateStorageKey, getPresignedUrl } = await import("@/lib/r2");
+  const { registerFile } = await import("@/lib/supabase-server");
+
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const formData = await request.formData();
+    const formData = await _request.formData();
     const file = formData.get("file") as File | null;
     const projectId = formData.get("projectId") as string | null;
     const fileType = (formData.get("type") as string) || "audio";
@@ -38,7 +53,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No projectId provided" }, { status: 400 });
     }
 
-    // Generate a unique storage key
     const storageKey = generateStorageKey(
       userId,
       projectId,
@@ -46,11 +60,9 @@ export async function POST(request: NextRequest) {
       fileType as "audio" | "image" | "document"
     );
 
-    // Upload to R2
     const buffer = Buffer.from(await file.arrayBuffer());
     await uploadToR2(storageKey, buffer, file.type || "audio/webm");
 
-    // Register in database
     await registerFile(
       userId,
       projectId,
@@ -60,24 +72,26 @@ export async function POST(request: NextRequest) {
       buffer.length
     );
 
-    // Generate a presigned URL for immediate playback
     const url = await getPresignedUrl(storageKey);
 
-    return NextResponse.json({
-      storageKey,
-      url,
-      size: buffer.length,
-    });
+    return NextResponse.json({ storageKey, url, size: buffer.length });
   } catch (error) {
     console.error("Upload error:", error);
-    return NextResponse.json(
-      { error: "Upload failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }
 
 export async function GET(request: NextRequest) {
+  if (!R2_CONFIGURED) {
+    return NextResponse.json(
+      { error: "R2 storage not configured", r2Disabled: true },
+      { status: 503 }
+    );
+  }
+
+  const { auth } = await import("@clerk/nextjs/server");
+  const { getPresignedUploadUrl } = await import("@/lib/r2");
+
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -105,3 +119,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
+
