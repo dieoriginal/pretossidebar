@@ -96,16 +96,27 @@ export default function ProjectsDashboard() {
     }
   };
 
-  const handleNewProject = () => {
-    // Reset store to a fresh project and navigate
-    updateProject({
+  const handleNewProject = async () => {
+    const newProject = {
       id: `proj_${Date.now()}`,
       songInfo: { title: "", artist: "", producer: "", featuring: [] },
       strophes: [],
       currentStep: 0,
       updatedAt: new Date().toISOString(),
-    });
-    router.push("/obraeurudita");
+    };
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProject),
+      });
+      if (!res.ok) throw new Error("Failed to create project in cloud");
+      updateProject(newProject);
+      router.push("/obraeurudita");
+    } catch (err) {
+      alert("Erro ao criar projeto na nuvem. Tente novamente.");
+      console.error(err);
+    }
   };
 
   const filtered = projects.filter(
