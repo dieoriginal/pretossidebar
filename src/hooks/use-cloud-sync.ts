@@ -77,14 +77,15 @@ export function useCloudSync(options: CloudSyncOptions = {}) {
   const snapshotTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingData = useRef<{ projectId: string; data: any; metadata?: any } | null>(null);
   const lastSnapshotTime = useRef<number>(0);
+  // Ref so event-listener callbacks always call the latest flushToCloud without stale closure
+  const flushRef = useRef<typeof flushToCloud>(flushToCloud as any);
 
   // Track online/offline
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      // Flush pending data when coming back online
       if (pendingData.current) {
-        flushToCloud(pendingData.current.projectId, pendingData.current.data, pendingData.current.metadata);
+        flushRef.current(pendingData.current.projectId, pendingData.current.data, pendingData.current.metadata);
       }
     };
     const handleOffline = () => {
@@ -106,11 +107,11 @@ export function useCloudSync(options: CloudSyncOptions = {}) {
 
     snapshotTimer.current = setInterval(() => {
       if (pendingData.current) {
-        flushToCloud(
+        flushRef.current(
           pendingData.current.projectId,
           pendingData.current.data,
           pendingData.current.metadata,
-          true // snapshot
+          true
         );
       }
     }, snapshotIntervalMs);
@@ -124,7 +125,7 @@ export function useCloudSync(options: CloudSyncOptions = {}) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && pendingData.current) {
-        flushToCloud(
+        flushRef.current(
           pendingData.current.projectId,
           pendingData.current.data,
           pendingData.current.metadata
@@ -205,6 +206,9 @@ export function useCloudSync(options: CloudSyncOptions = {}) {
     },
     [enabled, isOnline, snapshotIntervalMs]
   );
+
+  // Keep flushRef current so event-listener closures never go stale
+  useEffect(() => { flushRef.current = flushToCloud; }, [flushToCloud]);
 
   /**
    * Schedule a cloud sync (debounced).
